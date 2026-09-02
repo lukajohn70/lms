@@ -47,6 +47,9 @@ $router->get('/student/attendance', 'AttendanceController@getStudentAttendance')
 // Grades
 $router->get('/teacher/grades', 'GradeController@getTeacherGrades');
 $router->post('/teacher/grades/save', 'GradeController@saveGrades');
+$router->post('/teacher/grades/submit', 'GradeController@submitGradesForApproval');
+$router->get('/admin/grades/submissions', 'GradeController@getAdminGradeSubmissions');
+$router->post('/admin/grades/update-status', 'GradeController@updateGradeStatus');
 $router->get('/parent/grades', 'GradeController@getParentGrades');
 $router->get('/student/grades', 'GradeController@getStudentGrades');
 $router->get('/student/courses', 'GradeController@getStudentCourses');

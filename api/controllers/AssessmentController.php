@@ -244,8 +244,9 @@ class AssessmentController {
             die("Student ID required.");
         }
 
-        $term = isset($_GET['term']) ? $_GET['term'] : $this->getSetting('current_term', '2nd Term');
-        $session = $this->getSetting('academic_session', '2026/2027');
+        $termRaw = isset($_GET['term']) ? $_GET['term'] : $this->getSetting('current_term', '2nd Term');
+        $term = ($termRaw === '1st' || $termRaw === '1st Term') ? '1st Term' : (($termRaw === '2nd' || $termRaw === '2nd Term') ? '2nd Term' : (($termRaw === '3rd' || $termRaw === '3rd Term') ? '3rd Term' : $termRaw));
+        $session = isset($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
         $schoolName = $this->getSetting('school_name', 'Aroura Academy');
 
         // Fetch student details
@@ -256,22 +257,38 @@ class AssessmentController {
             die("Student not found.");
         }
 
-        // Fetch grades
+        // Fetch grades for requested term & session
         $gradesQuery = "
             SELECT 
+                c.id as course_id,
                 c.name as subject,
                 CONCAT(t.first_name, ' ', t.last_name) as teacher,
                 g.assignment_score, g.project_score, g.mid_term_test,
-                g.ca1, g.ca2, g.exam, g.score as total, g.remarks
+                g.ca1, g.ca2, g.exam, g.score as total, g.remarks, g.status
             FROM enrollments e
             JOIN courses c ON e.course_id = c.id
             LEFT JOIN users t ON c.teacher_id = t.id
-            LEFT JOIN grades g ON (e.student_id = g.student_id AND g.course_id = c.id)
+            LEFT JOIN grades g ON (e.student_id = g.student_id AND g.course_id = c.id AND g.academic_term = :term AND g.academic_session = :session)
             WHERE e.student_id = :sid
+            ORDER BY c.name
         ";
         $stmt = $this->conn->prepare($gradesQuery);
-        $stmt->execute([':sid' => $studentId]);
+        $stmt->execute([':sid' => $studentId, ':term' => $term, ':session' => $session]);
         $grades = $stmt->fetchAll();
+
+        // Fetch Multi-Term cumulative scores for this student
+        $multiStmt = $this->conn->prepare("
+            SELECT course_id, academic_term, score 
+            FROM grades 
+            WHERE student_id = :sid AND academic_session = :session
+        ");
+        $multiStmt->execute([':sid' => $studentId, ':session' => $session]);
+        $multiRows = $multiStmt->fetchAll();
+        $multiMap = [];
+        foreach ($multiRows as $mr) {
+            $tNorm = ($mr['academic_term'] === '1st' || $mr['academic_term'] === '1st Term') ? '1st Term' : (($mr['academic_term'] === '2nd' || $mr['academic_term'] === '2nd Term') ? '2nd Term' : '3rd Term');
+            $multiMap[$mr['course_id']][$tNorm] = floatval($mr['score']);
+        }
 
         // Fetch assessment
         $stmt = $this->conn->prepare("
@@ -294,8 +311,11 @@ class AssessmentController {
         $averageScore = 0;
         $totalSum = 0;
         $gradedCount = 0;
+        $annualSum = 0;
+        $annualCount = 0;
 
         foreach ($grades as &$g) {
+            $cid = $g['course_id'];
             $as = floatval($g['assignment_score'] ?? 0);
             $pr = floatval($g['project_score'] ?? 0);
             $mt = floatval($g['mid_term_test'] ?? 0);
@@ -306,9 +326,30 @@ class AssessmentController {
                 $totalSum += $tTotal;
                 $gradedCount++;
             }
+
+            $g['t1'] = $multiMap[$cid]['1st Term'] ?? null;
+            $g['t2'] = $multiMap[$cid]['2nd Term'] ?? null;
+            $g['t3'] = $multiMap[$cid]['3rd Term'] ?? null;
+            $avail = array_filter([$g['t1'], $g['t2'], $g['t3']], fn($v) => $v !== null);
+            $g['annual_avg'] = !empty($avail) ? round(array_sum($avail) / count($avail), 1) : $tTotal;
+
+            $annualSum += $g['annual_avg'];
+            $annualCount++;
         }
         if ($gradedCount > 0) {
             $averageScore = round($totalSum / $gradedCount, 1);
+        }
+        $annualAverageScore = $annualCount > 0 ? round($annualSum / $annualCount, 1) : $averageScore;
+
+        if ($annualAverageScore >= 50) {
+            $promotionDecision = "PROMOTED TO NEXT CLASS";
+            $promotionBadgeColor = "#219EBC";
+        } else if ($annualAverageScore >= 40) {
+            $promotionDecision = "PROMOTED ON TRIAL";
+            $promotionBadgeColor = "#FFB703";
+        } else {
+            $promotionDecision = "ADVISED TO REPEAT";
+            $promotionBadgeColor = "#ef4444";
         }
 
         // Ratings helper
@@ -592,11 +633,61 @@ class AssessmentController {
                                 </tr>
                                 <?php endforeach; ?>
                                 <tr style="background: #f1f5f9; font-weight: 800; font-size: 11px;">
-                                    <td colspan="7" style="text-align: right; padding: 10px;">AVERAGE SCORE</td>
+                                    <td colspan="7" style="text-align: right; padding: 10px;">TERM AVERAGE SCORE</td>
                                     <td colspan="3" style="color: #219EBC; text-align: left; padding-left: 15px; font-size: 12px;"><?= $averageScore ?>%</td>
                                 </tr>
                             </tbody>
                         </table>
+
+                        <?php if ($term === '3rd Term' || !empty($multiRows)): ?>
+                        <!-- Annual Cumulative Summary & Promotion Decision -->
+                        <div style="margin-top: 18px;">
+                            <h3 style="margin: 0 0 8px 0; color: #023047; text-transform: uppercase; font-size: 11px; border-bottom: 2px solid #FB8500; padding-bottom: 4px;">Annual Cumulative Summary (3-Term Progression)</h3>
+                            <table>
+                                <thead>
+                                    <tr style="background: #023047;">
+                                        <th style="text-align: left;">Subject</th>
+                                        <th>1st Term</th>
+                                        <th>2nd Term</th>
+                                        <th>3rd Term</th>
+                                        <th style="background: #FB8500; color: #fff;">Annual Avg</th>
+                                        <th>Final Grade</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($grades as $g): 
+                                        $ag = $gradeLetter($g['annual_avg'] ?? 0);
+                                    ?>
+                                    <tr>
+                                        <td class="sub-name"><?= htmlspecialchars($g['subject']) ?></td>
+                                        <td><?= $g['t1'] !== null ? floatval($g['t1']) : '—' ?></td>
+                                        <td><?= $g['t2'] !== null ? floatval($g['t2']) : '—' ?></td>
+                                        <td><?= $g['t3'] !== null ? floatval($g['t3']) : '—' ?></td>
+                                        <td style="font-weight: 700; color: #023047; background: #fff8f0;"><?= floatval($g['annual_avg']) ?>%</td>
+                                        <td style="font-weight: 700; color: #219EBC;"><?= $ag['grade'] ?></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                    <tr style="background: #f1f5f9; font-weight: 800; font-size: 11px;">
+                                        <td colspan="4" style="text-align: right; padding: 8px;">CUMULATIVE ANNUAL AVERAGE:</td>
+                                        <td colspan="2" style="color: #FB8500; font-size: 12px; font-weight: 800; text-align: left; padding-left: 10px;"><?= $annualAverageScore ?>%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- Official Promotion Decision Banner -->
+                            <div style="margin-top: 10px; background: #f8fafc; border: 1.5px solid <?= $promotionBadgeColor ?>; border-radius: 6px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span style="font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; display: block;">Academic Board Recommendation</span>
+                                    <span style="font-size: 13px; font-weight: 900; color: <?= $promotionBadgeColor ?>; letter-spacing: 0.03em;"><?= $promotionDecision ?></span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-size: 9px; color: #2a9d8f; font-weight: 700; background: rgba(42,157,143,0.1); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(42,157,143,0.3);">
+                                        ✓ OFFICIAL &amp; PUBLISHED
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Behavior and Skill Ratings -->

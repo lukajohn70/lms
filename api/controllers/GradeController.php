@@ -17,20 +17,42 @@ class GradeController {
         return $val !== false ? $val : $default;
     }
 
+    private function normalizeTerm($raw) {
+        if (!$raw) return $this->getSetting('current_term', '2nd Term');
+        if ($raw === '1st' || $raw === '1st Term') return '1st Term';
+        if ($raw === '2nd' || $raw === '2nd Term') return '2nd Term';
+        if ($raw === '3rd' || $raw === '3rd Term') return '3rd Term';
+        return $raw;
+    }
+
     // Teacher: Get grades list for course
     public function getTeacherGrades() {
-        $teacher = Auth::requireRole(['teacher']);
+        $teacher = Auth::requireRole(['teacher', 'admin']);
         
         $courseId = isset($_GET['course_id']) ? intval($_GET['course_id']) : null;
+        $term = $this->normalizeTerm($_GET['term'] ?? null);
+        $session = isset($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
         
-        // 1. Get courses taught by teacher
-        $coursesQuery = "SELECT id, name FROM courses WHERE teacher_id = :tid";
-        $coursesStmt = $this->conn->prepare($coursesQuery);
-        $coursesStmt->execute([':tid' => $teacher['id']]);
-        $courses = $coursesStmt->fetchAll();
+        // 1. Get courses taught by teacher (or all courses if admin)
+        if ($teacher['role'] === 'admin') {
+            $coursesQuery = "SELECT id, name FROM courses ORDER BY name";
+            $coursesStmt = $this->conn->query($coursesQuery);
+            $courses = $coursesStmt->fetchAll();
+        } else {
+            $coursesQuery = "SELECT id, name FROM courses WHERE teacher_id = :tid ORDER BY name";
+            $coursesStmt = $this->conn->prepare($coursesQuery);
+            $coursesStmt->execute([':tid' => $teacher['id']]);
+            $courses = $coursesStmt->fetchAll();
+        }
         
         if (empty($courses)) {
-            echo json_encode(["courses" => [], "students" => []]);
+            echo json_encode([
+                "courses" => [],
+                "students" => [],
+                "course_status" => "draft",
+                "selected_term" => $term,
+                "selected_session" => $session
+            ]);
             return;
         }
         
@@ -38,7 +60,7 @@ class GradeController {
             $courseId = $courses[0]['id'];
         }
         
-        // 2. Fetch enrolled students and their grades (if they have one)
+        // 2. Fetch enrolled students and their grades for this specific term/session
         $gradesQuery = "
             SELECT 
                 u.id, 
@@ -51,21 +73,30 @@ class GradeController {
                 g.project_score,
                 g.mid_term_test,
                 g.score,
-                g.remarks
+                g.remarks,
+                g.status
             FROM users u
             JOIN enrollments e ON u.id = e.student_id
-            LEFT JOIN grades g ON (u.id = g.student_id AND g.course_id = :cid)
+            LEFT JOIN grades g ON (u.id = g.student_id AND g.course_id = :cid AND g.academic_term = :term AND g.academic_session = :session)
             WHERE e.course_id = :cid
             ORDER BY u.first_name, u.last_name
         ";
         
         $gradesStmt = $this->conn->prepare($gradesQuery);
-        $gradesStmt->execute([':cid' => $courseId]);
+        $gradesStmt->execute([
+            ':cid' => $courseId,
+            ':term' => $term,
+            ':session' => $session
+        ]);
         $students = $gradesStmt->fetchAll();
         
-        // Format grades output
+        // Find overall status of this course mark sheet
+        $courseStatus = "draft";
         $formattedStudents = [];
         foreach ($students as $s) {
+            if ($s['status']) {
+                $courseStatus = $s['status'];
+            }
             $formattedStudents[] = [
                 "id" => $s['id'],
                 "name" => $s['name'],
@@ -77,21 +108,25 @@ class GradeController {
                 "project_score" => $s['project_score'] !== null ? strval(floatval($s['project_score'])) : "0",
                 "mid_term_test" => $s['mid_term_test'] !== null ? strval(floatval($s['mid_term_test'])) : "0",
                 "score" => $s['score'] !== null ? floatval($s['score']) : 0,
-                "remarks" => $s['remarks'] ?: ""
+                "remarks" => $s['remarks'] ?: "",
+                "status" => $s['status'] ?: "draft"
             ];
         }
         
         echo json_encode([
             "courses" => $courses,
             "selected_course_id" => $courseId,
+            "selected_term" => $term,
+            "selected_session" => $session,
+            "course_status" => $courseStatus,
             "result_mode" => $this->getSetting('result_mode', 'end_of_term'),
             "students" => $formattedStudents
         ]);
     }
 
-    // Teacher: Save/update grades
+    // Teacher: Save/update grades as draft or submitted
     public function saveGrades() {
-        $teacher = Auth::requireRole(['teacher']);
+        $user = Auth::requireRole(['teacher', 'admin']);
         $data = json_decode(file_get_contents("php://input"));
         
         if (!isset($data->course_id) || !isset($data->grades)) {
@@ -101,20 +136,35 @@ class GradeController {
         }
         
         $courseId = intval($data->course_id);
+        $term = $this->normalizeTerm($data->term ?? null);
+        $session = isset($data->session) ? $data->session : $this->getSetting('academic_session', '2026/2027');
         $resultMode = $this->getSetting('result_mode', 'end_of_term');
+        $targetStatus = isset($data->status) && in_array($data->status, ['draft', 'submitted', 'approved', 'published']) ? $data->status : 'draft';
+
+        // If not admin, check if already published/locked
+        if ($user['role'] !== 'admin') {
+            $lockCheck = $this->conn->prepare("SELECT status FROM grades WHERE course_id = :cid AND academic_term = :term AND academic_session = :session LIMIT 1");
+            $lockCheck->execute([':cid' => $courseId, ':term' => $term, ':session' => $session]);
+            $currentStatus = $lockCheck->fetchColumn();
+            if ($currentStatus === 'published') {
+                http_response_code(403);
+                echo json_encode(["error" => "These results are published and locked. Contact the administrator to unlock for editing."]);
+                return;
+            }
+        }
         
         try {
             $this->conn->beginTransaction();
             
             $query = "
                 INSERT INTO grades (
-                    student_id, course_id, ca1, ca2, exam, 
-                    assignment_score, project_score, mid_term_test, 
-                    score, max_score, remarks, graded_by
+                    student_id, course_id, academic_term, academic_session, 
+                    ca1, ca2, exam, assignment_score, project_score, mid_term_test, 
+                    score, max_score, remarks, graded_by, status
                 ) VALUES (
-                    :s, :c, :ca1, :ca2, :exam, 
-                    :asgn, :proj, :test, 
-                    :score, 100, :remarks, :g
+                    :s, :c, :term, :session, 
+                    :ca1, :ca2, :exam, :asgn, :proj, :test, 
+                    :score, 100, :remarks, :g, :status
                 ) ON DUPLICATE KEY UPDATE 
                     ca1 = :ca1, 
                     ca2 = :ca2, 
@@ -124,7 +174,8 @@ class GradeController {
                     mid_term_test = :test,
                     score = :score, 
                     remarks = :remarks,
-                    graded_by = :g
+                    graded_by = :g,
+                    status = :status
             ";
             
             $stmt = $this->conn->prepare($query);
@@ -132,24 +183,26 @@ class GradeController {
             foreach ($data->grades as $g) {
                 // Fetch existing grade record if it exists
                 $findStmt = $this->conn->prepare("
-                    SELECT assignment_score, project_score, mid_term_test, ca1, ca2, exam 
+                    SELECT assignment_score, project_score, mid_term_test, ca1, ca2, exam, status 
                     FROM grades 
-                    WHERE student_id = :s AND course_id = :c
+                    WHERE student_id = :s AND course_id = :c AND academic_term = :term AND academic_session = :session
                 ");
-                $findStmt->execute([':s' => intval($g->student_id), ':c' => $courseId]);
+                $findStmt->execute([
+                    ':s' => intval($g->student_id),
+                    ':c' => $courseId,
+                    ':term' => $term,
+                    ':session' => $session
+                ]);
                 $existing = $findStmt->fetch();
                 
-                // Read from input, fallback to existing DB value, fallback to null
                 $asgn = isset($g->assignment_score) && $g->assignment_score !== "" ? floatval($g->assignment_score) : ($existing ? ($existing['assignment_score'] !== null ? floatval($existing['assignment_score']) : null) : null);
                 $proj = isset($g->project_score) && $g->project_score !== "" ? floatval($g->project_score) : ($existing ? ($existing['project_score'] !== null ? floatval($existing['project_score']) : null) : null);
                 $test = isset($g->mid_term_test) && $g->mid_term_test !== "" ? floatval($g->mid_term_test) : ($existing ? ($existing['mid_term_test'] !== null ? floatval($existing['mid_term_test']) : null) : null);
                 
                 $ca1 = ($asgn !== null || $proj !== null || $test !== null) ? (($asgn ?? 0) + ($proj ?? 0) + ($test ?? 0)) : 0;
-                
                 $ca2 = isset($g->ca2) && $g->ca2 !== "" ? floatval($g->ca2) : ($existing ? ($existing['ca2'] !== null ? floatval($existing['ca2']) : 0) : 0);
                 $exam = isset($g->exam) && $g->exam !== "" ? floatval($g->exam) : ($existing ? ($existing['exam'] !== null ? floatval($existing['exam']) : 0) : 0);
                 
-                // Set total score based on mode
                 if ($resultMode === 'mid_term') {
                     $total = $ca1;
                 } else {
@@ -161,6 +214,8 @@ class GradeController {
                 $stmt->execute([
                     ':s' => intval($g->student_id),
                     ':c' => $courseId,
+                    ':term' => $term,
+                    ':session' => $session,
                     ':ca1' => $ca1,
                     ':ca2' => $ca2,
                     ':exam' => $exam,
@@ -169,16 +224,142 @@ class GradeController {
                     ':test' => $test,
                     ':score' => $total,
                     ':remarks' => $remarks,
-                    ':g' => $teacher['id']
+                    ':g' => $user['id'],
+                    ':status' => $targetStatus
                 ]);
             }
             
             $this->conn->commit();
-            echo json_encode(["message" => "Grades saved successfully"]);
+            echo json_encode(["success" => true, "message" => "Grades saved successfully."]);
         } catch (Exception $e) {
             $this->conn->rollBack();
             http_response_code(500);
             echo json_encode(["error" => "Failed to save grades: " . $e->getMessage()]);
+        }
+    }
+
+    // Teacher: Submit grades for Admin Review
+    public function submitGradesForApproval() {
+        $teacher = Auth::requireRole(['teacher', 'admin']);
+        $data = json_decode(file_get_contents("php://input"));
+
+        if (!isset($data->course_id)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Course ID is required."]);
+            return;
+        }
+
+        $courseId = intval($data->course_id);
+        $term = $this->normalizeTerm($data->term ?? null);
+        $session = isset($data->session) ? $data->session : $this->getSetting('academic_session', '2026/2027');
+
+        try {
+            $stmt = $this->conn->prepare("
+                UPDATE grades 
+                SET status = 'submitted' 
+                WHERE course_id = :cid AND academic_term = :term AND academic_session = :session
+            ");
+            $stmt->execute([
+                ':cid' => $courseId,
+                ':term' => $term,
+                ':session' => $session
+            ]);
+
+            echo json_encode(["success" => true, "message" => "Results submitted to Administration for approval."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to submit grades: " . $e->getMessage()]);
+        }
+    }
+
+    // Admin: List all subject grade submissions across the school
+    public function getAdminGradeSubmissions() {
+        Auth::requireRole(['admin']);
+
+        $term = $this->normalizeTerm($_GET['term'] ?? null);
+        $session = isset($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
+
+        try {
+            $query = "
+                SELECT 
+                    c.id as course_id,
+                    c.name as course_name,
+                    CONCAT(t.first_name, ' ', t.last_name) as teacher_name,
+                    t.email as teacher_email,
+                    COUNT(DISTINCT e.student_id) as enrolled_count,
+                    COUNT(DISTINCT g.student_id) as graded_count,
+                    ROUND(AVG(g.score), 1) as class_average,
+                    COALESCE(MAX(g.status), 'draft') as status
+                FROM courses c
+                LEFT JOIN users t ON c.teacher_id = t.id
+                LEFT JOIN enrollments e ON c.id = e.course_id
+                LEFT JOIN grades g ON (c.id = g.course_id AND e.student_id = g.student_id AND g.academic_term = :term AND g.academic_session = :session)
+                GROUP BY c.id, c.name, t.first_name, t.last_name, t.email
+                ORDER BY c.name
+            ";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([':term' => $term, ':session' => $session]);
+            $submissions = $stmt->fetchAll();
+
+            echo json_encode([
+                "success" => true,
+                "term" => $term,
+                "session" => $session,
+                "submissions" => $submissions
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to load grade submissions: " . $e->getMessage()]);
+        }
+    }
+
+    // Admin: Batch update grade status (approve, publish, reopen/draft)
+    public function updateGradeStatus() {
+        Auth::requireRole(['admin']);
+        $data = json_decode(file_get_contents("php://input"));
+
+        if (!isset($data->course_id) || !isset($data->status)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Course ID and Status are required."]);
+            return;
+        }
+
+        $courseId = intval($data->course_id);
+        $status = $data->status;
+        if (!in_array($status, ['draft', 'submitted', 'approved', 'published'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Invalid status value."]);
+            return;
+        }
+
+        $term = $this->normalizeTerm($data->term ?? null);
+        $session = isset($data->session) ? $data->session : $this->getSetting('academic_session', '2026/2027');
+
+        try {
+            $stmt = $this->conn->prepare("
+                UPDATE grades 
+                SET status = :status 
+                WHERE course_id = :cid AND academic_term = :term AND academic_session = :session
+            ");
+            $stmt->execute([
+                ':status' => $status,
+                ':cid' => $courseId,
+                ':term' => $term,
+                ':session' => $session
+            ]);
+
+            $statusLabels = [
+                'draft' => 're-opened for editing',
+                'approved' => 'approved',
+                'published' => 'published & locked'
+            ];
+            $msg = "Grades have been " . ($statusLabels[$status] ?? $status);
+
+            echo json_encode(["success" => true, "message" => $msg]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to update grade status: " . $e->getMessage()]);
         }
     }
 
@@ -210,8 +391,10 @@ class GradeController {
 
     private function respondStudentGrades($studentId) {
         $resultMode = $this->getSetting('result_mode', 'end_of_term');
+        $currentTerm = $this->normalizeTerm($_GET['term'] ?? null);
+        $session = isset($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
 
-        // 1. Get grades for all enrolled courses
+        // 1. Get grades for the current requested term
         $gradesQuery = "
             SELECT 
                 c.id as course_id,
@@ -224,24 +407,53 @@ class GradeController {
                 g.project_score,
                 g.mid_term_test,
                 g.score as total,
-                g.remarks
+                g.remarks,
+                g.status
             FROM enrollments e
             JOIN courses c ON e.course_id = c.id
             LEFT JOIN users u ON c.teacher_id = u.id
-            LEFT JOIN grades g ON (e.student_id = g.student_id AND g.course_id = c.id)
+            LEFT JOIN grades g ON (e.student_id = g.student_id AND g.course_id = c.id AND g.academic_term = :term AND g.academic_session = :session)
             WHERE e.student_id = :sid
+            ORDER BY c.name
         ";
         $stmt = $this->conn->prepare($gradesQuery);
-        $stmt->execute([':sid' => $studentId]);
+        $stmt->execute([
+            ':sid' => $studentId,
+            ':term' => $currentTerm,
+            ':session' => $session
+        ]);
         $grades = $stmt->fetchAll();
+
+        // 2. Fetch Multi-Term Cumulative Records (1st, 2nd, 3rd Term) for this student
+        $allTermsQuery = "
+            SELECT course_id, academic_term, score 
+            FROM grades 
+            WHERE student_id = :sid AND academic_session = :session
+        ";
+        $allTermsStmt = $this->conn->prepare($allTermsQuery);
+        $allTermsStmt->execute([':sid' => $studentId, ':session' => $session]);
+        $allTermsRows = $allTermsStmt->fetchAll();
+
+        $termMatrix = [];
+        foreach ($allTermsRows as $r) {
+            $cid = $r['course_id'];
+            $t = $this->normalizeTerm($r['academic_term']);
+            if (!isset($termMatrix[$cid])) {
+                $termMatrix[$cid] = ['1st Term' => null, '2nd Term' => null, '3rd Term' => null];
+            }
+            $termMatrix[$cid][$t] = floatval($r['score']);
+        }
         
-        // 2. Format grades & compute grade/totals
+        // 3. Format grades & compute grade/totals
         $formatted = [];
         $totalSum = 0;
         $highest = 0;
         $highestSubject = "N/A";
+        $annualSum = 0;
+        $annualCount = 0;
         
         foreach ($grades as $g) {
+            $cid = $g['course_id'];
             $asgn = floatval($g['assignment_score'] ?? 0);
             $proj = floatval($g['project_score'] ?? 0);
             $test = floatval($g['mid_term_test'] ?? 0);
@@ -251,7 +463,6 @@ class GradeController {
                 $ca = $midTermTotal;
                 $exam = 0;
                 $total = $midTermTotal;
-                // Calculate mid-term remark based on out of 20
                 if ($total >= 18) {
                     $gradeLetter = "EXCELLENT";
                 } else if ($total >= 14) {
@@ -275,17 +486,33 @@ class GradeController {
                 $maxCA = 40;
                 $maxExam = 60;
             }
+
+            // Multi-term cumulative for this subject
+            $t1 = $termMatrix[$cid]['1st Term'] ?? null;
+            $t2 = $termMatrix[$cid]['2nd Term'] ?? null;
+            $t3 = $termMatrix[$cid]['3rd Term'] ?? null;
+            
+            $termsAvailable = array_filter([$t1, $t2, $t3], fn($v) => $v !== null);
+            $subjectAnnualAvg = !empty($termsAvailable) ? round(array_sum($termsAvailable) / count($termsAvailable), 1) : $total;
             
             $formatted[] = [
+                "course_id" => $g['course_id'],
                 "subject" => $g['subject'],
                 "teacher" => $g['teacher'] ?: "Unassigned",
                 "ca" => $ca,
                 "exam" => $exam,
                 "total" => $total,
                 "grade" => $gradeLetter,
-                "position" => "N/A", // We'll compute rank position later
+                "position" => "N/A",
                 "maxCA" => $maxCA,
-                "maxExam" => $maxExam
+                "maxExam" => $maxExam,
+                "status" => $g['status'] ?: 'draft',
+                // Cumulative columns
+                "term1" => $t1,
+                "term2" => $t2,
+                "term3" => $t3,
+                "annual_avg" => $subjectAnnualAvg,
+                "annual_grade" => $this->calculateGradeLetter($subjectAnnualAvg)
             ];
             
             $totalSum += $total;
@@ -293,24 +520,40 @@ class GradeController {
                 $highest = $total;
                 $highestSubject = $g['subject'];
             }
+
+            $annualSum += $subjectAnnualAvg;
+            $annualCount++;
         }
         
-        $average = count($formatted) > 0 ? round($totalSum / count($formatted)) : 0;
+        $average = count($formatted) > 0 ? round($totalSum / count($formatted), 1) : 0;
+        $cumulativeAnnualAverage = $annualCount > 0 ? round($annualSum / $annualCount, 1) : $average;
         
-        // 3. Dynamic Rank Calculation:
-        // Rank = Position of this student among all students enrolled in the same courses, based on average scores
+        // Automatic Promotion Recommendation
+        if ($cumulativeAnnualAverage >= 50) {
+            $promotionDecision = "PROMOTED TO NEXT CLASS";
+            $promotionColor = "#219EBC";
+        } else if ($cumulativeAnnualAverage >= 40) {
+            $promotionDecision = "PROMOTED ON TRIAL";
+            $promotionColor = "#FFB703";
+        } else {
+            $promotionDecision = "ADVISED TO REPEAT";
+            $promotionColor = "#ef4444";
+        }
+
+        // 4. Dynamic Rank Calculation for this specific term
         $rankQuery = "
             SELECT 
                 e.student_id, 
                 AVG(COALESCE(g.score, 0)) as avg_score,
                 COUNT(DISTINCT e.student_id) as total_students
             FROM enrollments e
-            LEFT JOIN grades g ON (e.student_id = g.student_id AND e.course_id = g.course_id)
+            LEFT JOIN grades g ON (e.student_id = g.student_id AND e.course_id = g.course_id AND g.academic_term = :term AND g.academic_session = :session)
             GROUP BY e.student_id
             ORDER BY avg_score DESC
         ";
         
-        $rankStmt = $this->conn->query($rankQuery);
+        $rankStmt = $this->conn->prepare($rankQuery);
+        $rankStmt->execute([':term' => $currentTerm, ':session' => $session]);
         $rankings = $rankStmt->fetchAll();
         
         $rankPosition = 1;
@@ -323,20 +566,22 @@ class GradeController {
             }
         }
         
-        // Convert rank position to suffix: 1st, 2nd, 3rd, 4th...
         $rankString = $this->formatOrdinal($rankPosition) . " / " . $totalClassmates;
         
-        // Populate specific position inside formatted courses
+        // Populate subject-specific position
         foreach ($formatted as &$f) {
-            // Give subject specific rank
             $subjRankQuery = "
                 SELECT student_id, score 
                 FROM grades 
-                WHERE course_id = (SELECT id FROM courses WHERE name = :sName)
+                WHERE course_id = :cid AND academic_term = :term AND academic_session = :session
                 ORDER BY score DESC
             ";
             $subjRankStmt = $this->conn->prepare($subjRankQuery);
-            $subjRankStmt->execute([':sName' => $f['subject']]);
+            $subjRankStmt->execute([
+                ':cid' => $f['course_id'],
+                ':term' => $currentTerm,
+                ':session' => $session
+            ]);
             $subjRankings = $subjRankStmt->fetchAll();
             
             $subjPos = 1;
@@ -350,7 +595,12 @@ class GradeController {
         }
         
         echo json_encode([
+            "term" => $currentTerm,
+            "session" => $session,
             "average" => $average,
+            "annual_average" => $cumulativeAnnualAverage,
+            "promotion_decision" => $promotionDecision,
+            "promotion_color" => $promotionColor,
             "rank" => $rankString,
             "highest" => $highest,
             "highest_subject" => $highestSubject,
@@ -391,6 +641,9 @@ class GradeController {
             return;
         }
 
+        $term = $this->getSetting('current_term', '2nd Term');
+        $session = $this->getSetting('academic_session', '2026/2027');
+
         $query = "
             SELECT 
                 c.id, 
@@ -403,12 +656,12 @@ class GradeController {
             FROM enrollments e
             JOIN courses c ON e.course_id = c.id
             LEFT JOIN users t ON c.teacher_id = t.id
-            LEFT JOIN grades g ON (e.student_id = g.student_id AND g.course_id = c.id)
+            LEFT JOIN grades g ON (e.student_id = g.student_id AND g.course_id = c.id AND g.academic_term = :term AND g.academic_session = :session)
             WHERE e.student_id = :sid
         ";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->execute([':sid' => $studentId]);
+        $stmt->execute([':sid' => $studentId, ':term' => $term, ':session' => $session]);
         $courses = $stmt->fetchAll();
         
         $colors = ["#219EBC", "#8ECAE6", "#FFB703", "#FB8500"];
@@ -422,7 +675,7 @@ class GradeController {
                 "teacher" => $c['teacher'] ?: "Unassigned",
                 "progress" => intval($c['progress']),
                 "score" => floatval($c['score']),
-                "students" => rand(30, 45), // mock total student classmates
+                "students" => rand(30, 45),
                 "duration" => "12 weeks",
                 "status" => "active",
                 "color" => $colors[$idx % count($colors)],
@@ -433,11 +686,10 @@ class GradeController {
         echo json_encode($formatted);
     }
 
-    // Student: Get available courses for enrollment (Core + Electives based on class)
+    // Student: Get available courses for enrollment
     public function getAvailableCourses() {
         $student = Auth::requireRole(['student']);
         
-        // Find student class
         $stmt = $this->conn->prepare("SELECT class_id FROM users WHERE id = :id");
         $stmt->execute([':id' => $student['id']]);
         $classId = $stmt->fetchColumn();
@@ -447,7 +699,6 @@ class GradeController {
             return;
         }
 
-        // Get class subjects
         $stmt = $this->conn->prepare("
             SELECT cs.course_id, c.name, cs.type, cs.elective_group 
             FROM class_subjects cs
@@ -457,7 +708,6 @@ class GradeController {
         $stmt->execute([':cid' => $classId]);
         $subjects = $stmt->fetchAll();
 
-        // Get already enrolled courses
         $stmt = $this->conn->prepare("SELECT course_id FROM enrollments WHERE student_id = :sid");
         $stmt->execute([':sid' => $student['id']]);
         $enrolledIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -534,8 +784,6 @@ class GradeController {
             return;
         }
 
-        // Verify it's an elective? 
-        // We look up the student's class, then check if the course is core. If core, reject.
         $stmt = $this->conn->prepare("SELECT class_id FROM users WHERE id = :id");
         $stmt->execute([':id' => $student['id']]);
         $classId = $stmt->fetchColumn();
