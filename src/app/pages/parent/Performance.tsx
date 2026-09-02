@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, Award, CalendarDays, AlertTriangle, GraduationCap, Star, Printer, Layers, CheckCircle2 } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient, API_BASE_URL } from "../../lib/apiClient";
 import { useNavigate } from "react-router";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
@@ -154,8 +154,8 @@ export default function Performance() {
   const handlePrint = () => {
     if (!selectedChild) return;
     const token = localStorage.getItem("token");
-    const baseUrl = window.location.origin;
-    const apiBase = `${baseUrl}/lms/api`;
+    // Use API_BASE_URL (Apache port 80) not window.location.origin (Vite port 5173)
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
     const url = `${apiBase}/index.php?path=/reports/print&student_id=${selectedChild.id}&term=${encodeURIComponent(selectedTerm)}&token=${encodeURIComponent(token || "")}`;
     window.open(url, "_blank");
   };

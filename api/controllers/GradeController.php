@@ -597,6 +597,7 @@ class GradeController {
         echo json_encode([
             "term" => $currentTerm,
             "session" => $session,
+            "result_mode" => $resultMode,
             "average" => $average,
             "annual_average" => $cumulativeAnnualAverage,
             "promotion_decision" => $promotionDecision,

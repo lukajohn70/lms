@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, Award, Star, Printer, Layers, CheckCircle2 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient, API_BASE_URL } from "../../lib/apiClient";
 
 const gradeColor = (g: string) => g === "A" ? "#219EBC" : g === "B" ? "#8ECAE6" : g === "C" ? "#FFB703" : "#FB8500";
 
@@ -53,6 +53,7 @@ const PSYCHOMOTOR_SKILLS: [string, string][] = [
 export default function Results() {
   const [term, setTerm] = useState("2nd");
   const [viewMode, setViewMode] = useState<"term" | "annual">("term");
+  const [resultMode, setResultMode] = useState<"end_of_term" | "mid_term">("end_of_term");
   const [results, setResults] = useState<any[]>([]);
   const [average, setAverage] = useState(0);
   const [annualAverage, setAnnualAverage] = useState(0);
@@ -78,6 +79,8 @@ export default function Results() {
         setRank(res.rank || "—");
         setHighest(res.highest || 0);
         setHighestSubject(res.highest_subject || "—");
+        // Detect mid-term mode from returned grade data
+        if (res.result_mode) setResultMode(res.result_mode);
       })
       .catch(err => console.error("Error loading results", err))
       .finally(() => setLoading(false));
@@ -95,8 +98,8 @@ export default function Results() {
 
   const handlePrint = () => {
     const token = localStorage.getItem("token");
-    const baseUrl = window.location.origin;
-    const apiBase = `${baseUrl}/lms/api`;
+    // API_BASE_URL points to the Apache server (port 80), not Vite's dev port
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
     const url = `${apiBase}/index.php?path=/reports/print&token=${encodeURIComponent(token || "")}&term=${encodeURIComponent(term + " Term")}`;
     window.open(url, "_blank");
   };
@@ -108,7 +111,13 @@ export default function Results() {
       <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>Results &amp; Transcripts</h1>
-          <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>Academic performance, term evaluations &amp; annual promotion status</p>
+          <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>
+            {resultMode === "mid_term" ? (
+              <span style={{ color: "#FFB703", fontWeight: 700 }}>⚡ Mid-Term Assessment Mode — Showing mid-term scores only</span>
+            ) : (
+              "Academic performance, term evaluations & annual promotion status"
+            )}
+          </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {["1st","2nd","3rd"].map(t => (

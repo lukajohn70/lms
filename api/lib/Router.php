@@ -20,9 +20,10 @@ class Router {
     public function put($path, $action) { $this->addRoute('PUT', $path, $action); }
     public function delete($path, $action) { $this->addRoute('DELETE', $path, $action); }
 
-    public function dispatch($requestMethod, $requestUri) {
-        // Prefer PATH_INFO if available (works without mod_rewrite)
-        if (!empty($_SERVER['PATH_INFO'])) {
+        // Check query parameter ?path= first if provided
+        if (!empty($_GET['path'])) {
+            $uri = $_GET['path'];
+        } elseif (!empty($_SERVER['PATH_INFO'])) {
             $uri = $_SERVER['PATH_INFO'];
         } else {
             $uri = parse_url($requestUri, PHP_URL_PATH);
