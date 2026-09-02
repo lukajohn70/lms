@@ -1,10 +1,12 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { lazy } from "react";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Root = lazy(() => import("./pages/Root"));
 const RoleSelect = lazy(() => import("./pages/RoleSelect"));
 const LandingPage = lazy(() => import("./pages/website/LandingPage"));
 const AdmissionsLogin = lazy(() => import("./pages/parent/AdmissionsLogin"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Student
 const StudentLayout = lazy(() => import("./pages/student/StudentLayout"));
@@ -52,13 +54,16 @@ export const router = createBrowserRouter([
   {
     path: "/",
     Component: Root,
+    ErrorBoundary: ErrorBoundary,
     children: [
       { index: true, Component: LandingPage },
       { path: "login", Component: RoleSelect },
       { path: "admissions/login", Component: AdmissionsLogin },
+      { path: "admissions", Component: ParentAdmissions },
       {
         path: "student",
         Component: StudentLayout,
+        ErrorBoundary: ErrorBoundary,
         children: [
           { index: true, Component: StudentDashboard },
           { path: "cbt", Component: StudentCBT },
@@ -68,11 +73,13 @@ export const router = createBrowserRouter([
           { path: "fees", Component: StudentFees },
           { path: "communication", Component: StudentCommunication },
           { path: "library", Component: StudentLibrary },
+          { path: "*", Component: NotFound },
         ],
       },
       {
         path: "teacher",
         Component: TeacherLayout,
+        ErrorBoundary: ErrorBoundary,
         children: [
           { index: true, Component: TeacherDashboard },
           { path: "classes", Component: TeacherClasses },
@@ -81,11 +88,13 @@ export const router = createBrowserRouter([
           { path: "attendance", Component: TeacherAttendance },
           { path: "grades", Component: TeacherGrades },
           { path: "assessments", Component: TeacherAssessments },
+          { path: "*", Component: NotFound },
         ],
       },
       {
         path: "admin",
         Component: AdminLayout,
+        ErrorBoundary: ErrorBoundary,
         children: [
           { index: true, Component: AdminDashboard },
           { path: "users", Component: AdminUsers },
@@ -96,11 +105,13 @@ export const router = createBrowserRouter([
           { path: "fees", Component: AdminFees },
           { path: "reports", Component: AdminReports },
           { path: "settings", Component: AdminSettings },
+          { path: "*", Component: NotFound },
         ],
       },
       {
         path: "parent",
         Component: ParentLayout,
+        ErrorBoundary: ErrorBoundary,
         children: [
           { index: true, Component: ParentDashboard },
           { path: "performance", Component: ParentPerformance },
@@ -108,8 +119,10 @@ export const router = createBrowserRouter([
           { path: "communication", Component: ParentComm },
           { path: "admissions", Component: ParentAdmissions },
           { path: "settings", Component: ParentSettings },
+          { path: "*", Component: NotFound },
         ],
       },
+      { path: "*", Component: NotFound },
     ],
   },
 ]);
