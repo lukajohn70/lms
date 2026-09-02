@@ -390,13 +390,24 @@ class GradeController {
     }
 
     private function respondStudentGrades($studentId) {
-        $resultMode = $this->getSetting('result_mode', 'end_of_term');
-        $currentTerm = $this->normalizeTerm($_GET['term'] ?? null);
-        $session = isset($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
+        $systemResultMode = $this->getSetting('result_mode', 'end_of_term');
+        $currentTerm     = $this->normalizeTerm($_GET['term'] ?? null);
+        $session         = isset($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
 
-        // 1. Get grades for the current requested term
+        // view_type from query string: 'terminal' | 'mid_term' | 'cumulative'
+        // Falls back to system setting when not supplied
+        $viewType = $_GET['view_type'] ?? ($systemResultMode === 'mid_term' ? 'mid_term' : 'terminal');
+        if (!in_array($viewType, ['terminal', 'mid_term', 'cumulative'])) {
+            $viewType = 'terminal';
+        }
+        // 1st Term cannot have cumulative — fall back to terminal
+        if ($viewType === 'cumulative' && $currentTerm === '1st Term') {
+            $viewType = 'terminal';
+        }
+
+        // 1. Fetch enrolled courses + grades for the requested term
         $gradesQuery = "
-            SELECT 
+            SELECT
                 c.id as course_id,
                 c.name as subject,
                 CONCAT(u.first_name, ' ', u.last_name) as teacher,
@@ -412,202 +423,195 @@ class GradeController {
             FROM enrollments e
             JOIN courses c ON e.course_id = c.id
             LEFT JOIN users u ON c.teacher_id = u.id
-            LEFT JOIN grades g ON (e.student_id = g.student_id AND g.course_id = c.id AND g.academic_term = :term AND g.academic_session = :session)
+            LEFT JOIN grades g ON (
+                e.student_id = g.student_id
+                AND g.course_id = c.id
+                AND g.academic_term = :term
+                AND g.academic_session = :session
+            )
             WHERE e.student_id = :sid
             ORDER BY c.name
         ";
         $stmt = $this->conn->prepare($gradesQuery);
-        $stmt->execute([
-            ':sid' => $studentId,
-            ':term' => $currentTerm,
-            ':session' => $session
-        ]);
+        $stmt->execute([':sid' => $studentId, ':term' => $currentTerm, ':session' => $session]);
         $grades = $stmt->fetchAll();
 
-        // 2. Fetch Multi-Term Cumulative Records (1st, 2nd, 3rd Term) for this student
-        $allTermsQuery = "
-            SELECT course_id, academic_term, score 
-            FROM grades 
-            WHERE student_id = :sid AND academic_session = :session
-        ";
-        $allTermsStmt = $this->conn->prepare($allTermsQuery);
+        // 2. Fetch all-term scores for cumulative calculations
+        $allTermsStmt = $this->conn->prepare(
+            "SELECT course_id, academic_term, score
+             FROM grades
+             WHERE student_id = :sid AND academic_session = :session"
+        );
         $allTermsStmt->execute([':sid' => $studentId, ':session' => $session]);
-        $allTermsRows = $allTermsStmt->fetchAll();
-
         $termMatrix = [];
-        foreach ($allTermsRows as $r) {
+        foreach ($allTermsStmt->fetchAll() as $r) {
             $cid = $r['course_id'];
-            $t = $this->normalizeTerm($r['academic_term']);
+            $t   = $this->normalizeTerm($r['academic_term']);
             if (!isset($termMatrix[$cid])) {
                 $termMatrix[$cid] = ['1st Term' => null, '2nd Term' => null, '3rd Term' => null];
             }
             $termMatrix[$cid][$t] = floatval($r['score']);
         }
-        
-        // 3. Format grades & compute grade/totals
-        $formatted = [];
-        $totalSum = 0;
-        $highest = 0;
-        $highestSubject = "N/A";
-        $annualSum = 0;
-        $annualCount = 0;
-        
+
+        // 3. Build per-subject rows
+        $formatted    = [];
+        $totalSum     = 0;
+        $highest      = 0;
+        $highestSubject = 'N/A';
+        $cumSum       = 0;
+        $cumCount     = 0;
+
         foreach ($grades as $g) {
-            $cid = $g['course_id'];
-            $asgn = floatval($g['assignment_score'] ?? 0);
-            $proj = floatval($g['project_score'] ?? 0);
-            $test = floatval($g['mid_term_test'] ?? 0);
-            $midTermTotal = $asgn + $proj + $test;
+            $cid  = $g['course_id'];
+            $t1   = $termMatrix[$cid]['1st Term'] ?? null;
+            $t2   = $termMatrix[$cid]['2nd Term'] ?? null;
+            $t3   = $termMatrix[$cid]['3rd Term'] ?? null;
 
-            if ($resultMode === 'mid_term') {
-                $ca = $midTermTotal;
-                $exam = 0;
-                $total = $midTermTotal;
-                if ($total >= 18) {
-                    $gradeLetter = "EXCELLENT";
-                } else if ($total >= 14) {
-                    $gradeLetter = "VERY GOOD";
-                } else if ($total >= 12) {
-                    $gradeLetter = "GOOD";
-                } else if ($total >= 10) {
-                    $gradeLetter = "FAIR";
-                } else {
-                    $gradeLetter = "POOR";
-                }
-                $maxCA = 20;
-                $maxExam = 0;
-            } else {
-                $ca1 = floatval($g['ca1'] ?? 0);
-                $ca2 = floatval($g['ca2'] ?? 0);
-                $ca = $ca1 + $ca2; // CA / 40
-                $exam = floatval($g['exam'] ?? 0); // Exam / 60
+            // --- TERMINAL ---
+            if ($viewType === 'terminal') {
+                $ca1  = floatval($g['ca1']  ?? 0);
+                $ca2  = floatval($g['ca2']  ?? 0);
+                $ca   = $ca1 + $ca2;
+                $exam = floatval($g['exam'] ?? 0);
                 $total = floatval($g['total'] ?? ($ca + $exam));
-                $gradeLetter = $this->calculateGradeLetter($total);
-                $maxCA = 40;
-                $maxExam = 60;
+                $row  = [
+                    'course_id'  => $cid,
+                    'subject'    => $g['subject'],
+                    'teacher'    => $g['teacher'] ?: 'Unassigned',
+                    'view_type'  => 'terminal',
+                    'ca1'        => $ca1,
+                    'ca2'        => $ca2,
+                    'ca'         => $ca,
+                    'exam'       => $exam,
+                    'total'      => $total,
+                    'grade'      => $this->calculateGradeLetter($total),
+                    'position'   => 'N/A',
+                    'status'     => $g['status'] ?: 'draft',
+                ];
+                $totalSum += $total;
+                if ($total > $highest) { $highest = $total; $highestSubject = $g['subject']; }
+                $cumSum += $total; $cumCount++;
             }
 
-            // Multi-term cumulative for this subject
-            $t1 = $termMatrix[$cid]['1st Term'] ?? null;
-            $t2 = $termMatrix[$cid]['2nd Term'] ?? null;
-            $t3 = $termMatrix[$cid]['3rd Term'] ?? null;
-            
-            $termsAvailable = array_filter([$t1, $t2, $t3], fn($v) => $v !== null);
-            $subjectAnnualAvg = !empty($termsAvailable) ? round(array_sum($termsAvailable) / count($termsAvailable), 1) : $total;
-            
-            $formatted[] = [
-                "course_id" => $g['course_id'],
-                "subject" => $g['subject'],
-                "teacher" => $g['teacher'] ?: "Unassigned",
-                "ca" => $ca,
-                "exam" => $exam,
-                "total" => $total,
-                "grade" => $gradeLetter,
-                "position" => "N/A",
-                "maxCA" => $maxCA,
-                "maxExam" => $maxExam,
-                "status" => $g['status'] ?: 'draft',
-                // Cumulative columns
-                "term1" => $t1,
-                "term2" => $t2,
-                "term3" => $t3,
-                "annual_avg" => $subjectAnnualAvg,
-                "annual_grade" => $this->calculateGradeLetter($subjectAnnualAvg)
-            ];
-            
-            $totalSum += $total;
-            if ($total > $highest) {
-                $highest = $total;
-                $highestSubject = $g['subject'];
+            // --- MID-TERM ---
+            elseif ($viewType === 'mid_term') {
+                $asgn  = floatval($g['assignment_score'] ?? 0);
+                $proj  = floatval($g['project_score']    ?? 0);
+                $test  = floatval($g['mid_term_test']    ?? 0);
+                $total = $asgn + $proj + $test;
+                if      ($total >= 36) $rating = 'EXCELLENT';
+                else if ($total >= 28) $rating = 'VERY GOOD';
+                else if ($total >= 20) $rating  = 'GOOD';
+                else if ($total >= 12) $rating  = 'FAIR';
+                else                  $rating  = 'POOR';
+                $row  = [
+                    'course_id'   => $cid,
+                    'subject'     => $g['subject'],
+                    'teacher'     => $g['teacher'] ?: 'Unassigned',
+                    'view_type'   => 'mid_term',
+                    'assignment'  => $asgn,
+                    'project'     => $proj,
+                    'mid_term_test' => $test,
+                    'total'       => $total,
+                    'rating'      => $rating,
+                    'status'      => $g['status'] ?: 'draft',
+                ];
+                $totalSum += $total; $cumSum += $total; $cumCount++;
             }
 
-            $annualSum += $subjectAnnualAvg;
-            $annualCount++;
-        }
-        
-        $average = count($formatted) > 0 ? round($totalSum / count($formatted), 1) : 0;
-        $cumulativeAnnualAverage = $annualCount > 0 ? round($annualSum / $annualCount, 1) : $average;
-        
-        // Automatic Promotion Recommendation
-        if ($cumulativeAnnualAverage >= 50) {
-            $promotionDecision = "PROMOTED TO NEXT CLASS";
-            $promotionColor = "#219EBC";
-        } else if ($cumulativeAnnualAverage >= 40) {
-            $promotionDecision = "PROMOTED ON TRIAL";
-            $promotionColor = "#FFB703";
-        } else {
-            $promotionDecision = "ADVISED TO REPEAT";
-            $promotionColor = "#ef4444";
-        }
-
-        // 4. Dynamic Rank Calculation for this specific term
-        $rankQuery = "
-            SELECT 
-                e.student_id, 
-                AVG(COALESCE(g.score, 0)) as avg_score,
-                COUNT(DISTINCT e.student_id) as total_students
-            FROM enrollments e
-            LEFT JOIN grades g ON (e.student_id = g.student_id AND e.course_id = g.course_id AND g.academic_term = :term AND g.academic_session = :session)
-            GROUP BY e.student_id
-            ORDER BY avg_score DESC
-        ";
-        
-        $rankStmt = $this->conn->prepare($rankQuery);
-        $rankStmt->execute([':term' => $currentTerm, ':session' => $session]);
-        $rankings = $rankStmt->fetchAll();
-        
-        $rankPosition = 1;
-        $totalClassmates = count($rankings);
-        
-        foreach ($rankings as $idx => $r) {
-            if ($r['student_id'] == $studentId) {
-                $rankPosition = $idx + 1;
-                break;
-            }
-        }
-        
-        $rankString = $this->formatOrdinal($rankPosition) . " / " . $totalClassmates;
-        
-        // Populate subject-specific position
-        foreach ($formatted as &$f) {
-            $subjRankQuery = "
-                SELECT student_id, score 
-                FROM grades 
-                WHERE course_id = :cid AND academic_term = :term AND academic_session = :session
-                ORDER BY score DESC
-            ";
-            $subjRankStmt = $this->conn->prepare($subjRankQuery);
-            $subjRankStmt->execute([
-                ':cid' => $f['course_id'],
-                ':term' => $currentTerm,
-                ':session' => $session
-            ]);
-            $subjRankings = $subjRankStmt->fetchAll();
-            
-            $subjPos = 1;
-            foreach ($subjRankings as $idx => $sr) {
-                if ($sr['student_id'] == $studentId) {
-                    $subjPos = $idx + 1;
-                    break;
+            // --- CUMULATIVE ---
+            else {
+                // 2nd Term cumulative: average of 1st + 2nd
+                // 3rd Term cumulative: average of 1st + 2nd + 3rd
+                if ($currentTerm === '2nd Term') {
+                    $termsInAvg = array_filter([$t1, $t2], fn($v) => $v !== null);
+                    $cumAvg     = count($termsInAvg) > 0 ? round(array_sum($termsInAvg) / count($termsInAvg), 1) : 0;
+                } else { // 3rd Term
+                    $termsInAvg = array_filter([$t1, $t2, $t3], fn($v) => $v !== null);
+                    $cumAvg     = count($termsInAvg) > 0 ? round(array_sum($termsInAvg) / count($termsInAvg), 1) : 0;
                 }
+                $row = [
+                    'course_id'  => $cid,
+                    'subject'    => $g['subject'],
+                    'teacher'    => $g['teacher'] ?: 'Unassigned',
+                    'view_type'  => 'cumulative',
+                    'term1'      => $t1,
+                    'term2'      => $t2,
+                    'term3'      => $currentTerm === '3rd Term' ? $t3 : null,
+                    'cum_avg'    => $cumAvg,
+                    'grade'      => $this->calculateGradeLetter($cumAvg),
+                    'status'     => $g['status'] ?: 'draft',
+                ];
+                $cumSum += $cumAvg; $cumCount++;
+                if ($cumAvg > $highest) { $highest = $cumAvg; $highestSubject = $g['subject']; }
             }
-            $f['position'] = $this->formatOrdinal($subjPos);
+
+            $formatted[] = $row;
         }
-        
+
+        // 4. Averages
+        $average       = count($formatted) > 0 ? round($totalSum / count($formatted), 1) : 0;
+        $displayAverage = $viewType !== 'cumulative' ? $average
+            : ($cumCount > 0 ? round($cumSum / $cumCount, 1) : 0);
+
+        // 5. Promotion recommendation (always based on cumulative)
+        $allCumRows    = array_filter($formatted, fn($r) => isset($r['cum_avg']) || isset($r['total']));
+        $promScore     = $displayAverage;
+        if ($promScore >= 50)      { $promotionDecision = 'PROMOTED TO NEXT CLASS'; $promotionColor = '#219EBC'; }
+        else if ($promScore >= 40) { $promotionDecision = 'PROMOTED ON TRIAL';      $promotionColor = '#FFB703'; }
+        else                       { $promotionDecision = 'ADVISED TO REPEAT';      $promotionColor = '#ef4444'; }
+
+        // 6. Class rank
+        $rankStmt = $this->conn->prepare("
+            SELECT e.student_id, AVG(COALESCE(g.score, 0)) as avg_score
+            FROM enrollments e
+            LEFT JOIN grades g ON (e.student_id = g.student_id AND e.course_id = g.course_id
+                AND g.academic_term = :term AND g.academic_session = :session)
+            GROUP BY e.student_id ORDER BY avg_score DESC
+        ");
+        $rankStmt->execute([':term' => $currentTerm, ':session' => $session]);
+        $rankings  = $rankStmt->fetchAll();
+        $rankPos   = 1;
+        foreach ($rankings as $idx => $r) {
+            if ($r['student_id'] == $studentId) { $rankPos = $idx + 1; break; }
+        }
+        $rankString = $this->formatOrdinal($rankPos) . ' / ' . count($rankings);
+
+        // 7. Subject position (terminal only)
+        if ($viewType === 'terminal') {
+            foreach ($formatted as &$f) {
+                $srStmt = $this->conn->prepare(
+                    "SELECT student_id, score FROM grades
+                     WHERE course_id = :cid AND academic_term = :term AND academic_session = :session
+                     ORDER BY score DESC"
+                );
+                $srStmt->execute([':cid' => $f['course_id'], ':term' => $currentTerm, ':session' => $session]);
+                $srRows = $srStmt->fetchAll();
+                $pos    = 1;
+                foreach ($srRows as $idx => $sr) {
+                    if ($sr['student_id'] == $studentId) { $pos = $idx + 1; break; }
+                }
+                $f['position'] = $this->formatOrdinal($pos);
+            }
+        }
+
         echo json_encode([
-            "term" => $currentTerm,
-            "session" => $session,
-            "result_mode" => $resultMode,
-            "average" => $average,
-            "annual_average" => $cumulativeAnnualAverage,
-            "promotion_decision" => $promotionDecision,
-            "promotion_color" => $promotionColor,
-            "rank" => $rankString,
-            "highest" => $highest,
-            "highest_subject" => $highestSubject,
-            "grades" => $formatted
+            'term'               => $currentTerm,
+            'session'            => $session,
+            'view_type'          => $viewType,
+            'result_mode'        => $systemResultMode,
+            'average'            => $displayAverage,
+            'annual_average'     => $displayAverage,
+            'promotion_decision' => $promotionDecision,
+            'promotion_color'    => $promotionColor,
+            'rank'               => $rankString,
+            'highest'            => $highest,
+            'highest_subject'    => $highestSubject,
+            'grades'             => $formatted,
         ]);
     }
+
+
 
     private function calculateGradeLetter($score) {
         if ($score >= 70) return "A";

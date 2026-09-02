@@ -20,6 +20,7 @@ class Router {
     public function put($path, $action) { $this->addRoute('PUT', $path, $action); }
     public function delete($path, $action) { $this->addRoute('DELETE', $path, $action); }
 
+    public function dispatch($requestMethod, $requestUri) {
         // Check query parameter ?path= first if provided
         if (!empty($_GET['path'])) {
             $uri = $_GET['path'];

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Globe, Bell, Shield, Database, Save, ToggleLeft, ToggleRight, Check, CreditCard, User, Phone, Eye, EyeOff, BookOpen, Upload, Camera } from "lucide-react";
+import { Globe, Bell, Shield, Database, Save, ToggleLeft, ToggleRight, Check, CreditCard, User, Phone, Eye, EyeOff, BookOpen, Upload, Camera, Calendar } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { useApp } from "../../contexts/AppContext";
 
@@ -39,6 +39,19 @@ export default function AdminSettings() {
   const [schoolAcronym, setSchoolAcronym] = useState("AROURA");
   const [acceptanceFeeAmount, setAcceptanceFeeAmount] = useState("20000");
   const [resultMode, setResultMode] = useState("end_of_term");
+
+  // School Logo & Term Dates
+  const [schoolLogoPath, setSchoolLogoPath] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoResult, setLogoResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const [vacationDateTerm1, setVacationDateTerm1] = useState("2026-12-19");
+  const [resumptionDateTerm1, setResumptionDateTerm1] = useState("2027-01-10");
+  const [vacationDateTerm2, setVacationDateTerm2] = useState("2027-04-04");
+  const [resumptionDateTerm2, setResumptionDateTerm2] = useState("2027-04-22");
+  const [vacationDateTerm3, setVacationDateTerm3] = useState("2027-07-25");
+  const [resumptionDateTerm3, setResumptionDateTerm3] = useState("2027-09-15");
 
   // Toggle states
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -115,6 +128,14 @@ export default function AdminSettings() {
           setAcceptanceFeeAmount(s.acceptance_fee_amount || "20000");
           setResultMode(s.result_mode || "end_of_term");
 
+          setSchoolLogoPath(s.school_logo_path || "");
+          setVacationDateTerm1(s.vacation_date_term1 || "2026-12-19");
+          setResumptionDateTerm1(s.resumption_date_term1 || "2027-01-10");
+          setVacationDateTerm2(s.vacation_date_term2 || "2027-04-04");
+          setResumptionDateTerm2(s.resumption_date_term2 || "2027-04-22");
+          setVacationDateTerm3(s.vacation_date_term3 || "2027-07-25");
+          setResumptionDateTerm3(s.resumption_date_term3 || "2027-09-15");
+
           setEmailNotifications(s.email_notifications === "1");
           setCbtReminders(s.cbt_reminders === "1");
           setFeeDueAlerts(s.fee_due_alerts === "1");
@@ -134,6 +155,29 @@ export default function AdminSettings() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    setLogoResult(null);
+    const formData = new FormData();
+    formData.append("logo_file", file);
+    try {
+      const res: any = await apiClient.postForm("/admin/upload-logo", formData);
+      if (res && res.success) {
+        setSchoolLogoPath(res.logo_path);
+        setLogoResult({ ok: true, msg: "School logo updated successfully!" });
+      } else {
+        setLogoResult({ ok: false, msg: res?.error || "Failed to upload logo." });
+      }
+    } catch (err: any) {
+      setLogoResult({ ok: false, msg: err?.message || "Upload error. Please try again." });
+    } finally {
+      setLogoUploading(false);
+      setTimeout(() => setLogoResult(null), 4000);
+    }
+  };
+
   const handleSave = () => {
     const payload = {
       school_name: schoolName,
@@ -146,6 +190,13 @@ export default function AdminSettings() {
       school_acronym: schoolAcronym,
       acceptance_fee_amount: acceptanceFeeAmount,
       result_mode: resultMode,
+      school_logo_path: schoolLogoPath,
+      vacation_date_term1: vacationDateTerm1,
+      resumption_date_term1: resumptionDateTerm1,
+      vacation_date_term2: vacationDateTerm2,
+      resumption_date_term2: resumptionDateTerm2,
+      vacation_date_term3: vacationDateTerm3,
+      resumption_date_term3: resumptionDateTerm3,
       email_notifications: emailNotifications,
       cbt_reminders: cbtReminders,
       fee_due_alerts: feeDueAlerts,
@@ -153,7 +204,7 @@ export default function AdminSettings() {
       two_factor_auth: twoFactorAuth,
       session_timeout: sessionTimeout,
       login_attempt_limit: loginAttemptLimit,
-      auto_backups: autoBackups,
+      autoBackups: autoBackups,
       audit_logging: auditLogging,
       pay_method_card: payMethodCard,
       pay_method_bank: payMethodBank,
@@ -357,6 +408,37 @@ export default function AdminSettings() {
                 <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>General Parameters</span>
               </div>
               <div style={{ padding: "4px 20px 12px" }}>
+                {/* Official School Logo */}
+                <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.04em" }}>Official School Logo</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 10, background: "var(--muted)", border: "1.5px dashed var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+                      {schoolLogoPath ? (
+                        <img src={`http://localhost/lms/api/${schoolLogoPath}`} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <span style={{ fontSize: 18, fontWeight: 800, color: "#219EBC" }}>{schoolAcronym.slice(0, 2)}</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        disabled={logoUploading}
+                        style={{ padding: "6px 14px", borderRadius: 8, background: "#219EBC", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        {logoUploading ? "Uploading..." : "Upload Logo"}
+                      </button>
+                      <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: "none" }} />
+                      <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 4 }}>PNG, JPG, WEBP, or SVG. Displayed on official report cards and transcripts.</div>
+                      {logoResult && (
+                        <div style={{ fontSize: 11, fontWeight: 600, color: logoResult.ok ? "#2a9d8f" : "#ef4444", marginTop: 4 }}>
+                          {logoResult.msg}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>School Name</label>
                   <input type="text" value={schoolName} onChange={e => setSchoolName(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
@@ -403,6 +485,65 @@ export default function AdminSettings() {
                 <div style={{ padding: "12px 0" }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Admissions Acceptance Fee (₦)</label>
                   <input type="number" value={acceptanceFeeAmount} onChange={e => setAcceptanceFeeAmount(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                </div>
+              </div>
+            </Glass>
+
+            {/* Section: Term Vacation & Resumption Calendar */}
+            <Glass>
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: "#219EBC18", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
+                  <Calendar size={15} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Term Calendar &amp; Holiday Dates</span>
+                  <div style={{ fontSize: 11, color: "var(--subtext)" }}>School vacation and next term resumption dates printed on report cards</div>
+                </div>
+              </div>
+              <div style={{ padding: "8px 20px 16px" }}>
+                {/* 1st Term */}
+                <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#219EBC", marginBottom: 8, textTransform: "uppercase" }}>1st Term Calendar</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Vacation Date</label>
+                      <input type="date" value={vacationDateTerm1} onChange={e => setVacationDateTerm1(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Resumption Date</label>
+                      <input type="date" value={resumptionDateTerm1} onChange={e => setResumptionDateTerm1(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2nd Term */}
+                <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#FFB703", marginBottom: 8, textTransform: "uppercase" }}>2nd Term Calendar</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Vacation Date</label>
+                      <input type="date" value={vacationDateTerm2} onChange={e => setVacationDateTerm2(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Resumption Date</label>
+                      <input type="date" value={resumptionDateTerm2} onChange={e => setResumptionDateTerm2(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3rd Term */}
+                <div style={{ padding: "12px 0" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#FB8500", marginBottom: 8, textTransform: "uppercase" }}>3rd Term Calendar</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Vacation Date</label>
+                      <input type="date" value={vacationDateTerm3} onChange={e => setVacationDateTerm3(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Resumption Date</label>
+                      <input type="date" value={resumptionDateTerm3} onChange={e => setResumptionDateTerm3(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                  </div>
                 </div>
               </div>
             </Glass>

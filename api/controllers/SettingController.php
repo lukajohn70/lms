@@ -101,6 +101,7 @@ class SettingController {
             return;
         }
 
+
         if (move_uploaded_file($file["tmp_name"], $targetFilePath)) {
             echo json_encode(["success" => true, "message" => ucfirst($category) . " study guide updated successfully."]);
         } else {
@@ -108,4 +109,50 @@ class SettingController {
             echo json_encode(["error" => "Failed to save the uploaded study guide file."]);
         }
     }
+
+    public function uploadSchoolLogo() {
+        Auth::requireRole(['admin']);
+
+        if (!isset($_FILES['logo_file'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Logo file is required"]);
+            return;
+        }
+
+        $file = $_FILES['logo_file'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['png', 'jpg', 'jpeg', 'webp', 'svg'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Only PNG, JPG, WEBP, or SVG images are allowed."]);
+            return;
+        }
+
+        $targetDir = __DIR__ . "/../uploads/logos/";
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = "school_logo_" . time() . "." . $ext;
+        $targetFilePath = $targetDir . $fileName;
+        $relPath = "uploads/logos/" . $fileName;
+
+        if (move_uploaded_file($file["tmp_name"], $targetFilePath)) {
+            $stmt = $this->conn->prepare("
+                INSERT INTO system_settings (setting_key, setting_value) 
+                VALUES ('school_logo_path', :val)
+                ON DUPLICATE KEY UPDATE setting_value = :val
+            ");
+            $stmt->execute([':val' => $relPath]);
+
+            echo json_encode([
+                "success" => true,
+                "message" => "School logo updated successfully.",
+                "logo_path" => $relPath
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to save uploaded logo file."]);
+        }
+    }
 }
+

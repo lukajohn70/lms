@@ -89,6 +89,7 @@ $router->post('/users/update-avatar', 'UserController@updateAvatar');
 $router->post('/users/send-support', 'UserController@sendSupportTicket');
 $router->post('/admin/users/bulk-import', 'UserController@bulkImportUsers');
 $router->post('/admin/upload-study-guide', 'SettingController@uploadStudyGuide');
+$router->post('/admin/upload-logo', 'SettingController@uploadSchoolLogo');
 
 // Materials
 $router->post('/materials/upload', 'MaterialController@upload');
