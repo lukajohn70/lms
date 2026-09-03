@@ -66,7 +66,14 @@ export default function Classes() {
           </button>
           <div style={{ width: 1, height: 18, background: "var(--glass-border)" }} />
           <div>
-            <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--heading)", margin: 0 }}>{selected.name}</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <h1 style={{ fontSize: 18, fontWeight: 800, color: "var(--heading)", margin: 0 }}>{selected.name}</h1>
+              {selected.class_name && (
+                <span style={{ fontSize: 11.5, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: "rgba(33,158,188,0.15)", color: "#219EBC", border: "1px solid rgba(33,158,188,0.3)" }}>
+                  {selected.class_name}
+                </span>
+              )}
+            </div>
             <p style={{ fontSize: 11.5, color: "var(--subtext)", margin: 0 }}>{selected.student_count} students enrolled</p>
           </div>
           {/* Quick action buttons */}
@@ -215,7 +222,7 @@ export default function Classes() {
           <p style={{ fontSize: 13, color: "var(--subtext)", margin: 0 }}>You have no courses assigned yet. Contact admin to be assigned classes.</p>
         </Glass>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16 }}>
+        <div className="responsive-grid-2">
           {courses.map((c, i) => {
             const color = CARD_COLORS[i % CARD_COLORS.length];
             return (
@@ -237,11 +244,18 @@ export default function Classes() {
                   <div style={{ width: 48, height: 48, borderRadius: 12, background: `${color}15`, border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Users size={22} style={{ color }} />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "var(--heading)", marginBottom: 3 }}>{c.name}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 3 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: "var(--heading)" }}>{c.name}</span>
+                      {c.class_name && (
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: "1px 7px", borderRadius: 6, background: `${color}18`, color: color, border: `1px solid ${color}35` }}>
+                          {c.class_name}
+                        </span>
+                      )}
+                    </div>
                     <div style={{ fontSize: 11.5, color: "var(--subtext)" }}>{c.student_count} students enrolled</div>
                   </div>
-                  <ChevronRight size={18} style={{ color: "var(--subtext)" }} />
+                  <ChevronRight size={18} style={{ color: "var(--subtext)", flexShrink: 0 }} />
                 </div>
 
                 {/* Stats strip */}

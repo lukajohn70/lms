@@ -338,12 +338,37 @@ class DashboardController {
         $user = Auth::requireRole(['teacher']);
 
         $stmt = $this->conn->prepare("
-            SELECT DISTINCT c.id, c.name, c.description FROM courses c 
-            WHERE c.teacher_id = :tid 
-               OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)
+            SELECT DISTINCT 
+                c.id, 
+                c.name, 
+                c.description,
+                COALESCE(
+                    (
+                        SELECT GROUP_CONCAT(DISTINCT cl.name ORDER BY cl.name SEPARATOR ', ')
+                        FROM class_subjects cs
+                        JOIN classes cl ON cs.class_id = cl.id
+                        WHERE cs.course_id = c.id
+                          AND (cs.teacher_id = :tid OR c.teacher_id = :tid2)
+                    ),
+                    (
+                        SELECT GROUP_CONCAT(DISTINCT cl.name ORDER BY cl.name SEPARATOR ', ')
+                        FROM enrollments en
+                        JOIN users u ON en.student_id = u.id
+                        JOIN classes cl ON u.class_id = cl.id
+                        WHERE en.course_id = c.id
+                    )
+                ) AS class_name
+            FROM courses c 
+            WHERE c.teacher_id = :tid3 
+               OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid4)
             ORDER BY c.name
         ");
-        $stmt->execute([':tid' => $user['id'], ':tid2' => $user['id']]);
+        $stmt->execute([
+            ':tid' => $user['id'],
+            ':tid2' => $user['id'],
+            ':tid3' => $user['id'],
+            ':tid4' => $user['id']
+        ]);
         $courses = $stmt->fetchAll();
 
         $result = [];
@@ -367,7 +392,7 @@ class DashboardController {
             $s = $this->conn->prepare("
                 SELECT COUNT(*) FROM attendance
                 WHERE course_id = :cid AND status = 'absent'
-                  AND DATE(date) = (SELECT MAX(DATE(date)) FROM attendance WHERE course_id = :cid2)
+                  AND attendance_date = (SELECT MAX(attendance_date) FROM attendance WHERE course_id = :cid2)
             ");
             $s->execute([':cid' => $cid, ':cid2' => $cid]);
             $absent = intval($s->fetchColumn());
@@ -375,6 +400,7 @@ class DashboardController {
             $result[] = [
                 'id'            => $cid,
                 'name'          => $c['name'],
+                'class_name'    => $c['class_name'] ?: 'General',
                 'description'   => $c['description'] ?? '',
                 'student_count' => $student_count,
                 'avg'           => $avg,
