@@ -231,12 +231,12 @@ export default function AdminClasses() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
         <div>
           <div style={{ fontSize: 11, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Academic Setup</div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--heading)", margin: 0 }}>Classes & Subjects</h1>
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <div style={{ background: "var(--muted)", padding: 4, borderRadius: 10, display: "flex" }}>
             <button
               onClick={() => setActiveTab('classes')}
@@ -267,7 +267,7 @@ export default function AdminClasses() {
 
       {activeTab === 'classes' && (
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 24, alignItems: "start" }}>
+      <div className="responsive-grid-2" style={{ alignItems: "start", gap: 20 }}>
         {/* Classes List */}
         <Glass style={{ padding: 20 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px", color: "var(--heading)" }}>Grade Levels</h3>
@@ -328,7 +328,7 @@ export default function AdminClasses() {
                 </button>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxHeight: 600, overflowY: "auto" }}>
+              <div className="responsive-grid-2" style={{ maxHeight: 600, overflowY: "auto", gap: 12 }}>
                 {courses.map(course => {
                   const sub = subjects.find(s => s.course_id === course.id);
                   const isSelected = !!sub;

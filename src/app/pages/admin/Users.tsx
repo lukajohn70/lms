@@ -238,13 +238,13 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <div>
           <div style={{ fontSize: 11, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Admin</div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>User Management</h1>
           <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>{users.length} total users registered in system</p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {/* Dropdown for templates */}
           <div style={{ position: "relative" }}>
             <button
@@ -303,7 +303,7 @@ export default function UsersPage() {
       </div>
 
       {/* Stats Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 18 }}>
+      <div className="responsive-grid-4">
         {[
           { label: "Students", count: roleCounts.students, color: "#219EBC" },
           { label: "Parents", count: roleCounts.parents, color: "#FFB703" },
@@ -330,27 +330,32 @@ export default function UsersPage() {
 
       <Glass>
         {/* Search & Filters */}
-        <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", gap: 12, alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, padding: "7px 12px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
+        <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "1 1 240px", minWidth: 200, padding: "7px 12px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
             <Search size={14} style={{ color: "var(--subtext)" }} />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users by name or email…"
-              style={{ border: "none", background: "transparent", fontSize: 13, color: "var(--heading)", outline: "none", flex: 1 }} />
+              style={{ border: "none", background: "transparent", fontSize: 13, color: "var(--heading)", outline: "none", flex: 1, minWidth: 0 }} />
           </div>
-          {["All", "Student", "Teacher", "Parent"].map(r => (
-            <button key={r} onClick={() => setRoleFilter(r)} style={{
-              padding: "6px 12px", borderRadius: 8, border: `1px solid ${roleFilter === r ? roleColor(r) : "var(--glass-border)"}`,
-              background: roleFilter === r ? `${roleColor(r)}15` : "var(--muted)", cursor: "pointer", fontSize: 11.5,
-              color: roleFilter === r ? roleColor(r) : "var(--subtext)", fontWeight: roleFilter === r ? 700 : 400
-            }}>{r}</button>
-          ))}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {["All", "Student", "Teacher", "Parent"].map(r => (
+              <button key={r} onClick={() => setRoleFilter(r)} style={{
+                padding: "6px 12px", borderRadius: 8, border: `1px solid ${roleFilter === r ? roleColor(r) : "var(--glass-border)"}`,
+                background: roleFilter === r ? `${roleColor(r)}15` : "var(--muted)", cursor: "pointer", fontSize: 11.5,
+                color: roleFilter === r ? roleColor(r) : "var(--subtext)", fontWeight: roleFilter === r ? 700 : 400
+              }}>{r}</button>
+            ))}
+          </div>
         </div>
 
-        {/* Table Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.2fr 80px 180px 180px 80px 120px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
-          {["Name", "Role", "Email", "Details / Adm No", "Status", "Actions"].map(h => (
-            <span key={h} style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>{h}</span>
-          ))}
-        </div>
+        {/* Responsive Table Wrapper */}
+        <div className="table-responsive-wrapper">
+          <div style={{ minWidth: 760 }}>
+            {/* Table Header */}
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 80px 180px 180px 80px 120px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
+              {["Name", "Role", "Email", "Details / Adm No", "Status", "Actions"].map(h => (
+                <span key={h} style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>{h}</span>
+              ))}
+            </div>
 
         {/* Table Body */}
         {loading ? (
@@ -421,6 +426,8 @@ export default function UsersPage() {
             );
           })
         )}
+          </div>
+        </div>
       </Glass>
 
       {/* ─── LINK PARENT & CHILD MODAL ──────────────────────────────── */}

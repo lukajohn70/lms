@@ -205,7 +205,7 @@ export default function Fees() {
       {/* ───────────────────── LEDGER TAB ───────────────────── */}
       {activeTab === "ledger" && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 18 }}>
+          <div className="responsive-grid-3">
             {[
               { l: "Total Collected", v: `₦${totalCollected.toLocaleString()}`, c: "#219EBC", icon: <CheckCircle size={15} /> },
               { l: "Outstanding Balance", v: `₦${outstanding.toLocaleString()}`, c: "#FB8500", icon: <AlertTriangle size={15} /> },
@@ -348,7 +348,7 @@ export default function Fees() {
           {ratesLoading ? (
             <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>Loading fee configuration...</div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div className="responsive-grid-2">
               {FEE_RATES.map(rate => (
                 <Glass key={rate.key} style={{ padding: "18px 20px" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>

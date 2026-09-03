@@ -269,7 +269,7 @@ export default function Performance() {
       ) : (
         <>
           {/* Term overview summary cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 18 }}>
+          <div className="responsive-grid-4">
             {[
               { l: viewType === "cumulative" ? "Cumulative Avg" : "Term Average", v: `${meta.average || 0}%`, c: "#219EBC", icon: <TrendingUp size={15}/> },
               { l: "Class Rank", v: meta.rank || "—", c: "#FFB703", icon: <Award size={15}/> },
@@ -310,7 +310,9 @@ export default function Performance() {
               <span style={{ fontSize: 11, color: "var(--subtext)" }}>Session: {meta.session || "2026/2027"}</span>
             </div>
 
-            {/* TERMINAL VIEW */}
+            <div className="table-responsive-wrapper">
+              <div style={{ minWidth: 640 }}>
+                {/* TERMINAL VIEW */}
             {viewType === "terminal" && (
               <>
                 <div style={{ display: "grid", gridTemplateColumns: "1.8fr 70px 70px 80px 80px 80px 80px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", gap: 4 }}>
@@ -410,10 +412,12 @@ export default function Performance() {
                 </div>
               </>
             )}
+              </div>
+            </div>
           </Glass>
 
           {/* Charts & Attendance */}
-          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 0.7fr", gap: 16, marginBottom: 16 }} className="parent-grid-layout">
+          <div className="responsive-grid-2 parent-grid-layout" style={{ marginBottom: 16 }}>
             <Glass>
               <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 13.5, fontWeight: 600, color: "var(--heading)" }}>Subject Score Chart</div>
               <div style={{ padding: "8px 12px 12px" }}>
@@ -462,7 +466,7 @@ export default function Performance() {
 
           {/* Assessment / Behavior Ratings */}
           {!loadingAssessment && assessment && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18 }}>
+            <div className="responsive-grid-2" style={{ marginBottom: 18 }}>
               {/* Affective Domain */}
               <Glass>
                 <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 8 }}>

@@ -123,7 +123,7 @@ export default function Reports() {
 
       {activeTab === "analytics" ? (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 18 }}>
+          <div className="responsive-grid-4">
             {[
               { l: "Total Students", v: String(overview.total_students), delta: "+7 this term", c: "#219EBC", icon: <Users size={15}/> },
               { l: "Academic Avg", v: `${overview.academic_average}%`, delta: "+1.8%", c: "#8ECAE6", icon: <TrendingUp size={15}/> },
@@ -141,7 +141,7 @@ export default function Reports() {
             ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 16, marginBottom: 16 }}>
+          <div className="responsive-grid-2" style={{ marginBottom: 16 }}>
             <Glass>
               <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 13.5, fontWeight: 600, color: "var(--heading)" }}>Student Enrollment Trend</div>
               <div style={{ padding: "8px 12px 12px" }}>
@@ -202,7 +202,7 @@ export default function Reports() {
                 <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Academic Result Submission Status</div>
                 <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>Review subject scores submitted by teachers and lock official transcripts for publication</div>
               </div>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", background: "var(--muted)", borderRadius: 8, padding: 3, border: "1px solid var(--glass-border)" }}>
                   {["1st Term", "2nd Term", "3rd Term"].map(t => (
                     <button key={t} onClick={() => setSelectedTerm(t)} style={{
@@ -229,50 +229,54 @@ export default function Reports() {
             <Glass style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>No subject submissions found for {selectedTerm}.</Glass>
           ) : (
             <Glass>
-              <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 140px 260px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase" }}>
-                <span>Subject</span><span>Assigned Teacher</span>
-                <span style={{ textAlign:"center" }}>Graded/Total</span>
-                <span style={{ textAlign:"center" }}>Class Avg</span>
-                <span style={{ textAlign:"center" }}>Approval State</span>
-                <span style={{ textAlign:"right" }}>Governance Action</span>
-              </div>
-              {submissions.map(sub => {
-                const isPublished = sub.status === "published";
-                const isSubmitted = sub.status === "submitted";
-                return (
-                  <div key={sub.course_id} style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 140px 260px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{sub.course_name}</div>
-                      <div style={{ fontSize: 10, color: "var(--subtext)" }}>ID: CRS-{strPad(sub.course_id)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 12.5, color: "var(--heading)" }}>{sub.teacher_name || "Unassigned"}</div>
-                      <div style={{ fontSize: 10, color: "var(--subtext)" }}>{sub.teacher_email || "—"}</div>
-                    </div>
-                    <div style={{ textAlign:"center", fontSize:12, fontWeight:600, color:"var(--heading)" }}>{sub.graded_count} / {sub.enrolled_count}</div>
-                    <div style={{ textAlign:"center", fontSize:13, fontWeight:700, color:"#219EBC" }}>{sub.class_average ? `${sub.class_average}%` : "—"}</div>
-                    <div style={{ textAlign:"center" }}>
-                      {isPublished && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(42,157,143,0.12)",color:"#2a9d8f",border:"1px solid rgba(42,157,143,0.3)",fontSize:11,fontWeight:700 }}><Lock size={11}/> Published</span>}
-                      {isSubmitted && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(255,183,3,0.15)",color:"#FFB703",border:"1px solid rgba(255,183,3,0.3)",fontSize:11,fontWeight:700 }}><Clock size={11}/> Pending Review</span>}
-                      {sub.status==="draft" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(33,158,188,0.1)",color:"var(--subtext)",border:"1px solid var(--glass-border)",fontSize:11,fontWeight:600 }}>Draft</span>}
-                    </div>
-                    <div style={{ display:"flex",gap:6,justifyContent:"flex-end" }}>
-                      <button onClick={() => handlePreview(sub)} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 10px",borderRadius:6,background:"rgba(33,158,188,0.1)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:11,fontWeight:600,cursor:"pointer" }}>
-                        <Eye size={12} /> Preview
-                      </button>
-                      {isPublished ? (
-                        <button onClick={() => handleUpdateStatus(sub.course_id,"draft")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 10px",borderRadius:6,background:"rgba(231,111,81,0.1)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:11,fontWeight:600,cursor:"pointer" }}>
-                          <Unlock size={12} /> Unlock for Teacher
-                        </button>
-                      ) : (
-                        <button onClick={() => handleUpdateStatus(sub.course_id,"published")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 12px",borderRadius:6,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px rgba(33,158,188,0.3)" }}>
-                          <CheckCircle size={12} /> Approve &amp; Publish
-                        </button>
-                      )}
-                    </div>
+              <div className="table-responsive-wrapper">
+                <div style={{ minWidth: 820 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 140px 260px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase" }}>
+                    <span>Subject</span><span>Assigned Teacher</span>
+                    <span style={{ textAlign:"center" }}>Graded/Total</span>
+                    <span style={{ textAlign:"center" }}>Class Avg</span>
+                    <span style={{ textAlign:"center" }}>Approval State</span>
+                    <span style={{ textAlign:"right" }}>Governance Action</span>
                   </div>
-                );
-              })}
+                  {submissions.map(sub => {
+                    const isPublished = sub.status === "published";
+                    const isSubmitted = sub.status === "submitted";
+                    return (
+                      <div key={sub.course_id} style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 140px 260px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{sub.course_name}</div>
+                          <div style={{ fontSize: 10, color: "var(--subtext)" }}>ID: CRS-{strPad(sub.course_id)}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 12.5, color: "var(--heading)" }}>{sub.teacher_name || "Unassigned"}</div>
+                          <div style={{ fontSize: 10, color: "var(--subtext)" }}>{sub.teacher_email || "—"}</div>
+                        </div>
+                        <div style={{ textAlign:"center", fontSize:12, fontWeight:600, color:"var(--heading)" }}>{sub.graded_count} / {sub.enrolled_count}</div>
+                        <div style={{ textAlign:"center", fontSize:13, fontWeight:700, color:"#219EBC" }}>{sub.class_average ? `${sub.class_average}%` : "—"}</div>
+                        <div style={{ textAlign:"center" }}>
+                          {isPublished && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(42,157,143,0.12)",color:"#2a9d8f",border:"1px solid rgba(42,157,143,0.3)",fontSize:11,fontWeight:700 }}><Lock size={11}/> Published</span>}
+                          {isSubmitted && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(255,183,3,0.15)",color:"#FFB703",border:"1px solid rgba(255,183,3,0.3)",fontSize:11,fontWeight:700 }}><Clock size={11}/> Pending Review</span>}
+                          {sub.status==="draft" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(33,158,188,0.1)",color:"var(--subtext)",border:"1px solid var(--glass-border)",fontSize:11,fontWeight:600 }}>Draft</span>}
+                        </div>
+                        <div style={{ display:"flex",gap:6,justifyContent:"flex-end" }}>
+                          <button onClick={() => handlePreview(sub)} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 10px",borderRadius:6,background:"rgba(33,158,188,0.1)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:11,fontWeight:600,cursor:"pointer" }}>
+                            <Eye size={12} /> Preview
+                          </button>
+                          {isPublished ? (
+                            <button onClick={() => handleUpdateStatus(sub.course_id,"draft")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 10px",borderRadius:6,background:"rgba(231,111,81,0.1)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:11,fontWeight:600,cursor:"pointer" }}>
+                              <Unlock size={12} /> Unlock for Teacher
+                            </button>
+                          ) : (
+                            <button onClick={() => handleUpdateStatus(sub.course_id,"published")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 12px",borderRadius:6,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px rgba(33,158,188,0.3)" }}>
+                              <CheckCircle size={12} /> Approve &amp; Publish
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </Glass>
           )}
         </div>
@@ -307,46 +311,58 @@ export default function Reports() {
                 <div style={{ padding:40,textAlign:"center",color:"var(--subtext)" }}>No data available.</div>
               ) : (
                 <>
-                  <div style={{ display:"grid",gridTemplateColumns:"40px 2fr 1.2fr 80px 80px 80px 80px 60px 80px",padding:"10px 20px",borderBottom:"1px solid var(--glass-border)",fontSize:10,fontWeight:700,color:"var(--subtext)",textTransform:"uppercase",background:"var(--muted)",position:"sticky",top:0,zIndex:2 }}>
-                    <span>#</span><span>Student Name</span><span>Adm. No.</span>
-                    <span style={{textAlign:"center"}}>CA1</span><span style={{textAlign:"center"}}>CA2</span>
-                    <span style={{textAlign:"center"}}>Exam</span><span style={{textAlign:"center"}}>Total</span>
-                    <span style={{textAlign:"center"}}>Grade</span><span style={{textAlign:"center"}}>Status</span>
-                  </div>
-                  {previewData.students.map((st: any, i: number) => {
-                    const total = st.total !== null && st.total !== undefined ? parseFloat(st.total) : null;
-                    const gl = getGradeLabel(total);
-                    const gc = total === null ? "var(--subtext)" : total >= 60 ? "#2a9d8f" : total >= 45 ? "#FFB703" : "#e76f51";
-                    return (
-                      <div key={st.id} style={{ display:"grid",gridTemplateColumns:"40px 2fr 1.2fr 80px 80px 80px 80px 60px 80px",padding:"9px 20px",borderBottom:"1px solid var(--glass-border)",alignItems:"center",background:i%2===0?"transparent":"var(--muted)" }}>
-                        <span style={{fontSize:11,color:"var(--subtext)"}}>{i+1}</span>
-                        <span style={{fontSize:12.5,fontWeight:600,color:"var(--heading)"}}>{st.student_name}</span>
-                        <span style={{fontSize:11,color:"var(--subtext)"}}>{st.admission_number||"—"}</span>
-                        <span style={{textAlign:"center",fontSize:12}}>{st.ca1??'—'}</span>
-                        <span style={{textAlign:"center",fontSize:12}}>{st.ca2??'—'}</span>
-                        <span style={{textAlign:"center",fontSize:12}}>{st.exam??'—'}</span>
-                        <span style={{textAlign:"center",fontSize:13,fontWeight:700,color:gc}}>{total!==null?total:'—'}</span>
-                        <span style={{textAlign:"center",fontSize:13,fontWeight:800,color:gc}}>{gl}</span>
-                        <span style={{textAlign:"center"}}>
-                          {st.status ? (
-                            <span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:st.status==="published"?"rgba(42,157,143,0.12)":"rgba(255,183,3,0.12)",color:st.status==="published"?"#2a9d8f":"#FFB703",fontWeight:600}}>{st.status}</span>
-                          ) : (
-                            <span style={{fontSize:10,color:"var(--subtext)"}}>not graded</span>
-                          )}
-                        </span>
+                  <div className="table-responsive-wrapper">
+                    <div style={{ minWidth: 720 }}>
+                      <div style={{ display:"grid",gridTemplateColumns:"40px 2fr 1.2fr 80px 80px 80px 80px 60px 80px",padding:"10px 20px",borderBottom:"1px solid var(--glass-border)",fontSize:10,fontWeight:700,color:"var(--subtext)",textTransform:"uppercase",background:"var(--muted)",position:"sticky",top:0,zIndex:2 }}>
+                        <span>#</span><span>Student Name</span><span>Adm. No.</span>
+                        <span style={{textAlign:"center"}}>CA1</span><span style={{textAlign:"center"}}>CA2</span>
+                        <span style={{textAlign:"center"}}>Exam</span><span style={{textAlign:"center"}}>Total</span>
+                        <span style={{textAlign:"center"}}>Grade</span><span style={{textAlign:"center"}}>Status</span>
                       </div>
-                    );
-                  })}
-                  {/* Footer summary */}
-                  <div style={{ padding:"12px 20px",background:"var(--muted)",borderTop:"1px solid var(--glass-border)",display:"flex",gap:24,fontSize:12,color:"var(--subtext)",flexShrink:0 }}>
-                    <span>Enrolled: <strong style={{color:"var(--heading)"}}>{previewData.count}</strong></span>
-                    <span>Graded: <strong style={{color:"#2a9d8f"}}>{previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).length}</strong></span>
-                    <span>Not Graded: <strong style={{color:"#e76f51"}}>{previewData.students.filter((s:any)=>s.total===null||s.total===undefined).length}</strong></span>
-                    {(() => {
-                      const gs = previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).map((s:any)=>parseFloat(s.total));
-                      const avg = gs.length ? (gs.reduce((a:number,b:number)=>a+b,0)/gs.length).toFixed(1) : null;
-                      return <span>Class Avg: <strong style={{color:"#219EBC"}}>{avg ? `${avg}%` : "—"}</strong></span>;
-                    })()}
+                      {previewData.students.map((st: any, i: number) => {
+                        const total = st.total !== null && st.total !== undefined ? parseFloat(st.total) : null;
+                        const gl = getGradeLabel(total);
+                        const gc = total === null ? "var(--subtext)" : total >= 60 ? "#2a9d8f" : total >= 45 ? "#FFB703" : "#e76f51";
+                        return (
+                          <div key={st.id} style={{ display:"grid",gridTemplateColumns:"40px 2fr 1.2fr 80px 80px 80px 80px 60px 80px",padding:"9px 20px",borderBottom:"1px solid var(--glass-border)",alignItems:"center",background:i%2===0?"transparent":"var(--muted)" }}>
+                            <span style={{fontSize:11,color:"var(--subtext)"}}>{i+1}</span>
+                            <span style={{fontSize:12.5,fontWeight:600,color:"var(--heading)"}}>{st.student_name}</span>
+                            <span style={{fontSize:11,color:"var(--subtext)"}}>{st.admission_number||"—"}</span>
+                            <span style={{textAlign:"center",fontSize:12}}>{st.ca1??'—'}</span>
+                            <span style={{textAlign:"center",fontSize:12}}>{st.ca2??'—'}</span>
+                            <span style={{textAlign:"center",fontSize:12}}>{st.exam??'—'}</span>
+                            <span style={{textAlign:"center",fontSize:13,fontWeight:700,color:gc}}>{total!==null?total:'—'}</span>
+                            <span style={{textAlign:"center",fontSize:13,fontWeight:800,color:gc}}>{gl}</span>
+                            <span style={{textAlign:"center"}}>
+                              {st.status ? (
+                                <span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:st.status==="published"?"rgba(42,157,143,0.12)":"rgba(255,183,3,0.12)",color:st.status==="published"?"#2a9d8f":"#FFB703",fontWeight:600}}>{st.status}</span>
+                              ) : (
+                                <span style={{fontSize:10,color:"var(--subtext)"}}>not graded</span>
+                              )}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {/* Footer summary + Close button */}
+                  <div style={{ padding:"12px 20px",background:"var(--muted)",borderTop:"1px solid var(--glass-border)",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,fontSize:12,color:"var(--subtext)",flexShrink:0 }}>
+                    <div style={{ display:"flex",gap:16,flexWrap:"wrap" }}>
+                      <span>Enrolled: <strong style={{color:"var(--heading)"}}>{previewData.count}</strong></span>
+                      <span>Graded: <strong style={{color:"#2a9d8f"}}>{previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).length}</strong></span>
+                      <span>Not Graded: <strong style={{color:"#e76f51"}}>{previewData.students.filter((s:any)=>s.total===null||s.total===undefined).length}</strong></span>
+                      {(() => {
+                        const gs = previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).map((s:any)=>parseFloat(s.total));
+                        const avg = gs.length ? (gs.reduce((a:number,b:number)=>a+b,0)/gs.length).toFixed(1) : null;
+                        return <span>Class Avg: <strong style={{color:"#219EBC"}}>{avg ? `${avg}%` : "—"}</strong></span>;
+                      })()}
+                    </div>
+                    <button
+                      onClick={() => setPreviewOpen(false)}
+                      style={{ padding:"6px 16px", borderRadius:8, background:"var(--border)", border:"none", color:"var(--heading)", fontWeight:600, fontSize:12, cursor:"pointer" }}
+                    >
+                      Close Preview
+                    </button>
                   </div>
                 </>
               )}

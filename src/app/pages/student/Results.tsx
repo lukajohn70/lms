@@ -136,7 +136,7 @@ export default function Results() {
       ) : (
         <>
           {/* Summary Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 18 }}>
+          <div className="responsive-grid-4">
             {[
               { l: viewType === "cumulative" ? "Cumulative Avg" : "Term Average", v: `${meta.average || 0}%`, c: "#219EBC", icon: <TrendingUp size={15}/> },
               { l: "Class Rank", v: meta.rank || "—", c: "#FFB703", icon: <Award size={15}/> },
@@ -177,111 +177,116 @@ export default function Results() {
               <span style={{ fontSize: 11, color: "var(--subtext)" }}>Session: {meta.session || "2026/2027"}</span>
             </div>
 
-            {/* TERMINAL TABLE */}
-            {viewType === "terminal" && (
-              <>
-                <div style={{ display: "grid", gridTemplateColumns: "1.8fr 70px 70px 80px 80px 80px 80px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", gap: 4 }}>
-                  <span>Subject</span><span style={{textAlign:"center"}}>CA1 /20</span><span style={{textAlign:"center"}}>CA2 /20</span>
-                  <span style={{textAlign:"center"}}>Exam /60</span><span style={{textAlign:"center"}}>Total /100</span>
-                  <span style={{textAlign:"center"}}>Grade</span><span style={{textAlign:"center"}}>Position</span>
-                </div>
-                {grades.map((r: any) => (
-                  <div key={r.course_id} style={{ display: "grid", gridTemplateColumns: "1.8fr 70px 70px 80px 80px 80px 80px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", gap: 4 }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{r.subject}</div>
-                      <div style={{ fontSize: 10, color: "var(--subtext)" }}>{r.teacher}</div>
+            {/* RESPONSIVE TABLE CONTAINER */}
+            <div className="table-responsive-wrapper">
+              <div style={{ minWidth: 640 }}>
+                {/* TERMINAL TABLE */}
+                {viewType === "terminal" && (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: "1.8fr 70px 70px 80px 80px 80px 80px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", gap: 4 }}>
+                      <span>Subject</span><span style={{textAlign:"center"}}>CA1 /20</span><span style={{textAlign:"center"}}>CA2 /20</span>
+                      <span style={{textAlign:"center"}}>Exam /60</span><span style={{textAlign:"center"}}>Total /100</span>
+                      <span style={{textAlign:"center"}}>Grade</span><span style={{textAlign:"center"}}>Position</span>
                     </div>
-                    <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.ca1 ?? "—"}</span>
-                    <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.ca2 ?? "—"}</span>
-                    <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.exam ?? "—"}</span>
-                    <div style={{ textAlign:"center" }}>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: gradeColor(r.grade) }}>{r.total}</span>
-                      <div style={{ height: 3, borderRadius: 2, background: "var(--muted)", marginTop: 3 }}>
-                        <div style={{ height: "100%", width: `${r.total}%`, background: gradeColor(r.grade), borderRadius: 2 }} />
+                    {grades.map((r: any) => (
+                      <div key={r.course_id} style={{ display: "grid", gridTemplateColumns: "1.8fr 70px 70px 80px 80px 80px 80px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", gap: 4 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{r.subject}</div>
+                          <div style={{ fontSize: 10, color: "var(--subtext)" }}>{r.teacher}</div>
+                        </div>
+                        <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.ca1 ?? "—"}</span>
+                        <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.ca2 ?? "—"}</span>
+                        <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.exam ?? "—"}</span>
+                        <div style={{ textAlign:"center" }}>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: gradeColor(r.grade) }}>{r.total}</span>
+                          <div style={{ height: 3, borderRadius: 2, background: "var(--muted)", marginTop: 3 }}>
+                            <div style={{ height: "100%", width: `${r.total}%`, background: gradeColor(r.grade), borderRadius: 2 }} />
+                          </div>
+                        </div>
+                        <div style={{ textAlign:"center" }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: gradeColor(r.grade), background: `${gradeColor(r.grade)}18`, padding: "2px 8px", borderRadius: 6 }}>{r.grade}</span>
+                        </div>
+                        <span style={{ textAlign:"center", fontSize: 12, color: "var(--subtext)" }}>{r.position}</span>
                       </div>
+                    ))}
+                    <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end", gap: 24, fontSize: 12.5, fontWeight: 700, color: "var(--heading)" }}>
+                      <span>Term Average: <span style={{ color: "#219EBC", fontSize: 16 }}>{meta.average}%</span></span>
+                      <span>Rank: <span style={{ color: "#FFB703" }}>{meta.rank}</span></span>
                     </div>
-                    <div style={{ textAlign:"center" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: gradeColor(r.grade), background: `${gradeColor(r.grade)}18`, padding: "2px 8px", borderRadius: 6 }}>{r.grade}</span>
-                    </div>
-                    <span style={{ textAlign:"center", fontSize: 12, color: "var(--subtext)" }}>{r.position}</span>
-                  </div>
-                ))}
-                <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end", gap: 24, fontSize: 12.5, fontWeight: 700, color: "var(--heading)" }}>
-                  <span>Term Average: <span style={{ color: "#219EBC", fontSize: 16 }}>{meta.average}%</span></span>
-                  <span>Rank: <span style={{ color: "#FFB703" }}>{meta.rank}</span></span>
-                </div>
-              </>
-            )}
+                  </>
+                )}
 
-            {/* MID-TERM TABLE */}
-            {viewType === "mid_term" && (
-              <>
-                <div style={{ display: "grid", gridTemplateColumns: "1.8fr 90px 90px 100px 100px 110px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", gap: 4 }}>
-                  <span>Subject</span><span style={{textAlign:"center"}}>Assign /10</span><span style={{textAlign:"center"}}>Project /10</span>
-                  <span style={{textAlign:"center"}}>Mid-Test /20</span><span style={{textAlign:"center"}}>Total /40</span>
-                  <span style={{textAlign:"center"}}>Rating</span>
-                </div>
-                {grades.map((r: any) => (
-                  <div key={r.course_id} style={{ display: "grid", gridTemplateColumns: "1.8fr 90px 90px 100px 100px 110px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", gap: 4 }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{r.subject}</div>
-                      <div style={{ fontSize: 10, color: "var(--subtext)" }}>{r.teacher}</div>
+                {/* MID-TERM TABLE */}
+                {viewType === "mid_term" && (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: "1.8fr 90px 90px 100px 100px 110px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", gap: 4 }}>
+                      <span>Subject</span><span style={{textAlign:"center"}}>Assign /10</span><span style={{textAlign:"center"}}>Project /10</span>
+                      <span style={{textAlign:"center"}}>Mid-Test /20</span><span style={{textAlign:"center"}}>Total /40</span>
+                      <span style={{textAlign:"center"}}>Rating</span>
                     </div>
-                    <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.assignment ?? "—"}</span>
-                    <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.project ?? "—"}</span>
-                    <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.mid_term_test ?? "—"}</span>
-                    <div style={{ textAlign:"center" }}>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: ratingColor(r.rating) }}>{r.total}</span>
+                    {grades.map((r: any) => (
+                      <div key={r.course_id} style={{ display: "grid", gridTemplateColumns: "1.8fr 90px 90px 100px 100px 110px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", gap: 4 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{r.subject}</div>
+                          <div style={{ fontSize: 10, color: "var(--subtext)" }}>{r.teacher}</div>
+                        </div>
+                        <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.assignment ?? "—"}</span>
+                        <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.project ?? "—"}</span>
+                        <span style={{ textAlign:"center", fontSize: 13, color: "var(--heading)" }}>{r.mid_term_test ?? "—"}</span>
+                        <div style={{ textAlign:"center" }}>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: ratingColor(r.rating) }}>{r.total}</span>
+                        </div>
+                        <div style={{ textAlign:"center" }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: ratingColor(r.rating), background: `${ratingColor(r.rating)}18`, padding: "3px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>{r.rating}</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end", fontSize: 12.5, fontWeight: 700, color: "var(--heading)" }}>
+                      Mid-Term Average: <span style={{ color: "#FFB703", fontSize: 16, marginLeft: 8 }}>{meta.average}%</span>
                     </div>
-                    <div style={{ textAlign:"center" }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: ratingColor(r.rating), background: `${ratingColor(r.rating)}18`, padding: "3px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>{r.rating}</span>
-                    </div>
-                  </div>
-                ))}
-                <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end", fontSize: 12.5, fontWeight: 700, color: "var(--heading)" }}>
-                  Mid-Term Average: <span style={{ color: "#FFB703", fontSize: 16, marginLeft: 8 }}>{meta.average}%</span>
-                </div>
-              </>
-            )}
+                  </>
+                )}
 
-            {/* CUMULATIVE TABLE */}
-            {viewType === "cumulative" && (
-              <>
-                <div style={{ display: "grid", gridTemplateColumns: term === "3rd" ? "1.5fr 90px 90px 90px 110px 80px" : "1.5fr 100px 100px 120px 80px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", gap: 4 }}>
-                  <span>Subject</span>
-                  <span style={{textAlign:"center"}}>1st Term</span>
-                  <span style={{textAlign:"center"}}>2nd Term</span>
-                  {term === "3rd" && <span style={{textAlign:"center"}}>3rd Term</span>}
-                  <span style={{textAlign:"center"}}>Cumulative Avg</span>
-                  <span style={{textAlign:"center"}}>Grade</span>
-                </div>
-                {grades.map((r: any) => (
-                  <div key={r.course_id} style={{ display: "grid", gridTemplateColumns: term === "3rd" ? "1.5fr 90px 90px 90px 110px 80px" : "1.5fr 100px 100px 120px 80px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", gap: 4 }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{r.subject}</div>
-                      <div style={{ fontSize: 10, color: "var(--subtext)" }}>{r.teacher}</div>
+                {/* CUMULATIVE TABLE */}
+                {viewType === "cumulative" && (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: term === "3rd" ? "1.5fr 90px 90px 90px 110px 80px" : "1.5fr 100px 100px 120px 80px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", gap: 4 }}>
+                      <span>Subject</span>
+                      <span style={{textAlign:"center"}}>1st Term</span>
+                      <span style={{textAlign:"center"}}>2nd Term</span>
+                      {term === "3rd" && <span style={{textAlign:"center"}}>3rd Term</span>}
+                      <span style={{textAlign:"center"}}>Cumulative Avg</span>
+                      <span style={{textAlign:"center"}}>Grade</span>
                     </div>
-                    <span style={{ textAlign:"center", fontSize: 13, color: r.term1 !== null ? "var(--heading)" : "var(--subtext)" }}>{r.term1 !== null ? `${r.term1}%` : "—"}</span>
-                    <span style={{ textAlign:"center", fontSize: 13, color: r.term2 !== null ? "var(--heading)" : "var(--subtext)" }}>{r.term2 !== null ? `${r.term2}%` : "—"}</span>
-                    {term === "3rd" && <span style={{ textAlign:"center", fontSize: 13, color: r.term3 !== null ? "var(--heading)" : "var(--subtext)" }}>{r.term3 !== null ? `${r.term3}%` : "—"}</span>}
-                    <div style={{ textAlign:"center" }}>
-                      <span style={{ fontSize: 15, fontWeight: 800, color: "#FB8500" }}>{r.cum_avg}%</span>
+                    {grades.map((r: any) => (
+                      <div key={r.course_id} style={{ display: "grid", gridTemplateColumns: term === "3rd" ? "1.5fr 90px 90px 90px 110px 80px" : "1.5fr 100px 100px 120px 80px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", gap: 4 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{r.subject}</div>
+                          <div style={{ fontSize: 10, color: "var(--subtext)" }}>{r.teacher}</div>
+                        </div>
+                        <span style={{ textAlign:"center", fontSize: 13, color: r.term1 !== null ? "var(--heading)" : "var(--subtext)" }}>{r.term1 !== null ? `${r.term1}%` : "—"}</span>
+                        <span style={{ textAlign:"center", fontSize: 13, color: r.term2 !== null ? "var(--heading)" : "var(--subtext)" }}>{r.term2 !== null ? `${r.term2}%` : "—"}</span>
+                        {term === "3rd" && <span style={{ textAlign:"center", fontSize: 13, color: r.term3 !== null ? "var(--heading)" : "var(--subtext)" }}>{r.term3 !== null ? `${r.term3}%` : "—"}</span>}
+                        <div style={{ textAlign:"center" }}>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: "#FB8500" }}>{r.cum_avg}%</span>
+                        </div>
+                        <div style={{ textAlign:"center" }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: gradeColor(r.grade), background: `${gradeColor(r.grade)}18`, padding: "2px 8px", borderRadius: 6 }}>{r.grade}</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end", gap: 24, fontSize: 12.5, fontWeight: 700, color: "var(--heading)" }}>
+                      <span>Cumulative Average: <span style={{ color: "#FB8500", fontSize: 16 }}>{meta.average}%</span></span>
                     </div>
-                    <div style={{ textAlign:"center" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: gradeColor(r.grade), background: `${gradeColor(r.grade)}18`, padding: "2px 8px", borderRadius: 6 }}>{r.grade}</span>
-                    </div>
-                  </div>
-                ))}
-                <div style={{ padding: "12px 18px", display: "flex", justifyContent: "flex-end", gap: 24, fontSize: 12.5, fontWeight: 700, color: "var(--heading)" }}>
-                  <span>Cumulative Average: <span style={{ color: "#FB8500", fontSize: 16 }}>{meta.average}%</span></span>
-                </div>
-              </>
-            )}
+                  </>
+                )}
+              </div>
+            </div>
           </Glass>
 
           {/* Behavior Assessments */}
           {!loadingAss && assessment && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 18 }}>
+            <div className="responsive-grid-2" style={{ marginBottom: 18 }}>
               <Glass>
                 <div style={{ padding: "13px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 8 }}>
                   <Star size={13} style={{ color: "#FFB703" }} />

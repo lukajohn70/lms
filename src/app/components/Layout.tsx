@@ -341,7 +341,7 @@ export function Layout({ children }: { children: ReactNode }) {
         @media (max-width: 768px) { .md-hidden { display: flex !important; } }
       `}</style>
 
-      <div style={{ minHeight: "100vh", display: "flex", fontFamily: "'Poppins',sans-serif" }}>
+      <div style={{ minHeight: "100vh", display: "flex", fontFamily: "'Poppins',sans-serif", width: "100%", maxWidth: "100vw", overflowX: "hidden", boxSizing: "border-box" }}>
 
         {/* ===== DESKTOP SIDEBAR ===== */}
         <aside
@@ -490,10 +490,14 @@ export function Layout({ children }: { children: ReactNode }) {
             marginLeft: "var(--sidebar-w)",
             marginTop: "var(--topbar-h)",
             flex: 1,
+            minWidth: 0,
+            maxWidth: "100%",
+            boxSizing: "border-box",
             minHeight: "calc(100vh - var(--topbar-h))",
             background: "var(--background)",
             transition: "background 0.3s",
             padding: "24px",
+            overflowX: "hidden",
           }}
         >
           {children}

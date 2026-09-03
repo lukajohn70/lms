@@ -204,7 +204,7 @@ export default function ParentDashboard() {
             </div>
 
             {/* PLOTS AND DETAILS */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 320px", gap: 16 }} className="parent-grid-layout">
+            <div className="responsive-dashboard-3 parent-grid-layout">
               
               {/* Radar chart */}
               <Glass>

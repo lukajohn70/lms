@@ -308,7 +308,7 @@ export default function Grades() {
           </div>
 
           {/* Stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 18 }}>
+          <div className="responsive-grid-4">
             {[
               { l: "Class Average", v: `${avg}${activeTab === "mid_term" ? "/20" : "%"}`, c: "#219EBC" },
               { l: activeTab === "mid_term" ? "Excellent (18+)" : "A Grades", v: String(students.filter(s => activeTab === "mid_term" ? s.score >= 18 : s.score >= 70).length), c: "#8ECAE6" },
@@ -333,9 +333,11 @@ export default function Grades() {
               <span style={{ fontSize: 11, color: "var(--subtext)" }}>Session: 2026/2027</span>
             </div>
 
-            {/* Headers based on Active Tab */}
-            {activeTab === "mid_term" ? (
-              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 100px 100px 100px 80px 1fr 110px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
+            <div className="table-responsive-wrapper">
+              <div style={{ minWidth: 760 }}>
+                {/* Headers based on Active Tab */}
+                {activeTab === "mid_term" ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "1.2fr 100px 100px 100px 80px 1fr 110px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
                 {["Student", "Asgn (/5)", "Proj (/5)", "Test (/10)", "Total", "Performance", "Remark"].map(h => (
                   <span key={h} style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>{h}</span>
                 ))}
@@ -419,7 +421,9 @@ export default function Grades() {
                 );
               }
             })}
-          </Glass>
+                </div>
+              </div>
+            </Glass>
         </>
       )}
     </div>

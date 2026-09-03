@@ -54,7 +54,7 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 18 }}>
+      <div className="responsive-grid-4">
         {[
           { l: "Total Students", v: stats.totalStudents, c: "#219EBC", icon: <Users size={15}/> },
           { l: "Active Classes", v: stats.activeClasses, c: "#8ECAE6", icon: <BookOpen size={15}/> },
@@ -69,7 +69,7 @@ export default function TeacherDashboard() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 300px", gap: 16 }}>
+      <div className="responsive-dashboard-3">
         {/* Per-class avg bar chart (real data) */}
         <Glass>
           <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 8 }}>
@@ -158,7 +158,7 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Quick actions */}
-      <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
+      <div className="responsive-grid-4" style={{ marginTop: 18, gap: 12 }}>
         {[
           { l: "Create CBT", to: "/teacher/cbt", c: "#FFB703", icon: <ClipboardList size={16}/> },
           { l: "Upload Material", to: "/teacher/materials", c: "#219EBC", icon: <BookOpen size={16}/> },

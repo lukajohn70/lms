@@ -48,7 +48,7 @@ export default function AdminDashboard() {
         <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: "4px 0 0" }}>Aroura Academy · 2026/2027 Session · 2nd Term</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 18 }}>
+      <div className="responsive-grid-4">
         {[
           { l: "Total Students", v: stats.totalStudents, c: "#219EBC", icon: <Users size={15}/>, to: "/admin/users" },
           { l: "Teaching Staff", v: stats.teachingStaff, c: "#8ECAE6", icon: <BookOpen size={15}/>, to: "/admin/users" },
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 280px", gap: 16 }}>
+      <div className="responsive-dashboard-3">
         {/* Dept performance */}
         <Glass>
           <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 8 }}>

@@ -143,7 +143,7 @@ export default function StudentDashboard() {
       )}
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 18 }}>
+      <div className="responsive-grid-4">
         {[
           { label: "Avg. Score", value: `${stats.avgScore}%`, delta: "GPA Rate", icon: <TrendingUp size={15}/>, color: "#219EBC", to: "/student/results" },
           { label: "Class Position", value: stats.classRank, delta: "Dynamic Rank", icon: <Award size={15}/>, color: "#FFB703", to: "/student/results" },
@@ -162,7 +162,7 @@ export default function StudentDashboard() {
       </div>
 
       {/* 3-col grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.15fr 0.85fr", gap: 16 }}>
+      <div className="responsive-dashboard-3">
         {/* LEFT */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* CBT Card */}

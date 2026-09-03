@@ -93,7 +93,7 @@ export default function Classes() {
         </div>
 
         {/* Stat summary */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 18 }}>
+        <div className="responsive-grid-4">
           {[
             { l: "Class Average", v: `${avgScore}%`, c: "#8ECAE6" },
             { l: "Top Score", v: `${highest}%`, c: "#219EBC" },
@@ -119,12 +119,14 @@ export default function Classes() {
             )}
           </div>
 
-          {/* Table header */}
-          <div style={{ display: "grid", gridTemplateColumns: "1.4fr 80px 80px 80px 80px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
-            {["Student", "Score", "Grade", "Attendance", "Status"].map(h => (
-              <span key={h} style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>{h}</span>
-            ))}
-          </div>
+          <div className="table-responsive-wrapper">
+            <div style={{ minWidth: 540 }}>
+              {/* Table header */}
+              <div style={{ display: "grid", gridTemplateColumns: "1.4fr 80px 80px 80px 80px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
+                {["Student", "Score", "Grade", "Attendance", "Status"].map(h => (
+                  <span key={h} style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>{h}</span>
+                ))}
+              </div>
 
           {loadingDetail ? (
             <div style={{ padding: "32px 18px", textAlign: "center", color: "var(--subtext)", fontSize: 13 }}>Loading roster...</div>
@@ -177,6 +179,8 @@ export default function Classes() {
               );
             })
           )}
+            </div>
+          </div>
         </Glass>
       </div>
     );
