@@ -38,9 +38,10 @@ export default function Reports() {
   const [previewData, setPreviewData] = useState<any>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
-  // Auto-publish modal
-  const [autoPubModal, setAutoPubModal] = useState<any>(null); // { sub }
-  const [autoPubDate, setAutoPubDate] = useState("");
+  // Term-level result release date
+  const [releaseDate, setReleaseDate] = useState("");
+  const [savedReleaseDate, setSavedReleaseDate] = useState<string | null>(null);
+  const [releaseSaving, setReleaseSaving] = useState(false);
 
   useEffect(() => {
     apiClient.get("/admin/reports")
@@ -59,17 +60,23 @@ export default function Reports() {
   const loadSubmissions = () => {
     setApprovalsLoading(true);
     apiClient.get(`/admin/grades/submissions?term=${encodeURIComponent(selectedTerm)}`)
-      .then((res: any) => { if (res && res.success) setSubmissions(res.submissions || []); })
+      .then((res: any) => {
+        if (res && res.success) {
+          setSubmissions(res.submissions || []);
+          const rd = res.result_release_date || "";
+          setSavedReleaseDate(rd || null);
+          setReleaseDate(rd ? rd.replace(" ", "T").slice(0, 16) : "");
+        }
+      })
       .catch(err => console.error("Error loading submissions", err))
       .finally(() => setApprovalsLoading(false));
   };
 
   useEffect(() => { loadSubmissions(); }, [selectedTerm]);
 
-  const handleUpdateStatus = (courseId: number, newStatus: string, autoPublishAt?: string) => {
+  const handleUpdateStatus = (courseId: number, newStatus: string) => {
     apiClient.post("/admin/grades/update-status", { 
-      course_id: courseId, term: selectedTerm, status: newStatus,
-      ...(autoPublishAt ? { auto_publish_at: autoPublishAt } : {})
+      course_id: courseId, term: selectedTerm, status: newStatus
     })
       .then((res: any) => { setActionSuccess(res.message || "Status updated."); setTimeout(() => setActionSuccess(""), 4000); loadSubmissions(); })
       .catch((err: any) => alert(err.message || "Failed to update status"));
@@ -92,6 +99,23 @@ export default function Reports() {
       .then((res: any) => { if (res && res.success) setPreviewData(res); })
       .catch(err => console.error("Preview error", err))
       .finally(() => setPreviewLoading(false));
+  };
+
+  const handleSaveReleaseDate = async () => {
+    setReleaseSaving(true);
+    const termNum = selectedTerm.replace(/\D/g, "");
+    const key = `result_release_date_term${termNum}`;
+    const val = releaseDate ? releaseDate.replace("T", " ") + ":00" : "";
+    try {
+      await apiClient.post("/admin/settings/save", { [key]: val });
+      setSavedReleaseDate(val || null);
+      setActionSuccess(val ? `Result release date set to ${new Date(releaseDate).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })} for ${selectedTerm}.` : `Release date cleared for ${selectedTerm} — results visible immediately.`);
+      setTimeout(() => setActionSuccess(""), 5000);
+    } catch (err: any) {
+      alert(err.message || "Failed to save release date");
+    } finally {
+      setReleaseSaving(false);
+    }
   };
 
   const reopenRequestsCount = submissions.filter(s => s.status === "reopen_requested").length;
@@ -239,6 +263,58 @@ export default function Reports() {
             </div>
           </Glass>
 
+          {/* Term-level Result Release Date Panel */}
+          <Glass style={{ padding: "16px 20px", marginBottom: 18, border: `1px solid ${savedReleaseDate && new Date(savedReleaseDate) > new Date() ? "rgba(255,183,3,0.4)" : "rgba(42,157,143,0.25)"}` }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
+              <CalendarClock size={22} style={{ color: "#FFB703", flexShrink: 0, marginTop: 2 }} />
+              <div style={{ flex: 1, minWidth: 240 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--heading)", marginBottom: 3 }}>
+                  Result Release Date — {selectedTerm}
+                </div>
+                <div style={{ fontSize: 11.5, color: "var(--subtext)", lineHeight: 1.5, marginBottom: 10 }}>
+                  Set the date &amp; time when <strong style={{ color: "var(--heading)" }}>parents and students</strong> will be able to view {selectedTerm} results.
+                  All subjects must be published before this date. Leave blank to make results visible immediately.
+                </div>
+                {savedReleaseDate && (
+                  <div style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "4px 10px", borderRadius: 7, marginBottom: 10,
+                    background: new Date(savedReleaseDate) > new Date() ? "rgba(255,183,3,0.12)" : "rgba(42,157,143,0.12)",
+                    border: `1px solid ${new Date(savedReleaseDate) > new Date() ? "rgba(255,183,3,0.3)" : "rgba(42,157,143,0.3)"}`,
+                    color: new Date(savedReleaseDate) > new Date() ? "#FFB703" : "#2a9d8f",
+                    fontSize: 11.5, fontWeight: 600
+                  }}>
+                    {new Date(savedReleaseDate) > new Date() ? (
+                      <><CalendarClock size={12} /> Scheduled: {new Date(savedReleaseDate).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</>
+                    ) : (
+                      <><CheckCircle size={12} /> Released: {new Date(savedReleaseDate).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</>
+                    )}
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <input
+                    type="datetime-local"
+                    value={releaseDate}
+                    onChange={e => setReleaseDate(e.target.value)}
+                    style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", color: "var(--heading)", fontSize: 13, outline: "none" }}
+                  />
+                  <button onClick={handleSaveReleaseDate} disabled={releaseSaving} style={{
+                    display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8,
+                    background: "linear-gradient(135deg,#FFB703,#e67600)", color: "#011d2f",
+                    border: "none", cursor: releaseSaving ? "not-allowed" : "pointer", fontSize: 12.5, fontWeight: 700
+                  }}>
+                    <CalendarClock size={13} /> {releaseSaving ? "Saving..." : "Set Release Date"}
+                  </button>
+                  {releaseDate && (
+                    <button onClick={() => { setReleaseDate(""); }} style={{ padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--subtext)", fontSize: 12, cursor: "pointer" }}>
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Glass>
+
           {approvalsLoading ? (
             <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>Loading course submissions...</div>
           ) : submissions.length === 0 ? (
@@ -269,11 +345,6 @@ export default function Reports() {
                               ⚠ {sub.reopen_reason}
                             </div>
                           )}
-                          {sub.auto_publish_at && !isPublished && (
-                            <div style={{ fontSize: 10, color: "#8ECAE6", marginTop: 2 }}>
-                              🕐 Auto-publish: {new Date(sub.auto_publish_at).toLocaleString()}
-                            </div>
-                          )}
                         </div>
                         <div>
                           <div style={{ fontSize: 12.5, color: "var(--heading)" }}>{sub.teacher_name || "Unassigned"}</div>
@@ -293,7 +364,7 @@ export default function Reports() {
                           <button onClick={() => handlePreview(sub)} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(33,158,188,0.1)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:11,fontWeight:600,cursor:"pointer" }}>
                             <Eye size={12} /> Preview
                           </button>
-                          {(isPublished || isLocked) ? (
+                          {(isReopenReq || (isPublished || isLocked)) ? (
                             <button onClick={() => handleUpdateStatus(sub.course_id, "draft")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(231,111,81,0.1)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:11,fontWeight:600,cursor:"pointer" }}>
                               <Unlock size={12} /> Reopen
                             </button>
@@ -304,9 +375,6 @@ export default function Reports() {
                               </button>
                               <button onClick={() => handleUpdateStatus(sub.course_id, "published")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer" }}>
                                 <CheckCircle size={12} /> Lock &amp; Publish
-                              </button>
-                              <button onClick={() => { setAutoPubModal(sub); setAutoPubDate(""); }} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(255,183,3,0.1)",border:"1px solid rgba(255,183,3,0.3)",color:"#FFB703",fontSize:11,fontWeight:600,cursor:"pointer" }}>
-                                <CalendarClock size={12} /> Auto Date
                               </button>
                             </>
                           )}
@@ -351,7 +419,7 @@ export default function Reports() {
                         <button onClick={() => handlePreview(sub)} style={{ flex: "1 1 80px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(33,158,188,0.12)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:12,fontWeight:600,cursor:"pointer" }}>
                           <Eye size={13} /> Preview
                         </button>
-                        {(isPublished || isLocked) ? (
+                        {(isPublished || isLocked || isReopenReq) ? (
                           <button onClick={() => handleUpdateStatus(sub.course_id, "draft")} style={{ flex: "1 1 100px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(231,111,81,0.12)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:12,fontWeight:600,cursor:"pointer" }}>
                             <Unlock size={13} /> Reopen
                           </button>
@@ -363,9 +431,6 @@ export default function Reports() {
                             <button onClick={() => handleUpdateStatus(sub.course_id, "published")} style={{ flex: "1 1 120px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>
                               <CheckCircle size={13} /> Lock &amp; Publish
                             </button>
-                            <button onClick={() => { setAutoPubModal(sub); setAutoPubDate(""); }} style={{ flex: "1 1 120px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(255,183,3,0.1)",border:"1px solid rgba(255,183,3,0.3)",color:"#FFB703",fontSize:12,fontWeight:600,cursor:"pointer" }}>
-                              <CalendarClock size={13} /> Auto-Publish Date
-                            </button>
                           </>
                         )}
                       </div>
@@ -375,38 +440,6 @@ export default function Reports() {
               </div>
             </Glass>
           )}
-        </div>
-      )}
-
-      {/* Auto-Publish Date Modal */}
-      {autoPubModal && (
-        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16 }}>
-          <div style={{ background:"var(--glass-bg)",border:"1px solid var(--glass-border)",borderRadius:16,boxShadow:"var(--glass-shadow)",padding:28,width:"100%",maxWidth:420 }}>
-            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
-              <div style={{ fontSize:16,fontWeight:800,color:"var(--heading)" }}>Set Auto-Publish Date</div>
-              <button onClick={() => setAutoPubModal(null)} style={{ background:"none",border:"none",cursor:"pointer",color:"var(--subtext)" }}><X size={18} /></button>
-            </div>
-            <p style={{ fontSize:13,color:"var(--subtext)",marginBottom:4,lineHeight:1.5 }}>
-              <strong style={{ color:"var(--heading)" }}>{autoPubModal.course_name}</strong>
-            </p>
-            <p style={{ fontSize:12.5,color:"var(--subtext)",marginBottom:16,lineHeight:1.5 }}>
-              Results will be automatically published (made visible to students &amp; parents) at the selected date &amp; time.
-            </p>
-            <label style={{ display:"block",fontSize:11,fontWeight:700,color:"var(--subtext)",textTransform:"uppercase",marginBottom:6 }}>Auto-Publish Date &amp; Time</label>
-            <input
-              type="datetime-local"
-              value={autoPubDate}
-              onChange={e => setAutoPubDate(e.target.value)}
-              style={{ width:"100%",padding:"10px 14px",borderRadius:9,border:"1px solid var(--glass-border)",background:"var(--muted)",color:"var(--heading)",fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:16 }}
-            />
-            <div style={{ display:"flex",gap:10 }}>
-              <button onClick={() => setAutoPubModal(null)} style={{ flex:1,padding:"10px",borderRadius:9,background:"var(--muted)",border:"1px solid var(--glass-border)",cursor:"pointer",fontSize:13,fontWeight:600,color:"var(--subtext)" }}>Cancel</button>
-              <button onClick={() => { if (!autoPubDate) { alert("Please select a date and time."); return; } handleUpdateStatus(autoPubModal.course_id, "locked", autoPubDate); setAutoPubModal(null); }}
-                style={{ flex:2,padding:"10px",borderRadius:9,background:"linear-gradient(135deg,#FFB703,#e67600)",border:"none",cursor:"pointer",fontSize:13,fontWeight:700,color:"#011d2f",display:"flex",alignItems:"center",justifyContent:"center",gap:6 }}>
-                <CalendarClock size={14} /> Schedule Auto-Publish
-              </button>
-            </div>
-          </div>
         </div>
       )}
 

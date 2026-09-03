@@ -131,6 +131,22 @@ export default function Results() {
 
       {loading ? (
         <div style={{ padding: 40, color: "var(--subtext)", textAlign: "center" }}>Loading results...</div>
+      ) : meta.result_released === false ? (
+        <Glass style={{ padding: "36px 24px", textAlign: "center" }}>
+          <div style={{ fontSize: 42, marginBottom: 12 }}>🔒</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)", marginBottom: 8 }}>{termStr} Results Not Yet Released</div>
+          <div style={{ fontSize: 13, color: "var(--subtext)", lineHeight: 1.6 }}>
+            The school has scheduled result release for this term on
+          </div>
+          {meta.result_release_date && (
+            <div style={{ margin: "10px auto", display: "inline-block", padding: "8px 20px", borderRadius: 10, background: "rgba(255,183,3,0.1)", border: "1px solid rgba(255,183,3,0.3)", color: "#FFB703", fontWeight: 800, fontSize: 14 }}>
+              📅 {new Date(meta.result_release_date).toLocaleString("en-GB", { dateStyle: "full", timeStyle: "short" })}
+            </div>
+          )}
+          <div style={{ fontSize: 12, color: "var(--subtext)", marginTop: 10 }}>
+            Please check back after the release date to view your results.
+          </div>
+        </Glass>
       ) : grades.length === 0 ? (
         <Glass style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>No grade entries recorded for this term and view.</Glass>
       ) : (

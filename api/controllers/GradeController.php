@@ -323,12 +323,12 @@ class GradeController {
         $session = isset($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
 
         try {
-            // Auto-promote scheduled grades whose auto_publish_at has arrived
-            $this->conn->exec("
-                UPDATE grades 
-                SET status = 'published', auto_publish_at = NULL 
-                WHERE auto_publish_at IS NOT NULL AND auto_publish_at <= NOW() AND status IN ('locked', 'approved', 'submitted')
-            ");
+            // Look up term-level result release date
+            $termKey = strtolower(str_replace([' ', 'st', 'nd', 'rd', 'th'], ['_', '', '', '', ''], $term));
+            // Map e.g. '1st_term' -> 'term1', '2nd_term' -> 'term2', '3rd_term' -> 'term3'
+            $termNum = preg_replace('/\D/', '', $termKey);
+            $releaseKey = "result_release_date_term{$termNum}";
+            $releaseDate = $this->getSetting($releaseKey, null);
 
             $query = "
                 SELECT 
@@ -340,8 +340,7 @@ class GradeController {
                     COUNT(DISTINCT g.student_id) as graded_count,
                     ROUND(AVG(g.score), 1) as class_average,
                     COALESCE(MAX(g.status), 'draft') as status,
-                    MAX(g.reopen_reason) as reopen_reason,
-                    MAX(g.auto_publish_at) as auto_publish_at
+                    MAX(g.reopen_reason) as reopen_reason
                 FROM courses c
                 LEFT JOIN users t ON c.teacher_id = t.id
                 LEFT JOIN enrollments e ON c.id = e.course_id
@@ -358,6 +357,7 @@ class GradeController {
                 "success" => true,
                 "term" => $term,
                 "session" => $session,
+                "result_release_date" => $releaseDate ?: null,
                 "submissions" => $submissions
             ]);
         } catch (Exception $e) {
@@ -550,7 +550,7 @@ class GradeController {
                 AND g.course_id = c.id
                 AND g.academic_term = :term
                 AND g.academic_session = :session
-                AND (g.status = 'published' OR (g.auto_publish_at IS NOT NULL AND g.auto_publish_at <= NOW()))
+                AND g.status = 'published'
             )
             WHERE e.student_id = :sid
             ORDER BY c.name
@@ -733,19 +733,27 @@ class GradeController {
             }
         }
 
+        // 8. Check term-level result release date
+        $termNum = preg_replace('/\D/', '', $currentTerm);
+        $releaseKey = "result_release_date_term{$termNum}";
+        $releaseDate = $this->getSetting($releaseKey, null);
+        $released = !$releaseDate || strtotime($releaseDate) <= time();
+
         echo json_encode([
             'term'               => $currentTerm,
             'session'            => $session,
             'view_type'          => $viewType,
             'result_mode'        => $systemResultMode,
-            'average'            => $displayAverage,
-            'annual_average'     => $displayAverage,
-            'promotion_decision' => $promotionDecision,
-            'promotion_color'    => $promotionColor,
-            'rank'               => $rankString,
-            'highest'            => $highest,
-            'highest_subject'    => $highestSubject,
-            'grades'             => $formatted,
+            'average'            => $released ? $displayAverage : null,
+            'annual_average'     => $released ? $displayAverage : null,
+            'promotion_decision' => $released ? $promotionDecision : null,
+            'promotion_color'    => $released ? $promotionColor : null,
+            'rank'               => $released ? $rankString : null,
+            'highest'            => $released ? $highest : null,
+            'highest_subject'    => $released ? $highestSubject : null,
+            'grades'             => $released ? $formatted : [],
+            'result_release_date' => $releaseDate ?: null,
+            'result_released'    => $released,
         ]);
     }
 
