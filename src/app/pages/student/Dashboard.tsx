@@ -96,7 +96,7 @@ export default function StudentDashboard() {
   return (
     <div>
       {/* Welcome */}
-      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div className="page-header-responsive">
         <div>
           <div style={{ fontSize: 11, color: "#219EBC", textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 500, marginBottom: 4 }}>
             Dashboard Overview

@@ -261,19 +261,21 @@ export default function Fees() {
           )}
 
           <Glass>
-            <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", gap: 12, alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, padding: "7px 12px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
+            <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "1 1 200px", minWidth: 160, padding: "7px 12px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
                 <Search size={14} style={{ color: "var(--subtext)" }} />
                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search student…"
-                  style={{ border: "none", background: "transparent", fontSize: 13, color: "var(--heading)", outline: "none", flex: 1 }} />
+                  style={{ border: "none", background: "transparent", fontSize: 13, color: "var(--heading)", outline: "none", flex: 1, minWidth: 0 }} />
               </div>
-              {["all", "paid", "partial", "pending"].map(f => (
-                <button key={f} onClick={() => setFilter(f)} style={{
-                  padding: "5px 12px", borderRadius: 7, border: `1px solid ${filter === f ? "#219EBC" : "var(--glass-border)"}`,
-                  background: filter === f ? "rgba(33,158,188,0.12)" : "var(--muted)", cursor: "pointer", fontSize: 11.5,
-                  color: filter === f ? "#219EBC" : "var(--subtext)", fontWeight: filter === f ? 700 : 400, textTransform: "capitalize"
-                }}>{f}</button>
-              ))}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {["all", "paid", "partial", "pending"].map(f => (
+                  <button key={f} onClick={() => setFilter(f)} style={{
+                    padding: "5px 12px", borderRadius: 7, border: `1px solid ${filter === f ? "#219EBC" : "var(--glass-border)"}`,
+                    background: filter === f ? "rgba(33,158,188,0.12)" : "var(--muted)", cursor: "pointer", fontSize: 11.5,
+                    color: filter === f ? "#219EBC" : "var(--subtext)", fontWeight: filter === f ? 700 : 400, textTransform: "capitalize"
+                  }}>{f}</button>
+                ))}
+              </div>
             </div>
 
             {loading ? (
@@ -289,25 +291,25 @@ export default function Fees() {
                 const balance = f.total - f.paid;
                 return (
                   <div key={f.id} style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
                       <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(33,158,188,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#219EBC", flexShrink: 0 }}>
                         {f.student.split(" ").map(w => w[0]).join("")}
                       </div>
-                      <div style={{ flex: 1 }}>
+                      <div style={{ flex: "1 1 180px", minWidth: 160 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{f.student}</div>
                           <span style={{ fontSize: 11, fontWeight: 700, color: sc[f.status]?.c, background: sc[f.status]?.bg, padding: "2px 8px", borderRadius: 5, textTransform: "capitalize" }}>{f.status}</span>
                         </div>
                         <div style={{ fontSize: 10.5, color: "var(--subtext)" }}>{f.class} · {f.description} · ₦{f.paid.toLocaleString()} paid of ₦{f.total.toLocaleString()}</div>
                       </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ textAlign: "right", marginLeft: "auto", flexShrink: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: balance > 0 ? "#FB8500" : "#219EBC" }}>
                           {balance > 0 ? `₦${balance.toLocaleString()} balance` : "CLEARED"}
                         </div>
                         <div style={{ fontSize: 10, color: "var(--subtext)" }}>{pct}% paid</div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                       <div style={{ flex: 1, height: 5, borderRadius: 3, background: "var(--muted)", overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${sc[f.status]?.c}88, ${sc[f.status]?.c})` }} />
                       </div>

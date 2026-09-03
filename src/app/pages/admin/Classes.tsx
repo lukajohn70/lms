@@ -97,6 +97,16 @@ export default function AdminClasses() {
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeClass, setActiveClass] = useState<any>(null);
+  const subjectsRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectClass = (c: any) => {
+    setActiveClass(c);
+    if (typeof window !== "undefined" && window.innerWidth <= 768) {
+      setTimeout(() => {
+        subjectsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    }
+  };
   
   const [showAddClass, setShowAddClass] = useState(false);
   const [newClassName, setNewClassName] = useState("");
@@ -266,67 +276,96 @@ export default function AdminClasses() {
       </div>
 
       {activeTab === 'classes' && (
+        <>
+          {/* Quick mobile class switcher so user never has to scroll past classes to reach subjects */}
+          <div className="md-hidden" style={{ marginBottom: 14 }}>
+            <Glass style={{ padding: "12px 16px" }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                Select Class to Manage:
+              </label>
+              <select
+                value={activeClass?.id || ""}
+                onChange={(e) => {
+                  const found = classes.find(c => c.id === parseInt(e.target.value));
+                  if (found) handleSelectClass(found);
+                }}
+                style={{
+                  width: "100%", padding: "9px 12px", borderRadius: 8,
+                  background: "var(--background)", border: "1.5px solid rgba(251,133,0,0.4)",
+                  color: "var(--heading)", fontSize: 13, fontWeight: 700, outline: "none", boxSizing: "border-box"
+                }}
+              >
+                <option value="">-- Choose Class ({classes.length} Available) --</option>
+                {classes.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.department ? `(${c.department})` : ''}
+                  </option>
+                ))}
+              </select>
+            </Glass>
+          </div>
 
-      <div className="responsive-grid-2" style={{ alignItems: "start", gap: 20 }}>
-        {/* Classes List */}
-        <Glass style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px", color: "var(--heading)" }}>Grade Levels</h3>
-          {loading ? (
-            <div style={{ color: "var(--subtext)", fontSize: 13 }}>Loading...</div>
-          ) : classes.length === 0 ? (
-            <div style={{ color: "var(--subtext)", fontSize: 13 }}>No classes found. Create one.</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {classes.map(c => (
-                <div
-                  key={c.id}
-                  onClick={() => setActiveClass(c)}
-                  style={{
-                    padding: "12px 16px", borderRadius: 10, border: "1px solid var(--glass-border)", cursor: "pointer",
-                    background: activeClass?.id === c.id ? "rgba(251,133,0,0.1)" : "var(--muted)",
-                    borderColor: activeClass?.id === c.id ? "rgba(251,133,0,0.5)" : "var(--glass-border)",
-                    display: "flex", justifyContent: "space-between", alignItems: "center"
-                  }}
-                >
+          <div className="responsive-grid-2" style={{ alignItems: "start", gap: 20 }}>
+            {/* Classes List */}
+            <Glass style={{ padding: 20 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px", color: "var(--heading)" }}>Grade Levels</h3>
+              {loading ? (
+                <div style={{ color: "var(--subtext)", fontSize: 13 }}>Loading...</div>
+              ) : classes.length === 0 ? (
+                <div style={{ color: "var(--subtext)", fontSize: 13 }}>No classes found. Create one.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {classes.map(c => (
+                    <div
+                      key={c.id}
+                      onClick={() => handleSelectClass(c)}
+                      style={{
+                        padding: "12px 16px", borderRadius: 10, border: "1px solid var(--glass-border)", cursor: "pointer",
+                        background: activeClass?.id === c.id ? "rgba(251,133,0,0.1)" : "var(--muted)",
+                        borderColor: activeClass?.id === c.id ? "rgba(251,133,0,0.5)" : "var(--glass-border)",
+                        display: "flex", justifyContent: "space-between", alignItems: "center"
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: activeClass?.id === c.id ? "#FB8500" : "var(--heading)" }}>{c.name}</div>
+                        {c.department && <div style={{ fontSize: 11, color: "var(--subtext)" }}>{c.department}</div>}
+                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteClass(c.id); }} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer" }}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Glass>
+
+            {/* Subjects Allocation */}
+            <div ref={subjectsRef}>
+              <Glass style={{ padding: 20 }}>
+                {!activeClass ? (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtext)" }}>
+                    <Settings size={40} style={{ opacity: 0.3, marginBottom: 12 }} />
+                    <div style={{ fontSize: 14 }}>Select a class to allocate subjects.</div>
+                  </div>
+                ) : (
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: activeClass?.id === c.id ? "#FB8500" : "var(--heading)" }}>{c.name}</div>
-                    {c.department && <div style={{ fontSize: 11, color: "var(--subtext)" }}>{c.department}</div>}
-                  </div>
-                  <button onClick={(e) => { e.stopPropagation(); handleDeleteClass(c.id); }} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer" }}>
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </Glass>
-
-        {/* Subjects Allocation */}
-        <Glass style={{ padding: 20 }}>
-          {!activeClass ? (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtext)" }}>
-              <Settings size={40} style={{ opacity: 0.3, marginBottom: 12 }} />
-              <div style={{ fontSize: 14 }}>Select a class to allocate subjects.</div>
-            </div>
-          ) : (
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--heading)" }}>
-                    Subjects for {activeClass.name} {activeClass.department ? `(${activeClass.department})` : ''}
-                  </h3>
-                  <div style={{ fontSize: 12, color: "var(--subtext)", marginTop: 4 }}>
-                    Select subjects and mark them as core or elective.
-                  </div>
-                </div>
-                <button
-                  onClick={handleSaveSubjects}
-                  disabled={savingSubjects}
-                  style={{ padding: "8px 16px", borderRadius: 8, background: "#219EBC", border: "none", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
-                >
-                  <Save size={14} /> {savingSubjects ? "Saving..." : "Save Allocations"}
-                </button>
-              </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                      <div>
+                        <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--heading)" }}>
+                          Subjects for {activeClass.name} {activeClass.department ? `(${activeClass.department})` : ''}
+                        </h3>
+                        <div style={{ fontSize: 12, color: "var(--subtext)", marginTop: 4 }}>
+                          Select subjects and mark them as core or elective.
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleSaveSubjects}
+                        disabled={savingSubjects}
+                        style={{ padding: "8px 16px", borderRadius: 8, background: "#219EBC", border: "none", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                      >
+                        <Save size={14} /> {savingSubjects ? "Saving..." : "Save Allocations"}
+                      </button>
+                    </div>
 
               <div className="responsive-grid-2" style={{ maxHeight: 600, overflowY: "auto", gap: 12 }}>
                 {courses.map(course => {
@@ -380,7 +419,9 @@ export default function AdminClasses() {
           )}
         </Glass>
       </div>
-      )}
+    </div>
+  </>
+)}
 
       {activeTab === 'subjects' && (
         <Glass style={{ padding: 20 }}>

@@ -347,8 +347,8 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* Responsive Table Wrapper */}
-        <div className="table-responsive-wrapper">
+        {/* Desktop Table View */}
+        <div className="desktop-only table-responsive-wrapper">
           <div style={{ minWidth: 760 }}>
             {/* Table Header */}
             <div style={{ display: "grid", gridTemplateColumns: "1.2fr 80px 180px 180px 80px 120px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
@@ -357,76 +357,136 @@ export default function UsersPage() {
               ))}
             </div>
 
-        {/* Table Body */}
-        {loading ? (
-          <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>Loading users...</div>
-        ) : error ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#fb8500" }}>⚠ {error}</div>
-        ) : filtered.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>No users found matching search criteria.</div>
-        ) : (
-          filtered.map(u => {
-            const userName = `${u.first_name} ${u.last_name}`;
-            const userInitials = (u.first_name?.[0] || "") + (u.last_name?.[0] || "");
-            const userJoined = new Date(u.created_at).toLocaleDateString();
-            const isActive = u.status !== "inactive";
-            return (
-              <div key={u.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 80px 180px 180px 80px 120px", padding: "11px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: `${roleColor(u.role)}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: roleColor(u.role), flexShrink: 0 }}>
-                    {userInitials}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--heading)" }}>{userName}</div>
-                    <div style={{ fontSize: 10, color: "var(--subtext)" }}>Registered: {userJoined}</div>
-                  </div>
-                </div>
-                <div>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: roleColor(u.role), background: `${roleColor(u.role)}12`, padding: "2px 7px", borderRadius: 5, textTransform: "uppercase" }}>{u.role}</span>
-                </div>
-                <span style={{ fontSize: 11.5, color: "var(--subtext)", overflow: "hidden", textOverflow: "ellipsis" }}>{u.email}</span>
-                <span style={{ fontSize: 11.5, color: "var(--subtext)" }}>
-                  {u.role.toLowerCase() === "student" ? (
-                    <div>
-                      {u.admission_number ? <div>Adm No: {u.admission_number}</div> : <div>No Admission No</div>}
-                      {(() => {
-                        const sClass = classes.find(c => c.id === u.class_id);
-                        return (
-                          <div style={{ fontSize: 10, color: u.class_id ? "#219EBC" : "#e76f51", fontWeight: 700, marginTop: 2 }}>
-                            {sClass ? `${sClass.name} ${sClass.department ? `(${sClass.department})` : ''}` : "Unassigned Class"}
-                          </div>
-                        );
-                      })()}
+            {/* Table Body */}
+            {loading ? (
+              <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>Loading users...</div>
+            ) : error ? (
+              <div style={{ padding: 40, textAlign: "center", color: "#fb8500" }}>⚠ {error}</div>
+            ) : filtered.length === 0 ? (
+              <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>No users found matching search criteria.</div>
+            ) : (
+              filtered.map(u => {
+                const userName = `${u.first_name} ${u.last_name}`;
+                const userInitials = (u.first_name?.[0] || "") + (u.last_name?.[0] || "");
+                const userJoined = new Date(u.created_at).toLocaleDateString();
+                const isActive = u.status !== "inactive";
+                return (
+                  <div key={u.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 80px 180px 180px 80px 120px", padding: "11px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: `${roleColor(u.role)}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: roleColor(u.role), flexShrink: 0 }}>
+                        {userInitials}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--heading)" }}>{userName}</div>
+                        <div style={{ fontSize: 10, color: "var(--subtext)" }}>Registered: {userJoined}</div>
+                      </div>
                     </div>
-                  ) : "—"}
-                </span>
-                <button onClick={() => toggleStatus(u.id)} style={{ display: "inline-flex", alignSelf: "start", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 6, border: "none", background: isActive ? "rgba(42,157,143,0.12)" : "rgba(231,111,81,0.1)", cursor: "pointer" }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 600, color: isActive ? "#2a9d8f" : "#e76f51" }}>{isActive ? "active" : "inactive"}</span>
-                </button>
-                <div style={{ display: "flex", gap: 5 }}>
-                  {(u.role.toLowerCase() === "parent" || u.role.toLowerCase() === "student") && (
-                    <button onClick={() => { setLinkingUser(u); setSelectedTargetId(""); }}
-                      style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(33,158,188,0.08)", border: "1px solid rgba(33,158,188,0.2)", cursor: "pointer" }}
-                      title={u.role.toLowerCase() === "parent" ? "Link Student" : "Link Parent"}>
-                      <Link size={12} style={{ color: "#219EBC" }} />
+                    <div>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: roleColor(u.role), background: `${roleColor(u.role)}12`, padding: "2px 7px", borderRadius: 5, textTransform: "uppercase" }}>{u.role}</span>
+                    </div>
+                    <span style={{ fontSize: 11.5, color: "var(--subtext)", overflow: "hidden", textOverflow: "ellipsis" }}>{u.email}</span>
+                    <span style={{ fontSize: 11.5, color: "var(--subtext)" }}>
+                      {u.role.toLowerCase() === "student" ? (
+                        <div>
+                          {u.admission_number ? <div>Adm No: {u.admission_number}</div> : <div>No Admission No</div>}
+                          {(() => {
+                            const sClass = classes.find(c => c.id === u.class_id);
+                            return (
+                              <div style={{ fontSize: 10, color: u.class_id ? "#219EBC" : "#e76f51", fontWeight: 700, marginTop: 2 }}>
+                                {sClass ? `${sClass.name} ${sClass.department ? `(${sClass.department})` : ''}` : "Unassigned Class"}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : "—"}
+                    </span>
+                    <button onClick={() => toggleStatus(u.id)} style={{ display: "inline-flex", alignSelf: "start", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 6, border: "none", background: isActive ? "rgba(42,157,143,0.12)" : "rgba(231,111,81,0.1)", cursor: "pointer" }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 600, color: isActive ? "#2a9d8f" : "#e76f51" }}>{isActive ? "active" : "inactive"}</span>
                     </button>
-                  )}
-                  {u.role.toLowerCase() === "student" && (
-                    <button onClick={() => { setAssigningClassUser(u); setSelectedClassId(String(u.class_id || "")); }}
-                      style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(251,133,0,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
-                      title="Assign Class">
-                      <BookOpen size={12} style={{ color: "#FB8500" }} />
-                    </button>
-                  )}
-                  <button onClick={() => deleteUser(u.id)} style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(231,111,81,0.08)", border: "1px solid rgba(231,111,81,0.2)", cursor: "pointer" }}>
-                    <Trash2 size={12} style={{ color: "#e76f51" }} />
-                  </button>
-                </div>
-              </div>
-            );
-          })
-        )}
+                    <div style={{ display: "flex", gap: 5 }}>
+                      {(u.role.toLowerCase() === "parent" || u.role.toLowerCase() === "student") && (
+                        <button onClick={() => { setLinkingUser(u); setSelectedTargetId(""); }}
+                          style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(33,158,188,0.08)", border: "1px solid rgba(33,158,188,0.2)", cursor: "pointer" }}
+                          title={u.role.toLowerCase() === "parent" ? "Link Student" : "Link Parent"}>
+                          <Link size={12} style={{ color: "#219EBC" }} />
+                        </button>
+                      )}
+                      {u.role.toLowerCase() === "student" && (
+                        <button onClick={() => { setAssigningClassUser(u); setSelectedClassId(String(u.class_id || "")); }}
+                          style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(251,133,0,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
+                          title="Assign Class">
+                          <BookOpen size={12} style={{ color: "#FB8500" }} />
+                        </button>
+                      )}
+                      <button onClick={() => deleteUser(u.id)} style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(231,111,81,0.08)", border: "1px solid rgba(231,111,81,0.2)", cursor: "pointer" }}>
+                        <Trash2 size={12} style={{ color: "#e76f51" }} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
+        </div>
+
+        {/* Mobile Only Card View (Zero Sideways Scroll) */}
+        <div className="mobile-only" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
+          {loading ? (
+            <div style={{ padding: 30, textAlign: "center", color: "var(--subtext)" }}>Loading users...</div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: 30, textAlign: "center", color: "var(--subtext)" }}>No users found.</div>
+          ) : (
+            filtered.map(u => {
+              const userName = `${u.first_name} ${u.last_name}`;
+              const userInitials = (u.first_name?.[0] || "") + (u.last_name?.[0] || "");
+              const isActive = u.status !== "inactive";
+              const sClass = classes.find(c => c.id === u.class_id);
+              return (
+                <div key={u.id} style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: `${roleColor(u.role)}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: roleColor(u.role) }}>
+                        {userInitials}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--heading)" }}>{userName}</div>
+                        <div style={{ fontSize: 11, color: "var(--subtext)" }}>{u.email}</div>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: roleColor(u.role), background: `${roleColor(u.role)}15`, padding: "2px 7px", borderRadius: 5, textTransform: "uppercase" }}>{u.role}</span>
+                  </div>
+
+                  {u.role.toLowerCase() === "student" && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, background: "var(--glass-bg)", padding: "6px 10px", borderRadius: 6 }}>
+                      <span>{u.admission_number ? <strong>Adm: {u.admission_number}</strong> : <span style={{ color: "var(--subtext)" }}>No Adm No</span>}</span>
+                      <span style={{ color: u.class_id ? "#219EBC" : "#e76f51", fontWeight: 600 }}>{sClass ? sClass.name : "No Class"}</span>
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 4, borderTop: "1px solid var(--glass-border)" }}>
+                    <button onClick={() => toggleStatus(u.id)} style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: isActive ? "rgba(42,157,143,0.12)" : "rgba(231,111,81,0.1)", cursor: "pointer", fontSize: 11, fontWeight: 600, color: isActive ? "#2a9d8f" : "#e76f51" }}>
+                      {isActive ? "✔ Active" : "✖ Inactive"}
+                    </button>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {(u.role.toLowerCase() === "parent" || u.role.toLowerCase() === "student") && (
+                        <button onClick={() => { setLinkingUser(u); setSelectedTargetId(""); }} style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                          <Link size={11} /> Link
+                        </button>
+                      )}
+                      {u.role.toLowerCase() === "student" && (
+                        <button onClick={() => { setAssigningClassUser(u); setSelectedClassId(String(u.class_id || "")); }} style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(251,133,0,0.1)", border: "1px solid rgba(251,133,0,0.3)", color: "#FB8500", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                          <BookOpen size={11} /> Class
+                        </button>
+                      )}
+                      <button onClick={() => deleteUser(u.id)} style={{ padding: "5px 8px", borderRadius: 6, background: "rgba(231,111,81,0.1)", border: "1px solid rgba(231,111,81,0.3)", color: "#e76f51", cursor: "pointer" }}>
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </Glass>
 

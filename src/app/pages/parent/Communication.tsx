@@ -202,7 +202,7 @@ export default function ParentCommunication() {
           </button>
         </Glass>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 16, height: "calc(100vh - 200px)" }}>
+        <div className="chat-layout-split">
           {/* Threads list */}
           <Glass style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--glass-border)" }}>

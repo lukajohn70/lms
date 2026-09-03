@@ -332,7 +332,7 @@ export default function AdminSettings() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div className="page-header-responsive">
         <div>
           <div style={{ fontSize: 11, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Admin</div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--heading)", margin: 0 }}>
@@ -404,7 +404,7 @@ export default function AdminSettings() {
 
       {activeTab === "system" ? (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+          <div className="responsive-grid-2" style={{ gap: 18, marginBottom: 18 }}>
             {/* Section 1: General Info */}
             <Glass>
               <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
@@ -655,16 +655,16 @@ export default function AdminSettings() {
                 <span style={{ fontSize: 11.5, color: "var(--subtext)", marginLeft: 10 }}>Control which payment options parents can use during admissions</span>
               </div>
             </div>
-            <div style={{ padding: "4px 20px 12px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0 }}>
+            <div className="responsive-grid-3" style={{ padding: "8px 20px 14px", gap: 12 }}>
               {[
                 { l: "Credit / Debit Card", d: "Allow parents to pay with Visa, Mastercard, etc.", state: payMethodCard, set: setPayMethodCard },
                 { l: "Bank Transfer", d: "Allow parents to pay via direct bank transfer", state: payMethodBank, set: setPayMethodBank },
                 { l: "USSD Code", d: "Allow parents to pay using mobile USSD shortcodes", state: payMethodUssd, set: setPayMethodUssd },
-              ].map((t, i, arr) => (
-                <div key={t.l} style={{ display: "flex", alignItems: "center", justifycontent: "space-between", justifyContent: "space-between", padding: "14px 0", borderBottom: "1px solid var(--glass-border)", borderRight: i < arr.length - 1 ? "1px solid var(--glass-border)" : "none", paddingRight: i < arr.length - 1 ? 20 : 0, paddingLeft: i > 0 ? 20 : 0 }}>
+              ].map((t) => (
+                <div key={t.l} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
                   <div>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--heading)" }}>{t.l}</div>
-                    <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>{t.d}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{t.l}</div>
+                    <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{t.d}</div>
                   </div>
                   <button onClick={() => t.set(!t.state)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginLeft: 12, flexShrink: 0 }}>
                     {t.state ? <ToggleRight size={30} style={{ color: "#2a9d8f" }} /> : <ToggleLeft size={30} style={{ color: "rgba(142,202,230,0.3)" }} />}
@@ -676,7 +676,7 @@ export default function AdminSettings() {
         </>
       ) : (
         /* My Profile Tab Content */
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, alignItems: "start" }}>
+        <div className="responsive-grid-2" style={{ gap: 18, alignItems: "start" }}>
           {/* Card 1: Personal Info */}
           <Glass>
             <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
@@ -922,7 +922,7 @@ export default function AdminSettings() {
             </div>
           </div>
           <form onSubmit={handleGuideUpload} style={{ padding: "18px 20px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
+            <div className="responsive-grid-3" style={{ gap: 14, marginBottom: 16 }}>
               {(["nursery", "primary", "secondary"] as const).map(cat => {
                 const info = {
                   nursery: { label: "Nursery Guide", emoji: "🐣", desc: "NUR 1–3 curriculum guide (PDF)" },

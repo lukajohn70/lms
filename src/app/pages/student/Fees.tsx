@@ -78,7 +78,7 @@ export default function Fees() {
       ) : (
         <>
           {/* Summary */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 20 }}>
+          <div className="responsive-grid-3">
             {[
               { l: "Total Outstanding", v: `₦${totalOwed.toLocaleString()}`, c: "#FB8500", icon: <AlertTriangle size={15}/> },
               { l: "Total Paid", v: `₦${totalPaid.toLocaleString()}`, c: "#219EBC", icon: <CheckCircle size={15}/> },
@@ -94,7 +94,7 @@ export default function Fees() {
             ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 18 }}>
+          <div className="responsive-grid-2">
             {/* Fee breakdown */}
             <Glass>
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 18px", borderBottom: "1px solid var(--glass-border)" }}>

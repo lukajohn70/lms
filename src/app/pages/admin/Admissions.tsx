@@ -639,7 +639,8 @@ export default function AdminAdmissions() {
         ) : filteredApps.length === 0 ? (
           <div style={{ padding: 40, textAlign: "center", color: "#5a7f92" }}>No applications match filters.</div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <>
+            <div className="desktop-only" style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
               <thead>
                 <tr style={{ borderBottom: `2.5px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, textAlign: "left", opacity: 0.75 }}>
@@ -797,7 +798,112 @@ export default function AdminAdmissions() {
               </tbody>
             </table>
           </div>
-        )}
+
+          {/* MOBILE ONLY CARD VIEW - ELIMINATES SIDEWAYS SCROLL */}
+          <div className="mobile-only" style={{ display: "flex", flexDirection: "column", gap: 12, padding: 14 }}>
+            {filteredApps.map((app) => (
+              <div key={app.id} style={{ padding: 16, borderRadius: 12, background: theme === "dark" ? "rgba(255,255,255,0.03)" : "var(--muted)", border: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.07)" : "var(--glass-border)"}`, display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Top: Candidate and photo */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    {app.passport_path ? (
+                      <img 
+                        src={BACKEND_URL + app.passport_path} 
+                        alt="Candidate" 
+                        style={{ width: 44, height: 50, objectFit: "cover", borderRadius: 8, border: "1.5px solid rgba(251,133,0,0.2)" }} 
+                      />
+                    ) : (
+                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(33,158,188,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#219EBC" }}>
+                        {app.child_first_name?.[0]}{app.child_last_name?.[0]}
+                      </div>
+                    )}
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 14.5, color: "var(--heading)" }}>{app.child_first_name} {app.child_last_name}</div>
+                      <div style={{ fontSize: 12, color: "var(--subtext)", marginTop: 2 }}>Class: <strong>{app.grade_level}</strong> · {app.child_gender}</div>
+                      <div style={{ fontWeight: 700, color: "#fb8500", fontSize: 12, marginTop: 3 }}>App: {app.application_number}</div>
+                    </div>
+                  </div>
+                  <div>{getStatusBadge(app.status)}</div>
+                </div>
+
+                {/* Admission number if admitted */}
+                {app.admission_number && (
+                  <div style={{ padding: "6px 10px", borderRadius: 6, background: "rgba(42,157,143,0.1)", color: "#2a9d8f", fontSize: 12, fontWeight: 700 }}>
+                    Admission No: {app.admission_number}
+                  </div>
+                )}
+
+                {/* Parent contact */}
+                <div style={{ fontSize: 12, color: "var(--subtext)", background: "var(--glass-bg)", padding: "8px 12px", borderRadius: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+                  <div style={{ fontWeight: 600, color: "var(--heading)" }}>Parent: {app.parent_first_name} {app.parent_last_name} ({app.parent_relationship})</div>
+                  <div>📧 {app.parent_email}</div>
+                  <div>📞 {app.parent_phone}</div>
+                </div>
+
+                {/* Exam scores */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", borderRadius: 8, background: "var(--glass-bg)", fontSize: 12 }}>
+                  <span>Exam Scores:</span>
+                  {app.score_english !== null || app.score_math !== null || app.score_general !== null ? (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <span style={{ background: "rgba(33,158,188,0.1)", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Eng: {app.score_english}</span>
+                      <span style={{ background: "rgba(251,133,0,0.1)", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Math: {app.score_math}</span>
+                      <span style={{ background: "rgba(42,157,143,0.1)", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Gen: {app.score_general}</span>
+                    </div>
+                  ) : (
+                    <span style={{ opacity: 0.6 }}>Not Graded</span>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
+                  <button
+                    onClick={() => handleOpenSchedule(app)}
+                    style={{ flex: "1 1 110px", padding: "7px 10px", borderRadius: 7, border: "1px solid #219EBC", color: "#219EBC", background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700, textAlign: "center" }}
+                  >
+                    Schedule Exam
+                  </button>
+                  <button
+                    onClick={() => handleOpenGrade(app)}
+                    style={{ flex: "1 1 100px", padding: "7px 10px", borderRadius: 7, border: "1px solid #FFB703", color: "#FFB703", background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700, textAlign: "center" }}
+                  >
+                    Grade Exam
+                  </button>
+                  {app.status !== "admitted" && app.status !== "rejected" && (
+                    <>
+                      <button
+                        onClick={() => handleApprove(app.id)}
+                        style={{ flex: "1 1 80px", padding: "7px 10px", borderRadius: 7, border: "none", color: "white", background: "#2a9d8f", cursor: "pointer", fontSize: 11.5, fontWeight: 700 }}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleReject(app.id)}
+                        style={{ flex: "1 1 80px", padding: "7px 10px", borderRadius: 7, border: "none", color: "white", background: "#e76f51", cursor: "pointer", fontSize: 11.5, fontWeight: 700 }}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => handlePrintCard(app)}
+                    style={{ padding: "7px 12px", borderRadius: 7, border: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.12)" : "#dde3e8"}`, color: "inherit", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 11.5 }}
+                  >
+                    <Printer size={13} /> Card
+                  </button>
+                  {app.status === "admitted" && app.admission_number && (
+                    <button
+                      onClick={() => handlePrintAdmissionLetter(app)}
+                      style={{ padding: "7px 12px", borderRadius: 7, border: "1px solid #2a9d8f", color: "#2a9d8f", background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
+                    >
+                      <FileText size={13} /> Letter
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       </Glass>
 
       {/* MODAL 1: GRADE EXAM */}

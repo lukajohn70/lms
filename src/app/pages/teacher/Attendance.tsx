@@ -137,36 +137,40 @@ export default function Attendance() {
             </span>
           </div>
 
-          {/* Header row */}
-          <div style={{ display: "grid", gridTemplateColumns: `1fr repeat(${dates.length},85px) 80px`, padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
-            <span style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>Student</span>
-            {dates.map(d => (
-              <span key={d} style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textAlign: "center", textTransform: "uppercase" }}>
-                {formatDateLabel(d)}
-              </span>
-            ))}
-            <span style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textAlign: "center", textTransform: "uppercase" }}>Rate</span>
-          </div>
-
-          {students.map((s) => {
-            const rate = getRate(s);
-            return (
-              <div key={s.id} style={{ display: "grid", gridTemplateColumns: `1fr repeat(${dates.length},85px) 80px`, padding: "9px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
-                <span style={{ fontSize: 12.5, color: "var(--heading)", fontWeight: 500, overflow: "hidden", textTargetContent: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
+          <div className="table-responsive-wrapper">
+            <div style={{ minWidth: 620 }}>
+              {/* Header row */}
+              <div style={{ display: "grid", gridTemplateColumns: `1fr repeat(${dates.length},85px) 80px`, padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
+                <span style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>Student</span>
                 {dates.map(d => (
-                  <div key={d} style={{ display: "flex", justifyContent: "center" }}>
-                    <button onClick={() => toggle(s.id, d)}
-                      style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: (s.attendance[d]) ? "rgba(33,158,188,0.15)" : "rgba(251,133,0,0.1)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {(s.attendance[d]) ? <CheckCircle size={16} style={{ color: "#219EBC" }} /> : <XCircle size={16} style={{ color: "#FB8500" }} />}
-                    </button>
-                  </div>
+                  <span key={d} style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textAlign: "center", textTransform: "uppercase" }}>
+                    {formatDateLabel(d)}
+                  </span>
                 ))}
-                <div style={{ textAlign: "center" }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: rate < 80 ? "#FFB703" : "#219EBC" }}>{rate}%</span>
-                </div>
+                <span style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textAlign: "center", textTransform: "uppercase" }}>Rate</span>
               </div>
-            );
-          })}
+
+              {students.map((s) => {
+                const rate = getRate(s);
+                return (
+                  <div key={s.id} style={{ display: "grid", gridTemplateColumns: `1fr repeat(${dates.length},85px) 80px`, padding: "9px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
+                    <span style={{ fontSize: 12.5, color: "var(--heading)", fontWeight: 500, overflow: "hidden", textTargetContent: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
+                    {dates.map(d => (
+                      <div key={d} style={{ display: "flex", justifyContent: "center" }}>
+                        <button onClick={() => toggle(s.id, d)}
+                          style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: (s.attendance[d]) ? "rgba(33,158,188,0.15)" : "rgba(251,133,0,0.1)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {(s.attendance[d]) ? <CheckCircle size={16} style={{ color: "#219EBC" }} /> : <XCircle size={16} style={{ color: "#FB8500" }} />}
+                        </button>
+                      </div>
+                    ))}
+                    <div style={{ textAlign: "center" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: rate < 80 ? "#FFB703" : "#219EBC" }}>{rate}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </Glass>
       )}
     </div>

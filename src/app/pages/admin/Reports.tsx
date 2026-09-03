@@ -229,7 +229,8 @@ export default function Reports() {
             <Glass style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>No subject submissions found for {selectedTerm}.</Glass>
           ) : (
             <Glass>
-              <div className="table-responsive-wrapper">
+              {/* DESKTOP TABLE VIEW */}
+              <div className="desktop-only table-responsive-wrapper">
                 <div style={{ minWidth: 820 }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 140px 260px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase" }}>
                     <span>Subject</span><span>Assigned Teacher</span>
@@ -276,6 +277,49 @@ export default function Reports() {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* MOBILE CARD VIEW (NO HORIZONTAL SCROLLING) */}
+              <div className="mobile-only" style={{ display: "flex", flexDirection: "column", gap: 12, padding: 14 }}>
+                {submissions.map(sub => {
+                  const isPublished = sub.status === "published";
+                  const isSubmitted = sub.status === "submitted";
+                  return (
+                    <div key={sub.course_id} style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>{sub.course_name}</div>
+                          <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>Teacher: {sub.teacher_name || "Unassigned"}</div>
+                        </div>
+                        <div>
+                          {isPublished && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(42,157,143,0.12)",color:"#2a9d8f",border:"1px solid rgba(42,157,143,0.3)",fontSize:11,fontWeight:700 }}><Lock size={10}/> Published</span>}
+                          {isSubmitted && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(255,183,3,0.15)",color:"#FFB703",border:"1px solid rgba(255,183,3,0.3)",fontSize:11,fontWeight:700 }}><Clock size={10}/> Pending</span>}
+                          {sub.status==="draft" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(33,158,188,0.1)",color:"var(--subtext)",border:"1px solid var(--glass-border)",fontSize:11,fontWeight:600 }}>Draft</span>}
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderRadius: 8, background: "var(--glass-bg)", fontSize: 12 }}>
+                        <div>Graded: <strong style={{ color: "var(--heading)" }}>{sub.graded_count} / {sub.enrolled_count}</strong></div>
+                        <div>Class Avg: <strong style={{ color: "#219EBC" }}>{sub.class_average ? `${sub.class_average}%` : "—"}</strong></div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
+                        <button onClick={() => handlePreview(sub)} style={{ flex: "1 1 90px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(33,158,188,0.12)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:12,fontWeight:600,cursor:"pointer" }}>
+                          <Eye size={13} /> Preview
+                        </button>
+                        {isPublished ? (
+                          <button onClick={() => handleUpdateStatus(sub.course_id,"draft")} style={{ flex: "1 1 120px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(231,111,81,0.12)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:12,fontWeight:600,cursor:"pointer" }}>
+                            <Unlock size={13} /> Unlock
+                          </button>
+                        ) : (
+                          <button onClick={() => handleUpdateStatus(sub.course_id,"published")} style={{ flex: "1 1 140px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 12px",borderRadius:7,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>
+                            <CheckCircle size={13} /> Approve &amp; Publish
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </Glass>
           )}

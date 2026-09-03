@@ -283,21 +283,23 @@ export default function ParentFees() {
         <Glass style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>No outstanding or cleared fee invoices for this student.</Glass>
       ) : (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 20 }}>
+          <div className="responsive-grid-3">
             {[
               { l: "Total Outstanding", v: `₦${totalOwed.toLocaleString()}`, c: "#FB8500", icon: <AlertTriangle size={15}/> },
               { l: "Total Paid", v: `₦${totalPaid.toLocaleString()}`, c: "#219EBC", icon: <CheckCircle size={15}/> },
-              { l: "Next Payment Due", v: feeItems.find(f => f.paid < f.amount)?.due || "No Pending Fees", c: "#FFB703", icon: <Receipt size={15}/> },
+              { l: "Next Payment Due", v: feeItems.find(f => f.paid < f.amount)?.due || "No Pending Fees", c: "#FFB703", icon: <CreditCard size={15}/> },
             ].map(s => (
               <Glass key={s.l} style={{ padding: "16px 20px" }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: `${s.c}18`, display: "flex", alignItems: "center", justifyContent: "center", color: s.c, marginBottom: 10 }}>{s.icon}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: `${s.c}18`, display: "flex", alignItems: "center", justifyContent: "center", color: s.c }}>{s.icon}</div>
+                </div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: s.c }}>{s.v}</div>
                 <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 3 }}>{s.l}</div>
               </Glass>
             ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 18 }} className="parent-grid-layout">
+          <div className="responsive-grid-2 parent-grid-layout">
             <Glass>
               <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 8 }}>
                 <Receipt size={14} style={{ color: "#FFB703" }} />

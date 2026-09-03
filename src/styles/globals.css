@@ -148,3 +148,35 @@ html, body {
   gap: 12px;
   margin-bottom: 20px;
 }
+
+/* Visibility utilities */
+@media (min-width: 769px) {
+  .md-hidden {
+    display: none !important;
+  }
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* Chat Layout Split (Communication pages) */
+.chat-layout-split {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 16px;
+  height: calc(100vh - 200px);
+}
+
+@media (max-width: 768px) {
+  .chat-layout-split {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    gap: 14px;
+  }
+}
