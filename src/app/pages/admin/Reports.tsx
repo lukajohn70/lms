@@ -328,21 +328,38 @@ export default function Reports() {
 
       {/* Grade Preview Modal */}
       {previewOpen && (
-        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(4px)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20 }}>
-          <div style={{ background:"var(--background)",border:"1px solid var(--glass-border)",borderRadius:16,width:"100%",maxWidth:860,maxHeight:"88vh",display:"flex",flexDirection:"column",boxShadow:"0 24px 64px rgba(0,0,0,0.45)" }}>
+        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(4px)",zIndex:9999,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:0 }}
+          onClick={e => { if (e.target === e.currentTarget) setPreviewOpen(false); }}
+        >
+          <div style={{
+            background:"var(--background)",border:"1px solid var(--glass-border)",
+            borderRadius:"16px 16px 0 0",width:"100%",maxWidth:900,
+            maxHeight:"92vh",display:"flex",flexDirection:"column",
+            boxShadow:"0 -12px 64px rgba(0,0,0,0.45)"
+          }}>
             {/* Modal Header */}
-            <div style={{ padding:"16px 20px",borderBottom:"1px solid var(--glass-border)",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0 }}>
-              <div>
-                <div style={{ fontSize:15,fontWeight:800,color:"var(--heading)" }}>
+            <div style={{ padding:"14px 18px",borderBottom:"1px solid var(--glass-border)",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,flexShrink:0 }}>
+              <div style={{ minWidth:0 }}>
+                <div style={{ fontSize:14,fontWeight:800,color:"var(--heading)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>
                   Grade Sheet Preview — {previewData ? previewData.course?.name : "Loading..."}
                 </div>
                 {previewData && (
-                  <div style={{ fontSize:11.5,color:"var(--subtext)",marginTop:2 }}>
-                    {previewData.term} · {previewData.session} · Teacher: {previewData.course?.teacher_name || "Unassigned"} · {previewData.count} Students
+                  <div style={{ fontSize:11,color:"var(--subtext)",marginTop:3,display:"flex",flexWrap:"wrap",gap:6 }}>
+                    <span>{previewData.term}</span>
+                    <span>·</span>
+                    <span>{previewData.session}</span>
+                    <span>·</span>
+                    <span>Teacher: <strong>{previewData.course?.teacher_name || "Unassigned"}</strong></span>
+                    <span>·</span>
+                    <span><strong>{previewData.count}</strong> Students</span>
                   </div>
                 )}
               </div>
-              <button onClick={() => setPreviewOpen(false)} style={{ background:"var(--muted)",border:"1px solid var(--glass-border)",borderRadius:8,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"var(--subtext)" }}>
+              <button
+                onClick={() => setPreviewOpen(false)}
+                style={{ flexShrink:0,background:"var(--muted)",border:"1px solid var(--glass-border)",borderRadius:8,width:34,height:34,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"var(--subtext)" }}
+                title="Close"
+              >
                 <X size={16} />
               </button>
             </div>
@@ -356,8 +373,8 @@ export default function Reports() {
               ) : (
                 <>
                   <div className="table-responsive-wrapper">
-                    <div style={{ minWidth: 720 }}>
-                      <div style={{ display:"grid",gridTemplateColumns:"40px 2fr 1.2fr 80px 80px 80px 80px 60px 80px",padding:"10px 20px",borderBottom:"1px solid var(--glass-border)",fontSize:10,fontWeight:700,color:"var(--subtext)",textTransform:"uppercase",background:"var(--muted)",position:"sticky",top:0,zIndex:2 }}>
+                    <div style={{ minWidth: 700 }}>
+                      <div style={{ display:"grid",gridTemplateColumns:"36px 2fr 1fr 70px 70px 70px 70px 56px 80px",padding:"10px 18px",borderBottom:"1px solid var(--glass-border)",fontSize:10,fontWeight:700,color:"var(--subtext)",textTransform:"uppercase",background:"var(--muted)",position:"sticky",top:0,zIndex:2 }}>
                         <span>#</span><span>Student Name</span><span>Adm. No.</span>
                         <span style={{textAlign:"center"}}>CA1</span><span style={{textAlign:"center"}}>CA2</span>
                         <span style={{textAlign:"center"}}>Exam</span><span style={{textAlign:"center"}}>Total</span>
@@ -368,7 +385,7 @@ export default function Reports() {
                         const gl = getGradeLabel(total);
                         const gc = total === null ? "var(--subtext)" : total >= 60 ? "#2a9d8f" : total >= 45 ? "#FFB703" : "#e76f51";
                         return (
-                          <div key={st.id} style={{ display:"grid",gridTemplateColumns:"40px 2fr 1.2fr 80px 80px 80px 80px 60px 80px",padding:"9px 20px",borderBottom:"1px solid var(--glass-border)",alignItems:"center",background:i%2===0?"transparent":"var(--muted)" }}>
+                          <div key={st.id} style={{ display:"grid",gridTemplateColumns:"36px 2fr 1fr 70px 70px 70px 70px 56px 80px",padding:"9px 18px",borderBottom:"1px solid var(--glass-border)",alignItems:"center",background:i%2===0?"transparent":"var(--muted)" }}>
                             <span style={{fontSize:11,color:"var(--subtext)"}}>{i+1}</span>
                             <span style={{fontSize:12.5,fontWeight:600,color:"var(--heading)"}}>{st.student_name}</span>
                             <span style={{fontSize:11,color:"var(--subtext)"}}>{st.admission_number||"—"}</span>
@@ -389,28 +406,31 @@ export default function Reports() {
                       })}
                     </div>
                   </div>
-                  {/* Footer summary + Close button */}
-                  <div style={{ padding:"12px 20px",background:"var(--muted)",borderTop:"1px solid var(--glass-border)",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,fontSize:12,color:"var(--subtext)",flexShrink:0 }}>
-                    <div style={{ display:"flex",gap:16,flexWrap:"wrap" }}>
-                      <span>Enrolled: <strong style={{color:"var(--heading)"}}>{previewData.count}</strong></span>
-                      <span>Graded: <strong style={{color:"#2a9d8f"}}>{previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).length}</strong></span>
-                      <span>Not Graded: <strong style={{color:"#e76f51"}}>{previewData.students.filter((s:any)=>s.total===null||s.total===undefined).length}</strong></span>
-                      {(() => {
-                        const gs = previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).map((s:any)=>parseFloat(s.total));
-                        const avg = gs.length ? (gs.reduce((a:number,b:number)=>a+b,0)/gs.length).toFixed(1) : null;
-                        return <span>Class Avg: <strong style={{color:"#219EBC"}}>{avg ? `${avg}%` : "—"}</strong></span>;
-                      })()}
-                    </div>
-                    <button
-                      onClick={() => setPreviewOpen(false)}
-                      style={{ padding:"6px 16px", borderRadius:8, background:"var(--border)", border:"none", color:"var(--heading)", fontWeight:600, fontSize:12, cursor:"pointer" }}
-                    >
-                      Close Preview
-                    </button>
-                  </div>
                 </>
               )}
             </div>
+
+            {/* Modal Footer — always visible */}
+            {previewData && (
+              <div style={{ padding:"12px 18px",background:"var(--muted)",borderTop:"1px solid var(--glass-border)",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,fontSize:12,color:"var(--subtext)",flexShrink:0 }}>
+                <div style={{ display:"flex",gap:14,flexWrap:"wrap" }}>
+                  <span>Enrolled: <strong style={{color:"var(--heading)"}}>{previewData.count}</strong></span>
+                  <span>Graded: <strong style={{color:"#2a9d8f"}}>{previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).length}</strong></span>
+                  <span>Not Graded: <strong style={{color:"#e76f51"}}>{previewData.students.filter((s:any)=>s.total===null||s.total===undefined).length}</strong></span>
+                  {(() => {
+                    const gs = previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).map((s:any)=>parseFloat(s.total));
+                    const avg = gs.length ? (gs.reduce((a:number,b:number)=>a+b,0)/gs.length).toFixed(1) : null;
+                    return <span>Class Avg: <strong style={{color:"#219EBC"}}>{avg ? `${avg}%` : "—"}</strong></span>;
+                  })()}
+                </div>
+                <button
+                  onClick={() => setPreviewOpen(false)}
+                  style={{ padding:"7px 18px",borderRadius:8,background:"var(--border)",border:"none",color:"var(--heading)",fontWeight:700,fontSize:12,cursor:"pointer" }}
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

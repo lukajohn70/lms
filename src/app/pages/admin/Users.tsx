@@ -351,10 +351,13 @@ export default function UsersPage() {
         <div className="desktop-only table-responsive-wrapper">
           <div style={{ minWidth: 760 }}>
             {/* Table Header */}
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 80px 180px 180px 80px 120px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
-              {["Name", "Role", "Email", "Details / Adm No", "Status", "Actions"].map(h => (
-                <span key={h} style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>{h}</span>
-              ))}
+            <div style={{ display: "grid", gridTemplateColumns: "1.4fr 80px 180px 180px 90px 130px", padding: "10px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase" }}>Name</span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase" }}>Role</span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase" }}>Email</span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase" }}>Details / Adm No</span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", textAlign: "center" }}>Status</span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", textAlign: "right" }}>Actions</span>
             </div>
 
             {/* Table Body */}
@@ -371,7 +374,7 @@ export default function UsersPage() {
                 const userJoined = new Date(u.created_at).toLocaleDateString();
                 const isActive = u.status !== "inactive";
                 return (
-                  <div key={u.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 80px 180px 180px 80px 120px", padding: "11px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
+                  <div key={u.id} style={{ display: "grid", gridTemplateColumns: "1.4fr 80px 180px 180px 90px 130px", padding: "11px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                       <div style={{ width: 28, height: 28, borderRadius: "50%", background: `${roleColor(u.role)}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: roleColor(u.role), flexShrink: 0 }}>
                         {userInitials}
@@ -400,10 +403,12 @@ export default function UsersPage() {
                         </div>
                       ) : "—"}
                     </span>
-                    <button onClick={() => toggleStatus(u.id)} style={{ display: "inline-flex", alignSelf: "start", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 6, border: "none", background: isActive ? "rgba(42,157,143,0.12)" : "rgba(231,111,81,0.1)", cursor: "pointer" }}>
-                      <span style={{ fontSize: 10.5, fontWeight: 600, color: isActive ? "#2a9d8f" : "#e76f51" }}>{isActive ? "active" : "inactive"}</span>
-                    </button>
-                    <div style={{ display: "flex", gap: 5 }}>
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      <button onClick={() => toggleStatus(u.id)} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 6, border: "none", background: isActive ? "rgba(42,157,143,0.12)" : "rgba(231,111,81,0.1)", cursor: "pointer" }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 600, color: isActive ? "#2a9d8f" : "#e76f51" }}>{isActive ? "active" : "inactive"}</span>
+                      </button>
+                    </div>
+                    <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
                       {(u.role.toLowerCase() === "parent" || u.role.toLowerCase() === "student") && (
                         <button onClick={() => { setLinkingUser(u); setSelectedTargetId(""); }}
                           style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(33,158,188,0.08)", border: "1px solid rgba(33,158,188,0.2)", cursor: "pointer" }}
