@@ -93,7 +93,7 @@ export default function AdminDashboard() {
               { l: "Review CBT Approvals", to: "/admin/cbt", c: "#FFB703", badge: `${stats.pendingCbts} pending` },
               { l: "Manage Users", to: "/admin/users", c: "#219EBC", badge: null },
               { l: "Fee Management", to: "/admin/fees", c: "#FB8500", badge: "18 overdue" },
-              { l: "Analytics & Reports", to: "/admin/reports", c: "#8ECAE6", badge: null },
+              { l: "Analytics & Result Governance", to: "/admin/reports", c: "#8ECAE6", badge: stats.reopenRequests > 0 ? `${stats.reopenRequests} unlock req` : null },
             ].map(a => (
               <button key={a.l} onClick={() => navigate(a.to)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", borderRadius: 10, background: `${a.c}0e`, border: `1px solid ${a.c}28`, cursor: "pointer", fontFamily: "'Poppins',sans-serif" }}>
                 <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--heading)" }}>{a.l}</span>

@@ -226,6 +226,11 @@ class DashboardController {
         $feesCollected = $stmt->fetchColumn();
         if (!$feesCollected) $feesCollected = 0;
 
+        // Reopen requests for grades
+        $stmt = $this->conn->prepare("SELECT COUNT(DISTINCT course_id) FROM grades WHERE status = 'reopen_requested'");
+        $stmt->execute();
+        $reopenRequests = intval($stmt->fetchColumn());
+
         echo json_encode([
             "academic_term" => $this->getSetting('current_term', '2nd Term'),
             "academic_session" => $this->getSetting('academic_session', '2026/2027'),
@@ -234,7 +239,8 @@ class DashboardController {
                 "totalStudents" => $totalStudents,
                 "teachingStaff" => $teachingStaff,
                 "pendingCbts" => $pendingCbts,
-                "feesCollected" => floatval($feesCollected)
+                "feesCollected" => floatval($feesCollected),
+                "reopenRequests" => $reopenRequests
             ]
         ]);
     }

@@ -64,7 +64,7 @@ export default function Reports() {
       .finally(() => setApprovalsLoading(false));
   };
 
-  useEffect(() => { if (activeTab === "approvals") loadSubmissions(); }, [activeTab, selectedTerm]);
+  useEffect(() => { loadSubmissions(); }, [selectedTerm]);
 
   const handleUpdateStatus = (courseId: number, newStatus: string, autoPublishAt?: string) => {
     apiClient.post("/admin/grades/update-status", { 
@@ -94,6 +94,8 @@ export default function Reports() {
       .finally(() => setPreviewLoading(false));
   };
 
+  const reopenRequestsCount = submissions.filter(s => s.status === "reopen_requested").length;
+
   if (loading) return <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>Compiling system analytics...</div>;
 
   const formatCurrency = (val: number) => "₦" + val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -108,8 +110,8 @@ export default function Reports() {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           {[
-            { id: "analytics" as const, label: "Analytics Overview", color: "#219EBC", icon: <BarChart2 size={14} /> },
-            { id: "approvals" as const, label: "Result Approvals & Locking", color: "#FB8500", icon: <ShieldCheck size={14} /> }
+            { id: "analytics" as const, label: "Analytics Overview", color: "#219EBC", icon: <BarChart2 size={14} />, count: 0 },
+            { id: "approvals" as const, label: "Result Approvals & Locking", color: "#FB8500", icon: <ShieldCheck size={14} />, count: reopenRequestsCount }
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
               display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8,
@@ -117,7 +119,14 @@ export default function Reports() {
               background: activeTab === tab.id ? `${tab.color}22` : "var(--muted)",
               color: activeTab === tab.id ? tab.color : "var(--subtext)",
               fontWeight: 700, fontSize: 12.5, cursor: "pointer", transition: "all 0.2s"
-            }}>{tab.icon} {tab.label}</button>
+            }}>
+              {tab.icon} {tab.label}
+              {tab.count > 0 && (
+                <span style={{ background: "#FB8500", color: "#fff", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 800, marginLeft: 4 }}>
+                  {tab.count} Reopen Req
+                </span>
+              )}
+            </button>
           ))}
         </div>
       </div>
