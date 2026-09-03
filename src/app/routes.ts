@@ -18,6 +18,7 @@ const StudentResults = lazy(() => import("./pages/student/Results"));
 const StudentFees = lazy(() => import("./pages/student/Fees"));
 const StudentCommunication = lazy(() => import("./pages/student/Communication"));
 const StudentLibrary = lazy(() => import("./pages/student/Library"));
+const StudentSettings = lazy(() => import("./pages/student/StudentSettings"));
 
 // Teacher
 const TeacherLayout = lazy(() => import("./pages/teacher/TeacherLayout"));
@@ -73,6 +74,7 @@ export const router = createBrowserRouter([
           { path: "fees", Component: StudentFees },
           { path: "communication", Component: StudentCommunication },
           { path: "library", Component: StudentLibrary },
+          { path: "settings", Component: StudentSettings },
           { path: "*", Component: NotFound },
         ],
       },

@@ -106,7 +106,7 @@ export default function StudentLibrary() {
 
       {/* ── LIBRARY VIEW ── */}
       {activeView === "library" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 18 }}>
+        <div className="responsive-grid-2" style={{ gap: 18 }}>
           <div>
             {/* Search + filter */}
             <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
@@ -144,7 +144,7 @@ export default function StudentLibrary() {
                 <div style={{ fontSize: 12, color: "var(--subtext)", marginTop: 4 }}>Admin-uploaded resources will appear here.</div>
               </Glass>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
                 {filtered.map(book => {
                   const baseUrl = API_BASE_URL.replace("/index.php", "");
                   const fileUrl = `${baseUrl}/${book.file_path}`;
@@ -240,7 +240,7 @@ export default function StudentLibrary() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
+          <div className="responsive-grid-3" style={{ gap: 16, marginBottom: 24 }}>
             {GUIDE_BASES.map(g => {
               const available = guideStatuses[g.key];
               const baseUrl = API_BASE_URL.replace("/index.php", "");

@@ -109,7 +109,7 @@ export default function Materials() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 18 }}>
+      <div className="responsive-grid-4" style={{ marginBottom: 18 }}>
         {[
           { label: "Total Files", v: materials.length, c: "#219EBC" },
           { label: "Viewed", v: viewedCount, c: "#8ECAE6" },
@@ -125,12 +125,12 @@ export default function Materials() {
 
       <Glass>
         {/* Search & Filter */}
-        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", gap: 12, alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, padding: "8px 12px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
+        <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "1 1 220px", minWidth: 180, padding: "8px 12px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
             <Search size={14} style={{ color: "var(--subtext)" }} />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search materials…" style={{ border: "none", background: "transparent", fontSize: 13, color: "var(--heading)", outline: "none", flex: 1 }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search materials…" style={{ border: "none", background: "transparent", fontSize: 13, color: "var(--heading)", outline: "none", flex: 1, minWidth: 0 }} />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <Filter size={14} style={{ color: "var(--subtext)" }} />
             <select value={filter} onChange={e => setFilter(e.target.value)} style={{ background: "var(--muted)", border: "1px solid var(--glass-border)", borderRadius: 8, padding: "6px 10px", fontSize: 12, color: "var(--heading)", outline: "none" }}>
               {subjects.map(s => <option key={s} value={s}>{s === "all" ? "All Subjects" : s}</option>)}
@@ -138,53 +138,95 @@ export default function Materials() {
           </div>
         </div>
 
-        {/* Table header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 80px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
-          {["File Name", "Subject", "Teacher / Date", "Actions"].map(h => (
-            <span key={h} style={{ fontSize: 10.5, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</span>
-          ))}
-        </div>
-
         {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--subtext)", fontSize: 13 }}>
             No materials found matching your criteria.
           </div>
         ) : (
-          filtered.map((m) => {
-            const tc = TYPE_COLOR[m.file_type as keyof typeof TYPE_COLOR] || TYPE_COLOR.pdf;
-            const Icon = ICON[m.file_type as keyof typeof ICON] || FileText;
-            const isV = !!viewed[m.id];
-            
-            const baseUrl = API_BASE_URL.replace("/index.php", "");
-            const fileUrl = `${baseUrl}/${m.file_path}`;
+          <>
+            {/* Desktop Table View */}
+            <div className="desktop-only table-responsive-wrapper">
+              <div style={{ minWidth: 620 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 140px 80px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
+                  {["File Name", "Subject", "Teacher / Date", "Actions"].map(h => (
+                    <span key={h} style={{ fontSize: 10.5, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</span>
+                  ))}
+                </div>
+                {filtered.map((m) => {
+                  const tc = TYPE_COLOR[m.file_type as keyof typeof TYPE_COLOR] || TYPE_COLOR.pdf;
+                  const Icon = ICON[m.file_type as keyof typeof ICON] || FileText;
+                  const isV = !!viewed[m.id];
+                  const baseUrl = API_BASE_URL.replace("/index.php", "");
+                  const fileUrl = `${baseUrl}/${m.file_path}`;
 
-            return (
-              <div key={m.id} style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 80px", padding: "11px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", background: isV ? "transparent" : "rgba(33,158,188,0.025)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: tc.bg, border: `1px solid ${tc.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: tc.c }}>
-                    <Icon size={15} />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: isV ? 400 : 600, color: isV ? "var(--subtext)" : "var(--heading)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.title}</div>
-                    {!isV && <span style={{ fontSize: 9.5, background: "rgba(33,158,188,0.12)", color: "#219EBC", padding: "1px 5px", borderRadius: 4, fontWeight: 600 }}>NEW</span>}
-                  </div>
-                </div>
-                <span style={{ fontSize: 11, color: "var(--subtext)" }}>{m.course_name}</span>
-                <div>
-                  <div style={{ fontSize: 11, color: "var(--heading)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{m.teacher_name}</div>
-                  <div style={{ fontSize: 10, color: "var(--subtext)" }}>{m.date}</div>
-                </div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button onClick={() => toggleViewed(m.id)} style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: isV ? "var(--muted)" : "rgba(33,158,188,0.1)", border: `1px solid ${isV ? "var(--glass-border)" : "rgba(33,158,188,0.25)"}`, cursor: "pointer" }} title={isV ? "Mark unviewed" : "Mark viewed"}>
-                    {isV ? <EyeOff size={12} style={{ color: "var(--subtext)" }} /> : <Eye size={12} style={{ color: "#219EBC" }} />}
-                  </button>
-                  <a href={fileUrl} target="_blank" rel="noreferrer" style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--muted)", border: "1px solid var(--glass-border)", cursor: "pointer" }} title="Download">
-                    <Download size={12} style={{ color: "var(--subtext)" }} />
-                  </a>
-                </div>
+                  return (
+                    <div key={m.id} style={{ display: "grid", gridTemplateColumns: "1fr 140px 140px 80px", padding: "11px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", background: isV ? "transparent" : "rgba(33,158,188,0.025)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: tc.bg, border: `1px solid ${tc.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: tc.c }}>
+                          <Icon size={15} />
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 12.5, fontWeight: isV ? 400 : 600, color: isV ? "var(--subtext)" : "var(--heading)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.title}</div>
+                          {!isV && <span style={{ fontSize: 9.5, background: "rgba(33,158,188,0.12)", color: "#219EBC", padding: "1px 5px", borderRadius: 4, fontWeight: 600 }}>NEW</span>}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 11, color: "var(--subtext)" }}>{m.course_name}</span>
+                      <div>
+                        <div style={{ fontSize: 11, color: "var(--heading)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{m.teacher_name}</div>
+                        <div style={{ fontSize: 10, color: "var(--subtext)" }}>{m.date}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                        <button onClick={() => toggleViewed(m.id)} style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: isV ? "var(--muted)" : "rgba(33,158,188,0.1)", border: `1px solid ${isV ? "var(--glass-border)" : "rgba(33,158,188,0.25)"}`, cursor: "pointer" }} title={isV ? "Mark unviewed" : "Mark viewed"}>
+                          {isV ? <EyeOff size={12} style={{ color: "var(--subtext)" }} /> : <Eye size={12} style={{ color: "#219EBC" }} />}
+                        </button>
+                        <a href={fileUrl} target="_blank" rel="noreferrer" style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--muted)", border: "1px solid var(--glass-border)", cursor: "pointer" }} title="Download">
+                          <Download size={12} style={{ color: "var(--subtext)" }} />
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })
+            </div>
+
+            {/* Mobile Card View - Zero Horizontal Scroll */}
+            <div className="mobile-only" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
+              {filtered.map((m) => {
+                const tc = TYPE_COLOR[m.file_type as keyof typeof TYPE_COLOR] || TYPE_COLOR.pdf;
+                const Icon = ICON[m.file_type as keyof typeof ICON] || FileText;
+                const isV = !!viewed[m.id];
+                const baseUrl = API_BASE_URL.replace("/index.php", "");
+                const fileUrl = `${baseUrl}/${m.file_path}`;
+
+                return (
+                  <div key={m.id} style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 8, background: tc.bg, border: `1px solid ${tc.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: tc.c, marginTop: 2 }}>
+                        <Icon size={18} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 2 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: isV ? "var(--subtext)" : "var(--heading)", lineHeight: 1.3 }}>{m.title}</span>
+                          {!isV && <span style={{ fontSize: 9.5, background: "rgba(33,158,188,0.15)", color: "#219EBC", padding: "1px 6px", borderRadius: 4, fontWeight: 700 }}>NEW</span>}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: "#219EBC", fontWeight: 600 }}>{m.course_name}</div>
+                        <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>By {m.teacher_name} · {m.date}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, paddingTop: 4, borderTop: "1px solid var(--glass-border)" }}>
+                      <a href={fileUrl} target="_blank" rel="noreferrer" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 12px", borderRadius: 8, background: "linear-gradient(135deg, #219EBC, #1a8aaa)", color: "#fff", textDecoration: "none", fontSize: 12, fontWeight: 700 }}>
+                        <Download size={13} /> Open / Download
+                      </a>
+                      <button onClick={() => toggleViewed(m.id)} style={{ padding: "8px 12px", borderRadius: 8, background: "var(--glass-bg)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600 }}>
+                        {isV ? <><EyeOff size={13} style={{ color: "var(--subtext)" }} /> Unview</> : <><Eye size={13} style={{ color: "#219EBC" }} /> Mark Read</>}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </Glass>
     </div>

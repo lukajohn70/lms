@@ -4,7 +4,7 @@ import {
   LayoutDashboard, BookOpen, FileText, Receipt, MessageSquare, Library,
   GraduationCap, ClipboardList, FlaskConical, ChevronDown, ChevronRight,
   LogOut, HelpCircle, Users, Settings, BarChart2, CheckSquare, CalendarDays,
-  Bell, Search, Sun, Moon, UserCheck, Menu, X,
+  Bell, Search, Sun, Moon, UserCheck, Menu, X, ArrowUp,
 } from "lucide-react";
 import { useApp, Role } from "../contexts/AppContext";
 import { NotificationPanel } from "./NotificationPanel";
@@ -32,6 +32,7 @@ const NAV: Record<Role, NavItem[]> = {
     { icon: <Receipt size={17} />, label: "Fees & Payments", to: "/student/fees" },
     { icon: <MessageSquare size={17} />, label: "Communication", to: "/student/communication" },
     { icon: <Library size={17} />, label: "Library & Helpdesk", to: "/student/library" },
+    { icon: <Settings size={17} />, label: "Account Settings", to: "/student/settings" },
   ],
   teacher: [
     { icon: <LayoutDashboard size={17} />, label: "Dashboard", to: "/teacher" },
@@ -157,6 +158,16 @@ export function Layout({ children }: { children: ReactNode }) {
 
   // Close sidebar on route change (mobile)
   const closeSidebar = () => setSidebarOpen(false);
+
+  // Back to Top button state & scroll listener
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 250);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Prevent body scroll when sidebar is open on mobile
   useEffect(() => {
@@ -459,7 +470,15 @@ export function Layout({ children }: { children: ReactNode }) {
             </div>
 
             {/* Avatar */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+            <div
+              onClick={() => {
+                if (user.role === 'student') navigate('/student/settings');
+                else if (user.role === 'admin') navigate('/admin/settings');
+                else if (user.role === 'parent') navigate('/parent/settings');
+              }}
+              title="Account Settings"
+              style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+            >
               <div
                 style={{
                   width: 32, height: 32, borderRadius: "50%",
@@ -502,6 +521,37 @@ export function Layout({ children }: { children: ReactNode }) {
         >
           {children}
         </main>
+
+        {/* ===== BACK TO TOP BUTTON ===== */}
+        {showBackToTop && (
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            style={{
+              position: "fixed",
+              bottom: 24,
+              right: 24,
+              zIndex: 90,
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #219EBC, #023047)",
+              border: "1.5px solid rgba(255,255,255,0.25)",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              boxShadow: "0 6px 20px rgba(2,48,71,0.45)",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px) scale(1.05)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0) scale(1)"; }}
+            title="Back to top"
+            aria-label="Back to top"
+          >
+            <ArrowUp size={20} />
+          </button>
+        )}
 
         {/* ===== HELP & SUPPORT MODAL ===== */}
         {helpOpen && (

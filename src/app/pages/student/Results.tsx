@@ -177,8 +177,8 @@ export default function Results() {
               <span style={{ fontSize: 11, color: "var(--subtext)" }}>Session: {meta.session || "2026/2027"}</span>
             </div>
 
-            {/* RESPONSIVE TABLE CONTAINER */}
-            <div className="table-responsive-wrapper">
+            {/* DESKTOP TABLE VIEW */}
+            <div className="desktop-only table-responsive-wrapper">
               <div style={{ minWidth: 640 }}>
                 {/* TERMINAL TABLE */}
                 {viewType === "terminal" && (
@@ -271,7 +271,7 @@ export default function Results() {
                           <span style={{ fontSize: 15, fontWeight: 800, color: "#FB8500" }}>{r.cum_avg}%</span>
                         </div>
                         <div style={{ textAlign:"center" }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: gradeColor(r.grade), background: `${gradeColor(r.grade)}18`, padding: "2px 8px", borderRadius: 6 }}>{r.grade}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: gradeColor(r.grade) }}>{r.grade}</span>
                         </div>
                       </div>
                     ))}
@@ -279,6 +279,80 @@ export default function Results() {
                       <span>Cumulative Average: <span style={{ color: "#FB8500", fontSize: 16 }}>{meta.average}%</span></span>
                     </div>
                   </>
+                )}
+              </div>
+            </div>
+
+            {/* MOBILE ONLY CARD VIEW - ZERO SIDEWAYS SCROLL */}
+            <div className="mobile-only" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
+              {grades.map((r: any) => (
+                <div key={r.course_id} style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--heading)" }}>{r.subject}</div>
+                      <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{r.teacher}</div>
+                    </div>
+                    {viewType === "terminal" && (
+                      <span style={{ fontSize: 13, fontWeight: 800, color: gradeColor(r.grade), background: `${gradeColor(r.grade)}18`, padding: "2px 8px", borderRadius: 6 }}>
+                        Grade {r.grade}
+                      </span>
+                    )}
+                    {viewType === "mid_term" && (
+                      <span style={{ fontSize: 11, fontWeight: 700, color: ratingColor(r.rating), background: `${ratingColor(r.rating)}18`, padding: "2px 8px", borderRadius: 6 }}>
+                        {r.rating}
+                      </span>
+                    )}
+                    {viewType === "cumulative" && (
+                      <span style={{ fontSize: 13, fontWeight: 800, color: gradeColor(r.grade), background: `${gradeColor(r.grade)}18`, padding: "2px 8px", borderRadius: 6 }}>
+                        Grade {r.grade}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Terminal Breakdown */}
+                  {viewType === "terminal" && (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--glass-bg)", padding: "8px 10px", borderRadius: 7, fontSize: 11.5 }}>
+                      <span>CA1: <strong>{r.ca1 ?? "—"}</strong></span>
+                      <span>CA2: <strong>{r.ca2 ?? "—"}</strong></span>
+                      <span>Exam: <strong>{r.exam ?? "—"}</strong></span>
+                      <span>Total: <strong style={{ color: gradeColor(r.grade), fontSize: 13 }}>{r.total}</strong></span>
+                      {r.position && <span>Pos: <strong>{r.position}</strong></span>}
+                    </div>
+                  )}
+
+                  {/* Mid-term Breakdown */}
+                  {viewType === "mid_term" && (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--glass-bg)", padding: "8px 10px", borderRadius: 7, fontSize: 11.5 }}>
+                      <span>Assign: <strong>{r.assignment ?? "—"}</strong></span>
+                      <span>Project: <strong>{r.project ?? "—"}</strong></span>
+                      <span>Test: <strong>{r.mid_term_test ?? "—"}</strong></span>
+                      <span>Total: <strong style={{ color: ratingColor(r.rating), fontSize: 13 }}>{r.total}</strong></span>
+                    </div>
+                  )}
+
+                  {/* Cumulative Breakdown */}
+                  {viewType === "cumulative" && (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--glass-bg)", padding: "8px 10px", borderRadius: 7, fontSize: 11.5 }}>
+                      <span>1st: <strong>{r.term1 !== null ? `${r.term1}%` : "—"}</strong></span>
+                      <span>2nd: <strong>{r.term2 !== null ? `${r.term2}%` : "—"}</strong></span>
+                      {term === "3rd" && <span>3rd: <strong>{r.term3 !== null ? `${r.term3}%` : "—"}</strong></span>}
+                      <span>Avg: <strong style={{ color: "#FB8500", fontSize: 13 }}>{r.cum_avg}%</strong></span>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Mobile Summary footer */}
+              <div style={{ padding: 12, borderRadius: 10, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.25)", display: "flex", justifyContent: "space-around", alignItems: "center", marginTop: 4 }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 11, color: "var(--subtext)" }}>Average</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#219EBC", marginTop: 2 }}>{meta.average}%</div>
+                </div>
+                {meta.rank && (
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 11, color: "var(--subtext)" }}>Class Rank</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#FFB703", marginTop: 2 }}>{meta.rank}</div>
+                  </div>
                 )}
               </div>
             </div>
