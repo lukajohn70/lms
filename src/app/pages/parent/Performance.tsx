@@ -284,18 +284,20 @@ export default function Performance() {
             ))}
           </div>
 
-          {/* Promotion recommendation banner */}
-          <Glass style={{ padding: "14px 20px", marginBottom: 18, borderLeft: `4px solid ${meta.promotion_color || "#219EBC"}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-              <div>
-                <span style={{ fontSize: 10, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Academic Board Annual Status</span>
-                <div style={{ fontSize: 15, fontWeight: 800, color: meta.promotion_color || "#219EBC", marginTop: 2 }}>{meta.promotion_decision || "PROMOTED TO NEXT CLASS"}</div>
+          {/* Promotion recommendation banner - ONLY IN 3RD TERM */}
+          {selectedTerm === "3rd Term" && meta.promotion_decision && (
+            <Glass style={{ padding: "14px 20px", marginBottom: 18, borderLeft: `4px solid ${meta.promotion_color || "#219EBC"}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                <div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Academic Board Annual Status (Third Term)</span>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: meta.promotion_color || "#219EBC", marginTop: 2 }}>{meta.promotion_decision}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#2a9d8f", fontWeight: 700, background: "rgba(42,157,143,0.1)", padding: "5px 12px", borderRadius: 6 }}>
+                  <CheckCircle2 size={13} /> Official &amp; Verified Result
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#2a9d8f", fontWeight: 700, background: "rgba(42,157,143,0.1)", padding: "5px 12px", borderRadius: 6 }}>
-                <CheckCircle2 size={13} /> Official &amp; Verified Result
-              </div>
-            </div>
-          </Glass>
+            </Glass>
+          )}
 
           {/* UNIFIED RESULT TABLE */}
           <Glass style={{ marginBottom: 18 }}>

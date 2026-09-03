@@ -554,12 +554,27 @@ class GradeController {
         $displayAverage = $viewType !== 'cumulative' ? $average
             : ($cumCount > 0 ? round($cumSum / $cumCount, 1) : 0);
 
-        // 5. Promotion recommendation (always based on cumulative)
-        $allCumRows    = array_filter($formatted, fn($r) => isset($r['cum_avg']) || isset($r['total']));
-        $promScore     = $displayAverage;
-        if ($promScore >= 50)      { $promotionDecision = 'PROMOTED TO NEXT CLASS'; $promotionColor = '#219EBC'; }
-        else if ($promScore >= 40) { $promotionDecision = 'PROMOTED ON TRIAL';      $promotionColor = '#FFB703'; }
-        else                       { $promotionDecision = 'ADVISED TO REPEAT';      $promotionColor = '#ef4444'; }
+        // 5. Promotion recommendation (ONLY in 3rd Term)
+        $promotionDecision = null;
+        $promotionColor = null;
+        if ($currentTerm === '3rd Term') {
+            $cStmt = $this->conn->prepare("SELECT c.name FROM users u LEFT JOIN classes c ON u.class_id = c.id WHERE u.id = :sid LIMIT 1");
+            $cStmt->execute([':sid' => $studentId]);
+            $currentClassName = $cStmt->fetchColumn() ?: '';
+            $nextClass = $this->getNextClassName($currentClassName);
+
+            $promScore = $displayAverage;
+            if ($promScore >= 50) {
+                $promotionDecision = 'PROMOTED TO ' . $nextClass;
+                $promotionColor = '#219EBC';
+            } else if ($promScore >= 40) {
+                $promotionDecision = 'PROMOTED ON TRIAL';
+                $promotionColor = '#FFB703';
+            } else {
+                $promotionDecision = 'ADVISED TO REPEAT';
+                $promotionColor = '#ef4444';
+            }
+        }
 
         // 6. Class rank
         $rankStmt = $this->conn->prepare("
@@ -628,6 +643,20 @@ class GradeController {
         } else {
             return $number. $ends[$number % 10];
         }
+    }
+
+    private function getNextClassName($currentClass) {
+        if (empty($currentClass)) return "NEXT CLASS";
+        if (preg_match('/(JSS|SS|SSS|Basic|Grade|Primary|NUR)\s*(\d+)/i', $currentClass, $m)) {
+            $prefix = strtoupper($m[1]);
+            $num = intval($m[2]);
+            if ($prefix === 'JSS' && $num >= 3) return "SSS 1";
+            if ($prefix === 'SSS' && $num >= 3) return "GRADUATION";
+            if ($prefix === 'PRIMARY' && $num >= 6) return "JSS 1";
+            if ($prefix === 'BASIC' && $num >= 9) return "SSS 1";
+            return $prefix . " " . ($num + 1);
+        }
+        return "NEXT CLASS";
     }
 
     // Student/Parent: Get enrolled courses list with progress & topics

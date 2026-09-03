@@ -19,9 +19,15 @@ class AuthController {
             return;
         }
 
-        $query = "SELECT id, email, password_hash, role, first_name, last_name, phone, relationship FROM users WHERE email = :email LIMIT 1";
+        $ident = trim($data->email);
+        $query = "SELECT id, email, password_hash, role, first_name, last_name, phone, relationship 
+                  FROM users 
+                  WHERE email = :ident 
+                     OR admission_number = :ident 
+                     OR (role = 'admin' AND :ident = 'admin')
+                  LIMIT 1";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':email', $data->email);
+        $stmt->bindParam(':ident', $ident);
         $stmt->execute();
 
         $user = $stmt->fetch();

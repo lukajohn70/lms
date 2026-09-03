@@ -37,6 +37,8 @@ export default function AdminSettings() {
   const [schoolAddress, setSchoolAddress] = useState("12 Aroura Close, Victoria Island, Lagos");
   const [schoolDirectorName, setSchoolDirectorName] = useState("Mrs M I. Okafor");
   const [schoolAcronym, setSchoolAcronym] = useState("AROURA");
+  const [schoolMotto, setSchoolMotto] = useState("MOTTO: LEADERSHIP WITH DISTINCTION");
+  const [schoolWebsite, setSchoolWebsite] = useState("WWW.DEEPERLIFEHIGHSCHOOL.ORG");
   const [acceptanceFeeAmount, setAcceptanceFeeAmount] = useState("20000");
   const [resultMode, setResultMode] = useState("end_of_term");
 
@@ -125,6 +127,8 @@ export default function AdminSettings() {
           setSchoolAddress(s.school_address || "12 Aroura Close, Victoria Island, Lagos");
           setSchoolDirectorName(s.school_director_name || "Mrs M I. Okafor");
           setSchoolAcronym(s.school_acronym || "AROURA");
+          setSchoolMotto(s.school_motto || "MOTTO: LEADERSHIP WITH DISTINCTION");
+          setSchoolWebsite(s.school_website || "WWW.DEEPERLIFEHIGHSCHOOL.ORG");
           setAcceptanceFeeAmount(s.acceptance_fee_amount || "20000");
           setResultMode(s.result_mode || "end_of_term");
 
@@ -188,6 +192,8 @@ export default function AdminSettings() {
       school_address: schoolAddress,
       school_director_name: schoolDirectorName,
       school_acronym: schoolAcronym,
+      school_motto: schoolMotto,
+      school_website: schoolWebsite,
       acceptance_fee_amount: acceptanceFeeAmount,
       result_mode: resultMode,
       school_logo_path: schoolLogoPath,
@@ -477,6 +483,14 @@ export default function AdminSettings() {
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>School Acronym (For Refs)</label>
                   <input type="text" value={schoolAcronym} onChange={e => setSchoolAcronym(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>School Motto (Appears on Result)</label>
+                  <input type="text" value={schoolMotto} onChange={e => setSchoolMotto(e.target.value)} placeholder="e.g. MOTTO: LEADERSHIP WITH DISTINCTION" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>School Website (Appears on Result)</label>
+                  <input type="text" value={schoolWebsite} onChange={e => setSchoolWebsite(e.target.value)} placeholder="e.g. WWW.DEEPERLIFEHIGHSCHOOL.ORG" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Director / Registrar Name</label>

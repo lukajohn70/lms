@@ -188,6 +188,69 @@ export default function TeacherAssessments() {
                 </div>
               </div>
 
+              {/* Student Report Card Bio & Awards */}
+              <div style={{ marginBottom: 24, padding: 14, background: "var(--muted)", borderRadius: 10, border: "1px solid var(--glass-border)" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", marginBottom: 12, textTransform: "uppercase" }}>
+                  Report Card Profile &amp; Awards
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Sex / Gender</label>
+                    <select
+                      value={selectedStudent.gender || "MALE"}
+                      onChange={e => updateMetric("gender", e.target.value)}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--popover)", color: "var(--heading)", fontSize: 12.5, outline: "none" }}
+                    >
+                      <option value="MALE">MALE</option>
+                      <option value="FEMALE">FEMALE</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>House</label>
+                    <input
+                      type="text"
+                      value={selectedStudent.house || "FAITH"}
+                      onChange={e => updateMetric("house", e.target.value)}
+                      placeholder="e.g. FAITH, BLUE, WISDOM"
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--popover)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Sport Activities</label>
+                    <input
+                      type="text"
+                      value={selectedStudent.sport_activities || "BASKETBALL"}
+                      onChange={e => updateMetric("sport_activities", e.target.value)}
+                      placeholder="e.g. BASKETBALL, ATHLETICS"
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--popover)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Award / Prize 1</label>
+                    <input
+                      type="text"
+                      value={selectedStudent.award_1 ?? "NILL"}
+                      onChange={e => updateMetric("award_1", e.target.value)}
+                      placeholder="e.g. 1st in Mathematics or NILL"
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--popover)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Award / Prize 2</label>
+                    <input
+                      type="text"
+                      value={selectedStudent.award_2 ?? "NILL"}
+                      onChange={e => updateMetric("award_2", e.target.value)}
+                      placeholder="e.g. Best in Basketball or NILL"
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--popover)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Character Development Matrix */}
               <div style={{ marginBottom: 24 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 700, color: "#219EBC", textTransform: "uppercase", marginBottom: 12 }}>
