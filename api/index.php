@@ -82,9 +82,11 @@ $router->post('/student/fees/pay', 'FeeController@payFee');
 $router->get('/users/me', 'UserController@me');
 $router->get('/users', 'UserController@index');
 $router->post('/admin/users/assign-class', 'UserController@assignStudentClass');
+$router->get('/', function() {
+    echo json_encode(["status" => "online", "message" => "Aroura LMS API is running"]);
+});
 $router->post('/parent/update-profile', 'UserController@updateProfile');
 $router->post('/parent/update-password', 'UserController@updatePassword');
-$router->post('/student/update-profile', 'UserController@updateProfile');
 $router->post('/student/update-password', 'UserController@updatePassword');
 $router->post('/teacher/update-profile', 'UserController@updateProfile');
 $router->post('/teacher/update-password', 'UserController@updatePassword');

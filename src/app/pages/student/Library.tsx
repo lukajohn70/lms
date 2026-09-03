@@ -243,8 +243,7 @@ export default function StudentLibrary() {
           <div className="responsive-grid-3" style={{ gap: 16, marginBottom: 24 }}>
             {GUIDE_BASES.map(g => {
               const available = guideStatuses[g.key];
-              const baseUrl = API_BASE_URL.replace("/index.php", "");
-              const pdfUrl = `${baseUrl}/public/study_guides/${g.key}_guide.pdf`;
+              const pdfUrl = `http://${window.location.hostname}/lms/public/study_guides/${g.key}_guide.pdf`;
               return (
                 <Glass key={g.key} style={{ padding: 24, textAlign: "center", position: "relative", overflow: "hidden" }}>
                   {/* Color accent bar */}
@@ -302,8 +301,10 @@ export default function StudentLibrary() {
               <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--heading)" }}>Curriculum At A Glance</span>
               <span style={{ fontSize: 11, color: "var(--subtext)", marginLeft: 4 }}>NERDC-Aligned Subjects by Level</span>
             </div>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+
+            {/* Desktop Table View */}
+            <div className="desktop-only table-responsive-wrapper">
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
                 <thead>
                   <tr style={{ background: "rgba(33,158,188,0.05)" }}>
                     {["Level", "Core Subjects", "Electives / Vocational", "External Exam"].map(h => (
@@ -333,6 +334,31 @@ export default function StudentLibrary() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Only Cards View - Zero Sideways Scroll */}
+            <div className="mobile-only" style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
+              {[
+                { level: "Nursery 1–3", core: "English Language, Mathematics, Basic Science, Social Studies", electives: "Phonics, Arts & Crafts, Music, Physical Education", exam: "Internal Assessment" },
+                { level: "Primary 1–3", core: "English Language, Mathematics, Basic Science, Social Studies, CRS/IRS", electives: "Yoruba Language, Computer Studies, Fine & Applied Arts", exam: "Internal Assessment" },
+                { level: "Primary 4–6", core: "English Language, Mathematics, Basic Science, Social Studies, Agricultural Science", electives: "Home Economics, Music, Computer Studies", exam: "NPEC / State Exam" },
+                { level: "JSS 1–3", core: "English Language, Mathematics, Integrated Science, Social Studies, Basic Technology, CRS/IRS", electives: "French, Yoruba Language, Agriculture, Home Economics", exam: "BECE (JSCE)" },
+                { level: "SS 1–2", core: "English Language, Mathematics, Physics, Chemistry, Biology, Economics", electives: "Further Mathematics, Accounting, Government, Geography, Literature", exam: "Continuous Assessment" },
+                { level: "SS 3", core: "English Language, Mathematics, Physics, Chemistry, Biology, Economics", electives: "Further Mathematics, Accounting, Government, Geography, Literature", exam: "WAEC SSCE / NECO" },
+              ].map((row) => (
+                <div key={row.level} style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>{row.level}</span>
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: "#219EBC", background: "rgba(33,158,188,0.12)", padding: "2px 8px", borderRadius: 5 }}>{row.exam}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--heading)", lineHeight: 1.5 }}>
+                    <strong style={{ color: "#FB8500", fontSize: 11, textTransform: "uppercase" }}>Core: </strong>{row.core}
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--subtext)", lineHeight: 1.5 }}>
+                    <strong style={{ color: "var(--subtext)", fontSize: 11, textTransform: "uppercase" }}>Electives: </strong>{row.electives}
+                  </div>
+                </div>
+              ))}
             </div>
           </Glass>
         </div>
