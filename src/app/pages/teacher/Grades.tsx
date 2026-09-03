@@ -208,42 +208,68 @@ export default function Grades() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [csvMessage, setCsvMessage] = useState("");
   const [csvError, setCsvError] = useState("");
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
 
-  const handleDownloadTemplate = () => {
+  /**
+   * Download a term-specific CSV template.
+   * type: "midterm"     → Assignment, Project, Mid-Term Test  (/20 total)
+   *       "ca2only"     → CA 2 only  (/20)
+   *       "endofterm"   → CA 2 + Exam  (/80 / final portion)
+   */
+  const handleDownloadTemplate = (type: "midterm" | "ca2only" | "endofterm") => {
     if (!students || students.length === 0) {
       alert("No students enrolled in this course to generate a template for.");
       return;
     }
+    setShowTemplateMenu(false);
     const currentCourse = courses.find(c => c.id === selectedCourseId);
-    const courseName = currentCourse ? currentCourse.name : "Subject";
-    const headers = [
-      "Student ID",
-      "Student Number",
-      "Student Name",
-      "Assignment (/5)",
-      "Project (/5)",
-      "Mid-Term Test (/10)",
-      "CA 2 (/20)",
-      "Exam (/60)"
-    ];
+    const subjectSlug = (currentCourse?.name || "Subject").replace(/[^a-zA-Z0-9]/g, "_");
+    const termSlug = selectedTerm.replace(/\s+/g, "_");
 
-    const rows = students.map(s => [
-      s.id,
-      `"${(s.student_number || "").replace(/"/g, '""')}"`,
-      `"${(s.name || "").replace(/"/g, '""')}"`,
-      s.assignment_score || "",
-      s.project_score || "",
-      s.mid_term_test || "",
-      s.ca2 || "",
-      s.exam || ""
-    ]);
+    let headers: string[];
+    let rows: (string | number)[][];
+    let fileSuffix: string;
 
+    if (type === "midterm") {
+      headers = ["Student ID", "Student Number", "Student Name", "Assignment (/5)", "Project (/5)", "Mid-Term Test (/10)"];
+      rows = students.map(s => [
+        s.id,
+        `"${(s.student_number || "").replace(/"/g, '""')}"`,
+        `"${(s.name || "").replace(/"/g, '""')}"`,
+        s.assignment_score || "",
+        s.project_score || "",
+        s.mid_term_test || ""
+      ]);
+      fileSuffix = "MidTerm";
+    } else if (type === "ca2only") {
+      headers = ["Student ID", "Student Number", "Student Name", "CA 2 (/20)"];
+      rows = students.map(s => [
+        s.id,
+        `"${(s.student_number || "").replace(/"/g, '""')}"`,
+        `"${(s.name || "").replace(/"/g, '""')}"`,
+        s.ca2 || ""
+      ]);
+      fileSuffix = "CA2";
+    } else {
+      // endofterm
+      headers = ["Student ID", "Student Number", "Student Name", "CA 2 (/20)", "Exam (/60)"];
+      rows = students.map(s => [
+        s.id,
+        `"${(s.student_number || "").replace(/"/g, '""')}"`,
+        `"${(s.name || "").replace(/"/g, '""')}"`,
+        s.ca2 || "",
+        s.exam || ""
+      ]);
+      fileSuffix = "EndOfTerm";
+    }
+
+    const filename = `${subjectSlug}_${termSlug}_${fileSuffix}_Template.csv`;
     const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `${courseName.replace(/[^a-zA-Z0-9]/g, "_")}_${selectedTerm.replace(/\s+/g, "_")}_grades.csv`);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -370,7 +396,6 @@ export default function Grades() {
     };
     reader.readAsText(file);
   };
-
   const avg = students.length > 0 
     ? Math.round(students.reduce((acc, s) => acc + s.score, 0) / students.length)
     : 0;
@@ -378,63 +403,60 @@ export default function Grades() {
   const isLocked = courseStatus === "published" || courseStatus === "locked";
 
   return (
-    <div>
-      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: 0 }}>Grade Submissions</h1>
-            {/* Status Badge */}
-            {courseStatus === "published" && (
-              <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(42,157,143,0.15)", border: "1px solid rgba(42,157,143,0.3)", color: "#2a9d8f", fontSize: 11, fontWeight: 700 }}>
-                <Lock size={12}/> Published &amp; Locked
-              </span>
-            )}
-            {courseStatus === "locked" && (
-              <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(2,48,71,0.3)", border: "1px solid rgba(2,48,71,0.5)", color: "#8ECAE6", fontSize: 11, fontWeight: 700 }}>
-                <Lock size={12}/> Locked by Admin
-              </span>
-            )}
-            {courseStatus === "submitted" && (
-              <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(255,183,3,0.15)", border: "1px solid rgba(255,183,3,0.3)", color: "#FFB703", fontSize: 11, fontWeight: 700 }}>
-                ⏳ Pending Admin Approval
-              </span>
-            )}
-            {courseStatus === "approved" && (
-              <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(33,158,188,0.15)", border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 11, fontWeight: 700 }}>
-                ✅ Approved
-              </span>
-            )}
-            {courseStatus === "reopen_requested" && (
-              <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(251,133,0,0.15)", border: "1px solid rgba(251,133,0,0.3)", color: "#FB8500", fontSize: 11, fontWeight: 700 }}>
-                🔓 Reopen Requested
-              </span>
-            )}
-            {courseStatus === "draft" && (
-              <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(33,158,188,0.1)", border: "1px solid var(--glass-border)", color: "var(--subtext)", fontSize: 11, fontWeight: 700 }}>
-                📝 Draft Mode
-              </span>
-            )}
-          </div>
-          <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>Record and evaluate student term sheets with multi-tier approval workflow</p>
+    <div onClick={() => setShowTemplateMenu(false)}>
+      {/* ── Page Header ── */}
+      <div style={{ marginBottom: 20 }}>
+        {/* Title + status badge row */}
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 4 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: 0 }}>Grade Submissions</h1>
+          {courseStatus === "published" && (
+            <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(42,157,143,0.15)", border: "1px solid rgba(42,157,143,0.3)", color: "#2a9d8f", fontSize: 11, fontWeight: 700 }}>
+              <Lock size={12}/> Published &amp; Locked
+            </span>
+          )}
+          {courseStatus === "locked" && (
+            <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(2,48,71,0.3)", border: "1px solid rgba(2,48,71,0.5)", color: "#8ECAE6", fontSize: 11, fontWeight: 700 }}>
+              <Lock size={12}/> Locked by Admin
+            </span>
+          )}
+          {courseStatus === "submitted" && (
+            <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(255,183,3,0.15)", border: "1px solid rgba(255,183,3,0.3)", color: "#FFB703", fontSize: 11, fontWeight: 700 }}>
+              ⏳ Pending Admin Approval
+            </span>
+          )}
+          {courseStatus === "approved" && (
+            <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(33,158,188,0.15)", border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 11, fontWeight: 700 }}>
+              ✅ Approved
+            </span>
+          )}
+          {courseStatus === "reopen_requested" && (
+            <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(251,133,0,0.15)", border: "1px solid rgba(251,133,0,0.3)", color: "#FB8500", fontSize: 11, fontWeight: 700 }}>
+              🔓 Reopen Requested
+            </span>
+          )}
+          {courseStatus === "draft" && (
+            <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(33,158,188,0.1)", border: "1px solid var(--glass-border)", color: "var(--subtext)", fontSize: 11, fontWeight: 700 }}>
+              📝 Draft Mode
+            </span>
+          )}
         </div>
-        
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: "0 0 14px" }}>Record and evaluate student term sheets with multi-tier approval workflow</p>
+
+        {/* Controls row — wraps on mobile */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+
           {/* Term Selector */}
           <div style={{ display: "flex", background: "var(--muted)", borderRadius: 8, padding: 3, border: "1px solid var(--glass-border)" }}>
             {["1st Term", "2nd Term", "3rd Term"].map(t => (
               <button
                 key={t}
-                onClick={() => setSelectedTerm(t)}
+                onClick={(e) => { e.stopPropagation(); setSelectedTerm(t); }}
                 style={{
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  border: "none",
+                  padding: "5px 11px",
+                  borderRadius: 6, border: "none",
                   background: selectedTerm === t ? "#219EBC" : "transparent",
                   color: selectedTerm === t ? "#fff" : "var(--subtext)",
-                  fontSize: 11.5,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 0.2s"
+                  fontSize: 11.5, fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
                 }}
               >
                 {t}
@@ -442,80 +464,108 @@ export default function Grades() {
             ))}
           </div>
 
+          {/* Subject select */}
           {courses.length > 0 && (
-            <select 
-              value={selectedCourseId || ""} 
-              onChange={e => setSelectedCourseId(parseInt(e.target.value))} 
-              style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, color: "var(--heading)", outline: "none" }}
+            <select
+              value={selectedCourseId || ""}
+              onChange={e => setSelectedCourseId(parseInt(e.target.value))}
+              style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, color: "var(--heading)", outline: "none", flex: 1, minWidth: 140, maxWidth: 260 }}
             >
               {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           )}
 
-          {/* CSV Template & Import Buttons */}
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {/* Template dropdown */}
+          <div style={{ position: "relative" }} onClick={e => e.stopPropagation()}>
             <button
-              onClick={handleDownloadTemplate}
+              onClick={() => setShowTemplateMenu(v => !v)}
               disabled={loading || students.length === 0}
-              title="Download CSV Template with enrolled students"
+              title="Download a term-specific CSV template"
               style={{
                 display: "flex", alignItems: "center", gap: 5, padding: "7px 12px",
                 borderRadius: 8, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.3)",
                 cursor: (loading || students.length === 0) ? "not-allowed" : "pointer",
-                fontSize: 12, fontWeight: 600, color: "#219EBC"
+                fontSize: 12, fontWeight: 600, color: "#219EBC", whiteSpace: "nowrap"
               }}
             >
-              <Download size={13} /> Template (.csv)
+              <Download size={13} /> Template ▾
             </button>
-            {!isLocked && (
-              <>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImportCsv}
-                  accept=".csv"
-                  style={{ display: "none" }}
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={loading || students.length === 0}
-                  title="Import student scores from filled CSV"
-                  style={{
-                    display: "flex", alignItems: "center", gap: 5, padding: "7px 12px",
-                    borderRadius: 8, background: "rgba(255,183,3,0.12)", border: "1px solid rgba(255,183,3,0.35)",
-                    cursor: (loading || students.length === 0) ? "not-allowed" : "pointer",
-                    fontSize: 12, fontWeight: 600, color: "#FFB703"
-                  }}
-                >
-                  <Upload size={13} /> Import CSV
-                </button>
-              </>
+            {showTemplateMenu && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 300,
+                background: "var(--glass-bg)", border: "1px solid var(--glass-border)",
+                borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.35)",
+                backdropFilter: "blur(20px)", minWidth: 220, overflow: "hidden"
+              }}>
+                {[
+                  { type: "midterm" as const, label: "Mid-Term Template", sub: "Assignment · Project · Mid-Term Test", color: "#219EBC" },
+                  { type: "ca2only" as const, label: "CA 2 Only Template", sub: "CA 2 score column (/20)", color: "#FFB703" },
+                  { type: "endofterm" as const, label: "End of Term Template", sub: "CA 2 + Exam scores", color: "#FB8500" },
+                ].map(opt => (
+                  <button
+                    key={opt.type}
+                    onClick={() => handleDownloadTemplate(opt.type)}
+                    style={{
+                      display: "block", width: "100%", textAlign: "left",
+                      padding: "10px 14px", background: "transparent",
+                      border: "none", borderBottom: "1px solid var(--glass-border)",
+                      cursor: "pointer", color: "var(--heading)"
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "var(--muted)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 700, color: opt.color }}>{opt.label}</div>
+                    <div style={{ fontSize: 10.5, color: "var(--subtext)", marginTop: 2 }}>{opt.sub}</div>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
+          {/* Import CSV */}
+          {!isLocked && (
+            <>
+              <input type="file" ref={fileInputRef} onChange={handleImportCsv} accept=".csv" style={{ display: "none" }} />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading || students.length === 0}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5, padding: "7px 12px",
+                  borderRadius: 8, background: "rgba(255,183,3,0.12)", border: "1px solid rgba(255,183,3,0.35)",
+                  cursor: (loading || students.length === 0) ? "not-allowed" : "pointer",
+                  fontSize: 12, fontWeight: 600, color: "#FFB703", whiteSpace: "nowrap"
+                }}
+              >
+                <Upload size={13} /> Import CSV
+              </button>
+            </>
+          )}
+
+          {/* Save & Submit */}
           {!isLocked && (
             <>
               <button onClick={() => handleSave("draft")} disabled={loading || students.length === 0}
-                style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 8, background: saved ? "rgba(33,158,188,0.15)" : "var(--muted)", border: "1px solid var(--glass-border)", cursor: (loading || students.length === 0) ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, color: saved ? "#219EBC" : "var(--heading)" }}>
+                style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 8, background: saved ? "rgba(33,158,188,0.15)" : "var(--muted)", border: "1px solid var(--glass-border)", cursor: (loading || students.length === 0) ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, color: saved ? "#219EBC" : "var(--heading)", whiteSpace: "nowrap" }}>
                 {saved ? <><CheckCircle size={13}/> Saved</> : <><Save size={13}/> Save Draft</>}
               </button>
 
               <button onClick={handleSubmitForApproval} disabled={loading || students.length === 0}
-                style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 16px", borderRadius: 8, background: submitted ? "rgba(42,157,143,0.15)" : "linear-gradient(135deg,#219EBC,#023047)", border: submitted ? "1px solid #2a9d8f" : "none", cursor: (loading || students.length === 0) ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 700, color: submitted ? "#2a9d8f" : "#fff", boxShadow: "0 4px 12px rgba(33,158,188,0.25)" }}>
+                style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 16px", borderRadius: 8, background: submitted ? "rgba(42,157,143,0.15)" : "linear-gradient(135deg,#219EBC,#023047)", border: submitted ? "1px solid #2a9d8f" : "none", cursor: (loading || students.length === 0) ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 700, color: submitted ? "#2a9d8f" : "#fff", boxShadow: "0 4px 12px rgba(33,158,188,0.25)", whiteSpace: "nowrap" }}>
                 {submitted ? <><CheckCircle size={13}/> Submitted!</> : <><Send size={13}/> Submit for Approval</>}
               </button>
             </>
           )}
 
+          {/* Request Reopen */}
           {isLocked && courseStatus !== "reopen_requested" && (
             <button onClick={() => setShowReopenModal(true)}
-              style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 8, background: "rgba(251,133,0,0.12)", border: "1px solid rgba(251,133,0,0.3)", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#FB8500" }}>
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 8, background: "rgba(251,133,0,0.12)", border: "1px solid rgba(251,133,0,0.3)", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#FB8500", whiteSpace: "nowrap" }}>
               <RotateCcw size={13}/> Request Reopen
             </button>
           )}
           {courseStatus === "submitted" && (
             <button onClick={() => setShowReopenModal(true)}
-              style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 8, background: "rgba(251,133,0,0.12)", border: "1px solid rgba(251,133,0,0.3)", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#FB8500" }}>
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 8, background: "rgba(251,133,0,0.12)", border: "1px solid rgba(251,133,0,0.3)", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#FB8500", whiteSpace: "nowrap" }}>
               <RotateCcw size={13}/> Request Reopen
             </button>
           )}
