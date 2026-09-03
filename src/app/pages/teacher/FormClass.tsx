@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { 
   Award, Heart, CalendarDays, FileText, Download, Upload, CheckCircle2, 
-  AlertCircle, Edit2, Search, Sparkles, CheckSquare, X, RefreshCw, Star
+  AlertCircle, Edit2, Search, Sparkles, CheckSquare, X, RefreshCw, Star,
+  ChevronLeft, ChevronRight, ArrowLeft
 } from "lucide-react";
 import { apiClient, API_BASE_URL } from "../../lib/apiClient";
 
@@ -50,6 +51,9 @@ export default function FormClass() {
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
+
+  // Mobile active tab view: "roster" or "workspace"
+  const [mobileTab, setMobileTab] = useState<"roster" | "workspace">("roster");
 
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [loadingRoster, setLoadingRoster] = useState(false);
@@ -256,6 +260,30 @@ export default function FormClass() {
   const attendanceEntered = students.filter(s => s.days_present !== null).length;
   const affectiveCompleted = students.filter(s => s.punctuality > 0 && s.neatness > 0).length;
 
+  // Student pagination indices for mobile & desktop navigation
+  const currentIndex = filteredStudents.findIndex(s => s.id === selectedStudent?.id);
+  const prevStudent = currentIndex > 0 ? filteredStudents[currentIndex - 1] : null;
+  const nextStudent = currentIndex >= 0 && currentIndex < filteredStudents.length - 1 ? filteredStudents[currentIndex + 1] : null;
+
+  const handleSelectStudent = (student: any) => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    setSelectedStudent(student);
+    setSaveStatus("");
+    setMobileTab("workspace");
+  };
+
+  const handlePrevStudent = () => {
+    if (prevStudent) {
+      handleSelectStudent(prevStudent);
+    }
+  };
+
+  const handleNextStudent = () => {
+    if (nextStudent) {
+      handleSelectStudent(nextStudent);
+    }
+  };
+
   if (loadingClasses) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 350, color: "var(--subtext)" }}>
@@ -286,8 +314,99 @@ export default function FormClass() {
 
   return (
     <div>
+      <style>{`
+        .form-class-split {
+          display: grid;
+          grid-template-columns: 310px 1fr;
+          gap: 18px;
+          align-items: start;
+        }
+        .form-workspace-tabs-scroller {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          padding-bottom: 8px;
+          margin-bottom: 18px;
+        }
+        .form-workspace-tabs-scroller::-webkit-scrollbar {
+          display: none;
+        }
+        .form-mobile-nav {
+          display: none;
+        }
+        .form-mobile-switch-btn {
+          display: none;
+        }
+        @media (max-width: 850px) {
+          .form-class-split {
+            display: block !important;
+          }
+          .form-class-roster-panel {
+            display: ${mobileTab === "roster" ? "block" : "none"} !important;
+            margin-bottom: 16px;
+          }
+          .form-class-workspace-panel {
+            display: ${mobileTab === "workspace" ? "block" : "none"} !important;
+          }
+          .form-mobile-nav {
+            display: block !important;
+          }
+          .form-mobile-switch-btn {
+            display: flex !important;
+          }
+          .form-class-header-wrap {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+          .form-class-header-actions {
+            width: 100% !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+          }
+          .form-class-header-actions button {
+            width: 100% !important;
+            justify-content: center !important;
+            padding: 9px 8px !important;
+            font-size: 11.5px !important;
+          }
+          .responsive-grid-4.form-stats-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+          }
+          .form-stats-card {
+            padding: 10px 12px !important;
+          }
+          .form-stats-val {
+            font-size: 18px !important;
+          }
+          .arm-switcher-pills {
+            width: 100% !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            white-space: nowrap !important;
+            padding: 4px !important;
+            box-sizing: border-box !important;
+          }
+        }
+        @media (max-width: 550px) {
+          .responsive-grid-3.attendance-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .responsive-grid-2.awards-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .form-class-header-actions {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+
       {/* Header & Arm Switcher */}
-      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
+      <div className="form-class-header-wrap" style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <span style={{ fontSize: 11, fontWeight: 800, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.06em" }}>
@@ -304,7 +423,7 @@ export default function FormClass() {
         </div>
 
         {/* Action Buttons: Template Download & Upload */}
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="form-class-header-actions" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <button
             onClick={handleDownloadCsv}
             style={{
@@ -332,7 +451,7 @@ export default function FormClass() {
 
       {/* Class Arm Switcher Pills (If assigned to multiple arms) */}
       {formClasses.length > 1 && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 18, background: "var(--muted)", padding: 4, borderRadius: 10, width: "fit-content" }}>
+        <div className="arm-switcher-pills" style={{ display: "flex", gap: 8, marginBottom: 18, background: "var(--muted)", padding: 4, borderRadius: 10, width: "fit-content" }}>
           {formClasses.map(c => {
             const active = c.id === selectedClassId;
             return (
@@ -354,35 +473,35 @@ export default function FormClass() {
       )}
 
       {/* Summary Stats Overview */}
-      <div className="responsive-grid-4" style={{ marginBottom: 20, gap: 12 }}>
-        <Glass style={{ padding: "14px 18px" }}>
+      <div className="responsive-grid-4 form-stats-grid" style={{ marginBottom: 20, gap: 12 }}>
+        <Glass className="form-stats-card" style={{ padding: "14px 18px" }}>
           <div style={{ fontSize: 11, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 700 }}>Class Enrolment</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#219EBC", marginTop: 4 }}>{totalCount}</div>
-          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>Students in this arm</div>
+          <div className="form-stats-val" style={{ fontSize: 22, fontWeight: 800, color: "#219EBC", marginTop: 4 }}>{totalCount}</div>
+          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>Students in arm</div>
         </Glass>
 
-        <Glass style={{ padding: "14px 18px" }}>
+        <Glass className="form-stats-card" style={{ padding: "14px 18px" }}>
           <div style={{ fontSize: 11, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 700 }}>Teacher Comments</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#FFB703", marginTop: 4 }}>
+          <div className="form-stats-val" style={{ fontSize: 22, fontWeight: 800, color: "#FFB703", marginTop: 4 }}>
             {commentsCompleted} <span style={{ fontSize: 13, color: "var(--subtext)" }}>/ {totalCount}</span>
           </div>
-          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{Math.round((commentsCompleted / (totalCount || 1)) * 100)}% completed</div>
+          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{Math.round((commentsCompleted / (totalCount || 1)) * 100)}% done</div>
         </Glass>
 
-        <Glass style={{ padding: "14px 18px" }}>
-          <div style={{ fontSize: 11, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 700 }}>Attendance Recorded</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#2a9d8f", marginTop: 4 }}>
+        <Glass className="form-stats-card" style={{ padding: "14px 18px" }}>
+          <div style={{ fontSize: 11, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 700 }}>Attendance Entered</div>
+          <div className="form-stats-val" style={{ fontSize: 22, fontWeight: 800, color: "#2a9d8f", marginTop: 4 }}>
             {attendanceEntered} <span style={{ fontSize: 13, color: "var(--subtext)" }}>/ {totalCount}</span>
           </div>
-          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>Official term totals</div>
+          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>Term totals</div>
         </Glass>
 
-        <Glass style={{ padding: "14px 18px" }}>
+        <Glass className="form-stats-card" style={{ padding: "14px 18px" }}>
           <div style={{ fontSize: 11, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 700 }}>Domains Evaluated</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#FB8500", marginTop: 4 }}>
+          <div className="form-stats-val" style={{ fontSize: 22, fontWeight: 800, color: "#FB8500", marginTop: 4 }}>
             {affectiveCompleted} <span style={{ fontSize: 13, color: "var(--subtext)" }}>/ {totalCount}</span>
           </div>
-          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>Affective &amp; Psychomotor</div>
+          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>Traits &amp; Skills</div>
         </Glass>
       </div>
 
@@ -394,10 +513,10 @@ export default function FormClass() {
         </Glass>
       ) : (
         /* Split View: Roster (Left) & Assessment Workspace (Right) */
-        <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 18, alignItems: "start" }}>
+        <div className="form-class-split">
           
           {/* Left Panel: Student Roster with Search and Name-Edit Action */}
-          <Glass style={{ padding: "14px 12px", height: "fit-content" }}>
+          <Glass className="form-class-roster-panel" style={{ padding: "14px 12px", height: "fit-content" }}>
             <div style={{ marginBottom: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
                 <Search size={13} style={{ color: "var(--subtext)" }} />
@@ -412,7 +531,7 @@ export default function FormClass() {
             </div>
 
             <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.05em", padding: "4px 6px 8px", borderBottom: "1px solid var(--glass-border)" }}>
-              {filteredStudents.length} Students
+              {filteredStudents.length} Students {filteredStudents.length !== students.length && `(filtered from ${students.length})`}
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: "calc(100vh - 360px)", overflowY: "auto", marginTop: 6 }}>
@@ -424,11 +543,7 @@ export default function FormClass() {
                 return (
                   <div
                     key={s.id}
-                    onClick={() => {
-                      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-                      setSelectedStudent(s);
-                      setSaveStatus("");
-                    }}
+                    onClick={() => handleSelectStudent(s)}
                     style={{
                       padding: "9px 10px", borderRadius: 9, cursor: "pointer",
                       border: `1px solid ${isSelected ? "#FB8500" : "transparent"}`,
@@ -461,23 +576,91 @@ export default function FormClass() {
 
                     {s.punctuality > 0 && (
                       <span style={{ fontSize: 9.5, color: "#219EBC", fontWeight: 700, background: "rgba(33,158,188,0.12)", padding: "2px 5px", borderRadius: 6 }}>
-                        ✓ Evaluated
+                        ✓ Rated
                       </span>
                     )}
                   </div>
                 );
               })}
             </div>
+
+            {/* Mobile quick button to go back to active evaluation */}
+            {selectedStudent && (
+              <div className="form-mobile-switch-btn" style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => setMobileTab("workspace")}
+                  style={{
+                    width: "100%", padding: "10px 14px", borderRadius: 10,
+                    background: "linear-gradient(135deg, #FB8500, #E76F51)", border: "none",
+                    color: "#fff", fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    boxShadow: "0 4px 12px rgba(251,133,0,0.25)"
+                  }}
+                >
+                  Edit: {selectedStudent.name.split(" ")[0]} →
+                </button>
+              </div>
+            )}
           </Glass>
 
           {/* Right Panel: Student Assessment Workspace */}
           {selectedStudent ? (
-            <Glass style={{ padding: 22 }}>
+            <Glass className="form-class-workspace-panel" style={{ padding: "18px 16px" }}>
+              {/* Mobile Header with Back Button and Prev/Next Navigation */}
+              <div className="form-mobile-nav" style={{ marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setMobileTab("roster")}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 11px",
+                      borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)",
+                      color: "var(--heading)", fontSize: 12, fontWeight: 700, cursor: "pointer"
+                    }}
+                  >
+                    <ArrowLeft size={13} /> Roster ({filteredStudents.length})
+                  </button>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <button
+                      type="button"
+                      disabled={!prevStudent}
+                      onClick={handlePrevStudent}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32,
+                        borderRadius: 7, background: "var(--muted)", border: "1px solid var(--glass-border)",
+                        color: "var(--heading)", opacity: prevStudent ? 1 : 0.35, cursor: prevStudent ? "pointer" : "not-allowed"
+                      }}
+                      title="Previous Student"
+                    >
+                      <ChevronLeft size={15} />
+                    </button>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--subtext)", minWidth: 42, textAlign: "center" }}>
+                      {currentIndex >= 0 ? `${currentIndex + 1} / ${filteredStudents.length}` : ""}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={!nextStudent}
+                      onClick={handleNextStudent}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32,
+                        borderRadius: 7, background: "var(--muted)", border: "1px solid var(--glass-border)",
+                        color: "var(--heading)", opacity: nextStudent ? 1 : 0.35, cursor: nextStudent ? "pointer" : "not-allowed"
+                      }}
+                      title="Next Student"
+                    >
+                      <ChevronRight size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* Workspace Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: 14, marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: 12, marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--heading)" }}>
+                    <h2 style={{ margin: 0, fontSize: 16.5, fontWeight: 800, color: "var(--heading)" }}>
                       {selectedStudent.name}
                     </h2>
                     <button
@@ -495,14 +678,14 @@ export default function FormClass() {
                 </div>
 
                 {saveStatus && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#2a9d8f", background: "rgba(42,157,143,0.1)", padding: "4px 10px", borderRadius: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#2a9d8f", background: "rgba(42,157,143,0.1)", padding: "4px 9px", borderRadius: 8 }}>
                     <CheckCircle2 size={13} /> {saveStatus}
                   </div>
                 )}
               </div>
 
-              {/* Workspace Navigation Tabs */}
-              <div style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--glass-border)", paddingBottom: 8, marginBottom: 18, flexWrap: "wrap" }}>
+              {/* Workspace Navigation Tabs (Horizontal swipe on mobile) */}
+              <div className="form-workspace-tabs-scroller" style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--glass-border)", paddingBottom: 8, marginBottom: 16 }}>
                 {[
                   { id: "affective", label: "Affective Traits", icon: <Heart size={13} />, color: "#219EBC" },
                   { id: "psychomotor", label: "Psychomotor Skills", icon: <Award size={13} />, color: "#FFB703" },
@@ -515,11 +698,12 @@ export default function FormClass() {
                       key={t.id}
                       onClick={() => setActiveTab(t.id as any)}
                       style={{
-                        display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8,
+                        display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
                         border: `1.5px solid ${active ? t.color : "transparent"}`,
                         background: active ? `${t.color}15` : "transparent",
                         color: active ? t.color : "var(--subtext)",
-                        fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s"
+                        fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
+                        whiteSpace: "nowrap", flexShrink: 0
                       }}
                     >
                       {t.icon} {t.label}
@@ -531,16 +715,16 @@ export default function FormClass() {
               {/* TAB 1: Affective / Behavioral Traits */}
               {activeTab === "affective" && (
                 <div>
-                  <div style={{ fontSize: 12, color: "var(--subtext)", marginBottom: 12 }}>
-                    Rate student character development on a scale of <strong>1 (Poor)</strong> to <strong>5 (Excellent)</strong>:
+                  <div style={{ fontSize: 12, color: "var(--subtext)", marginBottom: 10 }}>
+                    Rate character development: <strong>1 (Poor)</strong> to <strong>5 (Excellent)</strong>:
                   </div>
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 360 }}>
                       <thead>
                         <tr style={{ borderBottom: "2px solid var(--glass-border)" }}>
-                          <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 11, color: "var(--subtext)" }}>Behavioral Trait</th>
+                          <th style={{ textAlign: "left", padding: "8px 8px", fontSize: 11, color: "var(--subtext)" }}>Behavioral Trait</th>
                           {[1, 2, 3, 4, 5].map(i => (
-                            <th key={i} style={{ width: 50, padding: "8px", fontSize: 11, color: "var(--subtext)", textAlign: "center" }}>
+                            <th key={i} style={{ width: 44, padding: "6px 2px", fontSize: 11, color: "var(--subtext)", textAlign: "center" }}>
                               {i}
                             </th>
                           ))}
@@ -551,16 +735,18 @@ export default function FormClass() {
                           const currentScore = (selectedStudent as any)[t.id] || 0;
                           return (
                             <tr key={t.id} style={{ borderBottom: "1px solid var(--glass-border)" }}>
-                              <td style={{ padding: "8px 10px", fontSize: 12.5, fontWeight: 600, color: "var(--heading)" }}>{t.label}</td>
+                              <td style={{ padding: "8px 8px", fontSize: 12.5, fontWeight: 600, color: "var(--heading)", minWidth: 140 }}>{t.label}</td>
                               {[1, 2, 3, 4, 5].map(v => (
-                                <td key={v} style={{ textAlign: "center", padding: "6px" }}>
-                                  <input
-                                    type="radio"
-                                    name={`aff-${selectedStudent.id}-${t.id}`}
-                                    checked={currentScore === v}
-                                    onChange={() => updateMetric(t.id, v)}
-                                    style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#219EBC" }}
-                                  />
+                                <td key={v} style={{ textAlign: "center", padding: "6px 2px" }}>
+                                  <label style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, cursor: "pointer", borderRadius: "50%", background: currentScore === v ? "rgba(33,158,188,0.15)" : "transparent" }}>
+                                    <input
+                                      type="radio"
+                                      name={`aff-${selectedStudent.id}-${t.id}`}
+                                      checked={currentScore === v}
+                                      onChange={() => updateMetric(t.id, v)}
+                                      style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#219EBC" }}
+                                    />
+                                  </label>
                                 </td>
                               ))}
                             </tr>
