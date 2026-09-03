@@ -106,6 +106,109 @@ class ClassController {
         }
     }
 
+    // Bulk import courses (subjects) via CSV
+    public function bulkImportCourses() {
+        Auth::requireRole(['admin']);
+
+        if (!isset($_FILES['csv_file'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "No CSV file uploaded"]);
+            return;
+        }
+
+        $file = $_FILES['csv_file'];
+        if (strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) !== 'csv') {
+            http_response_code(400);
+            echo json_encode(["error" => "Only CSV files are allowed"]);
+            return;
+        }
+
+        $handle = fopen($file['tmp_name'], "r");
+        if ($handle === false) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to open uploaded CSV"]);
+            return;
+        }
+
+        // Read headers, skipping commented lines
+        $headers = fgetcsv($handle, 1000, ",");
+        while ($headers !== false && (empty($headers[0]) || substr(trim($headers[0]), 0, 1) === '#')) {
+            $headers = fgetcsv($handle, 1000, ",");
+        }
+
+        if (!$headers) {
+            fclose($handle);
+            http_response_code(400);
+            echo json_encode(["error" => "Empty or invalid CSV file"]);
+            return;
+        }
+
+        // Clean headers
+        $cleanHeaders = array_map(function($h) {
+            return strtolower(trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $h)));
+        }, $headers);
+        $headerMap = array_flip($cleanHeaders);
+
+        if (!isset($headerMap['name']) && !isset($headerMap['subject_name']) && !isset($headerMap['subject'])) {
+            fclose($handle);
+            http_response_code(400);
+            echo json_encode(["error" => "CSV must include a 'name' or 'subject' column"]);
+            return;
+        }
+
+        $nameKey = isset($headerMap['name']) ? $headerMap['name'] : (isset($headerMap['subject_name']) ? $headerMap['subject_name'] : $headerMap['subject']);
+        $descKey = isset($headerMap['description']) ? $headerMap['description'] : null;
+        $topicsKey = isset($headerMap['topics']) ? $headerMap['topics'] : null;
+
+        $created = 0;
+        $skipped = 0;
+        $errors = [];
+
+        $stmtCheck = $this->conn->prepare("SELECT id FROM courses WHERE LOWER(name) = LOWER(:n) LIMIT 1");
+        $stmtInsert = $this->conn->prepare("INSERT INTO courses (name, description, topics) VALUES (:n, :d, :t)");
+
+        $this->conn->beginTransaction();
+        try {
+            while (($row = fgetcsv($handle, 1000, ",")) !== false) {
+                if (empty($row) || !isset($row[$nameKey])) continue;
+                $name = trim($row[$nameKey]);
+                if (empty($name)) continue;
+
+                $desc = ($descKey !== null && isset($row[$descKey])) ? trim($row[$descKey]) : null;
+                $topics = ($topicsKey !== null && isset($row[$topicsKey])) ? trim($row[$topicsKey]) : null;
+
+                // Check duplicate
+                $stmtCheck->execute([':n' => $name]);
+                if ($stmtCheck->rowCount() > 0) {
+                    $skipped++;
+                    continue;
+                }
+
+                $stmtInsert->execute([
+                    ':n' => $name,
+                    ':d' => $desc,
+                    ':t' => $topics
+                ]);
+                $created++;
+            }
+
+            $this->conn->commit();
+            fclose($handle);
+
+            echo json_encode([
+                "success" => true,
+                "created" => $created,
+                "skipped" => $skipped,
+                "message" => "Imported $created subject(s)" . ($skipped > 0 ? " ($skipped already existed)" : "")
+            ]);
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            fclose($handle);
+            http_response_code(500);
+            echo json_encode(["error" => "Bulk import error: " . $e->getMessage()]);
+        }
+    }
+
     // Get subjects allocated to a specific class
     public function getClassSubjects() {
         $user = Auth::authenticate();

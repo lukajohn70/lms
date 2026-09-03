@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, BookOpen, Save, Settings, Search, ChevronDown } from "lucide-react";
+import { Plus, Trash2, BookOpen, Save, Settings, Search, ChevronDown, Download, Upload, CheckCircle, AlertCircle } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
@@ -122,6 +122,71 @@ export default function AdminClasses() {
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState("");
   const [newSubjectDesc, setNewSubjectDesc] = useState("");
+
+  // CSV Template & Bulk Import for Subjects
+  const subjectFileInputRef = useRef<HTMLInputElement>(null);
+  const [csvMessage, setCsvMessage] = useState("");
+  const [csvError, setCsvError] = useState("");
+  const [csvImporting, setCsvImporting] = useState(false);
+
+  const handleDownloadSubjectsTemplate = () => {
+    const headers = ["name", "description", "topics"];
+    const rows = [
+      ["Mathematics", "Core general mathematics and quantitative reasoning", "Algebra, Geometry, Trigonometry"],
+      ["English Language", "Grammar, composition, literature and oral English", "Grammar, Essay Writing, Comprehension"],
+      ["Physics", "Classical and modern physics with laboratory practicals", "Mechanics, Optics, Electricity"],
+      ["Chemistry", "Inorganic, organic and physical chemistry", "Periodic Table, Chemical Reactions"],
+      ["Biology", "Living systems, ecology and human physiology", "Cell Biology, Genetics, Ecology"],
+      ["Economics", "Principles of micro and macro economics", "Demand & Supply, Fiscal Policy"]
+    ];
+
+    const csvContent = "\uFEFF" + [
+      "# Aroura Academy Subjects (Courses) Template",
+      "# Required column: name",
+      headers.join(","),
+      ...rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(","))
+    ].join("\r\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `subjects_import_template.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportSubjectsCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCsvImporting(true);
+    setCsvMessage("");
+    setCsvError("");
+
+    const formData = new FormData();
+    formData.append("csv_file", file);
+
+    try {
+      const res: any = await apiClient.postForm("/admin/courses/bulk-import", formData);
+      if (res && res.success) {
+        setCsvMessage(res.message || `Successfully imported ${res.created} subject(s)!`);
+        fetchCourses();
+        setTimeout(() => setCsvMessage(""), 6000);
+      } else {
+        setCsvError(res.error || "Failed to import subjects.");
+        setTimeout(() => setCsvError(""), 6000);
+      }
+    } catch (err: any) {
+      setCsvError(err.message || "Bulk import failed. Please check CSV format.");
+      setTimeout(() => setCsvError(""), 6000);
+    } finally {
+      setCsvImporting(false);
+      if (subjectFileInputRef.current) subjectFileInputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     fetchClasses();
@@ -265,15 +330,64 @@ export default function AdminClasses() {
               <Plus size={16} /> New Class
             </button>
           ) : (
-            <button
-              onClick={() => setShowAddSubject(true)}
-              style={{ padding: "10px 18px", borderRadius: 10, background: "linear-gradient(135deg, #219EBC, #023047)", border: "none", color: "#fff", fontSize: 13, fontWeight: 600, display: "flex", gap: 8, alignItems: "center", cursor: "pointer" }}
-            >
-              <Plus size={16} /> New Subject
-            </button>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={handleDownloadSubjectsTemplate}
+                style={{
+                  padding: "9px 14px", borderRadius: 10, background: "rgba(33,158,188,0.1)",
+                  border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 12.5, fontWeight: 600,
+                  display: "flex", gap: 6, alignItems: "center", cursor: "pointer"
+                }}
+              >
+                <Download size={14} /> Template (.csv)
+              </button>
+
+              <input
+                type="file"
+                ref={subjectFileInputRef}
+                onChange={handleImportSubjectsCsv}
+                accept=".csv"
+                style={{ display: "none" }}
+              />
+
+              <button
+                type="button"
+                disabled={csvImporting}
+                onClick={() => subjectFileInputRef.current?.click()}
+                style={{
+                  padding: "9px 14px", borderRadius: 10, background: "linear-gradient(135deg, #FB8500, #E76F51)",
+                  border: "none", color: "#fff", fontSize: 12.5, fontWeight: 600,
+                  display: "flex", gap: 6, alignItems: "center", cursor: csvImporting ? "not-allowed" : "pointer",
+                  boxShadow: "0 4px 12px rgba(251,133,0,0.25)"
+                }}
+              >
+                <Upload size={14} /> {csvImporting ? "Importing…" : "Import CSV"}
+              </button>
+
+              <button
+                onClick={() => setShowAddSubject(true)}
+                style={{ padding: "9px 16px", borderRadius: 10, background: "linear-gradient(135deg, #219EBC, #023047)", border: "none", color: "#fff", fontSize: 12.5, fontWeight: 600, display: "flex", gap: 8, alignItems: "center", cursor: "pointer" }}
+              >
+                <Plus size={16} /> New Subject
+              </button>
+            </div>
           )}
         </div>
       </div>
+
+      {csvMessage && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 9, background: "rgba(42,157,143,0.12)", border: "1px solid rgba(42,157,143,0.3)", color: "#2a9d8f", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
+          <CheckCircle size={15} style={{ flexShrink: 0 }} />
+          <span>{csvMessage}</span>
+        </div>
+      )}
+      {csvError && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 9, background: "rgba(231,111,81,0.12)", border: "1px solid rgba(231,111,81,0.3)", color: "#e76f51", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
+          <AlertCircle size={15} style={{ flexShrink: 0 }} />
+          <span>{csvError}</span>
+        </div>
+      )}
 
       {activeTab === 'classes' && (
         <>

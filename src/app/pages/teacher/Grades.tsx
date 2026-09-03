@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Save, CheckCircle, TrendingUp, Sparkles, BookOpen, Send, Lock, AlertCircle, RotateCcw, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Save, CheckCircle, TrendingUp, Sparkles, BookOpen, Send, Lock, AlertCircle, RotateCcw, X, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 
 const getMidRemark = (total: number) => {
@@ -204,6 +204,173 @@ export default function Grades() {
     }
   };
 
+  // CSV Template & Import
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [csvMessage, setCsvMessage] = useState("");
+  const [csvError, setCsvError] = useState("");
+
+  const handleDownloadTemplate = () => {
+    if (!students || students.length === 0) {
+      alert("No students enrolled in this course to generate a template for.");
+      return;
+    }
+    const currentCourse = courses.find(c => c.id === selectedCourseId);
+    const courseName = currentCourse ? currentCourse.name : "Subject";
+    const headers = [
+      "Student ID",
+      "Student Number",
+      "Student Name",
+      "Assignment (/5)",
+      "Project (/5)",
+      "Mid-Term Test (/10)",
+      "CA 2 (/20)",
+      "Exam (/60)"
+    ];
+
+    const rows = students.map(s => [
+      s.id,
+      `"${(s.student_number || "").replace(/"/g, '""')}"`,
+      `"${(s.name || "").replace(/"/g, '""')}"`,
+      s.assignment_score || "",
+      s.project_score || "",
+      s.mid_term_test || "",
+      s.ca2 || "",
+      s.exam || ""
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${courseName.replace(/[^a-zA-Z0-9]/g, "_")}_${selectedTerm.replace(/\s+/g, "_")}_grades.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target?.result as string;
+        if (!text) throw new Error("Empty CSV file");
+
+        const lines = text.split(/\r\n|\n/).map(l => l.trim()).filter(l => l.length > 0);
+        if (lines.length < 2) throw new Error("CSV file contains no data rows");
+
+        const parseLine = (line: string) => {
+          const result: string[] = [];
+          let current = "";
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"' || char === "'") {
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              result.push(current.trim());
+              current = "";
+            } else {
+              current += char;
+            }
+          }
+          result.push(current.trim());
+          return result.map(s => s.replace(/^["']|["']$/g, "").trim());
+        };
+
+        const headerLine = lines[0];
+        const headers = parseLine(headerLine).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ""));
+        
+        const findCol = (keys: string[]) => {
+          for (const k of keys) {
+            const idx = headers.findIndex(h => h.includes(k));
+            if (idx !== -1) return idx;
+          }
+          return -1;
+        };
+
+        const idIdx = findCol(["studentid", "id"]);
+        const numIdx = findCol(["studentnumber", "admissionnumber", "regnumber", "number"]);
+        const nameIdx = findCol(["studentname", "name", "fullname"]);
+        const asgnIdx = findCol(["assignment", "asgn"]);
+        const projIdx = findCol(["project", "proj"]);
+        const testIdx = findCol(["midtermtest", "test"]);
+        const ca2Idx = findCol(["ca2", "continuousassessment2"]);
+        const examIdx = findCol(["exam", "examinationscore"]);
+
+        let matchCount = 0;
+
+        setStudents(prev => {
+          return prev.map(s => {
+            for (let i = 1; i < lines.length; i++) {
+              const row = parseLine(lines[i]);
+              let isMatch = false;
+
+              if (idIdx !== -1 && row[idIdx] && String(row[idIdx]) === String(s.id)) {
+                isMatch = true;
+              } else if (numIdx !== -1 && row[numIdx] && s.student_number && row[numIdx].toLowerCase() === s.student_number.toLowerCase()) {
+                isMatch = true;
+              } else if (nameIdx !== -1 && row[nameIdx] && s.name && row[nameIdx].toLowerCase() === s.name.toLowerCase()) {
+                isMatch = true;
+              }
+
+              if (isMatch) {
+                matchCount++;
+                const newAsgn = asgnIdx !== -1 && row[asgnIdx] !== undefined ? row[asgnIdx].replace(/[^0-9.]/g, "") : s.assignment_score;
+                const newProj = projIdx !== -1 && row[projIdx] !== undefined ? row[projIdx].replace(/[^0-9.]/g, "") : s.project_score;
+                const newTest = testIdx !== -1 && row[testIdx] !== undefined ? row[testIdx].replace(/[^0-9.]/g, "") : s.mid_term_test;
+                const newCa2  = ca2Idx !== -1 && row[ca2Idx] !== undefined ? row[ca2Idx].replace(/[^0-9.]/g, "") : s.ca2;
+                const newExam = examIdx !== -1 && row[examIdx] !== undefined ? row[examIdx].replace(/[^0-9.]/g, "") : s.exam;
+
+                const a = parseFloat(newAsgn) || 0;
+                const p = parseFloat(newProj) || 0;
+                const t = parseFloat(newTest) || 0;
+                const c2 = parseFloat(newCa2) || 0;
+                const ex = parseFloat(newExam) || 0;
+
+                const midTotal = a + p + t;
+                const score = activeTab === "mid_term" ? midTotal : (midTotal + c2 + ex);
+
+                return {
+                  ...s,
+                  assignment_score: newAsgn,
+                  project_score: newProj,
+                  mid_term_test: newTest,
+                  ca1: String(midTotal),
+                  ca2: newCa2,
+                  exam: newExam,
+                  score
+                };
+              }
+            }
+            return s;
+          });
+        });
+
+        if (matchCount > 0) {
+          setCsvMessage(`Successfully imported and updated scores for ${matchCount} student(s) from CSV! Remember to click "Save Draft" or "Submit for Approval".`);
+          setCsvError("");
+          setTimeout(() => setCsvMessage(""), 7000);
+        } else {
+          setCsvError("No matching students found in CSV. Please ensure Student IDs, Admission Numbers, or Names match the enrolled list.");
+          setCsvMessage("");
+          setTimeout(() => setCsvError(""), 7000);
+        }
+      } catch (err: any) {
+        setCsvError(err.message || "Failed to parse CSV file. Please use the downloaded template.");
+        setCsvMessage("");
+        setTimeout(() => setCsvError(""), 7000);
+      } finally {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const avg = students.length > 0 
     ? Math.round(students.reduce((acc, s) => acc + s.score, 0) / students.length)
     : 0;
@@ -285,6 +452,47 @@ export default function Grades() {
             </select>
           )}
 
+          {/* CSV Template & Import Buttons */}
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <button
+              onClick={handleDownloadTemplate}
+              disabled={loading || students.length === 0}
+              title="Download CSV Template with enrolled students"
+              style={{
+                display: "flex", alignItems: "center", gap: 5, padding: "7px 12px",
+                borderRadius: 8, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.3)",
+                cursor: (loading || students.length === 0) ? "not-allowed" : "pointer",
+                fontSize: 12, fontWeight: 600, color: "#219EBC"
+              }}
+            >
+              <Download size={13} /> Template (.csv)
+            </button>
+            {!isLocked && (
+              <>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImportCsv}
+                  accept=".csv"
+                  style={{ display: "none" }}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading || students.length === 0}
+                  title="Import student scores from filled CSV"
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5, padding: "7px 12px",
+                    borderRadius: 8, background: "rgba(255,183,3,0.12)", border: "1px solid rgba(255,183,3,0.35)",
+                    cursor: (loading || students.length === 0) ? "not-allowed" : "pointer",
+                    fontSize: 12, fontWeight: 600, color: "#FFB703"
+                  }}
+                >
+                  <Upload size={13} /> Import CSV
+                </button>
+              </>
+            )}
+          </div>
+
           {!isLocked && (
             <>
               <button onClick={() => handleSave("draft")} disabled={loading || students.length === 0}
@@ -318,6 +526,20 @@ export default function Grades() {
           )}
         </div>
       </div>
+
+      {/* CSV Status Messages */}
+      {csvMessage && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", borderRadius: 9, background: "rgba(42,157,143,0.12)", border: "1px solid rgba(42,157,143,0.3)", color: "#2a9d8f", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
+          <CheckCircle size={15} style={{ flexShrink: 0 }} />
+          <span>{csvMessage}</span>
+        </div>
+      )}
+      {csvError && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", borderRadius: 9, background: "rgba(231,111,81,0.12)", border: "1px solid rgba(231,111,81,0.3)", color: "#e76f51", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
+          <AlertCircle size={15} style={{ flexShrink: 0 }} />
+          <span>{csvError}</span>
+        </div>
+      )}
 
       {/* Reopen Request Modal */}
       {showReopenModal && (
@@ -429,7 +651,8 @@ export default function Grades() {
               <span style={{ fontSize: 11, color: "var(--subtext)" }}>Session: 2026/2027</span>
             </div>
 
-            <div className="table-responsive-wrapper">
+            {/* DESKTOP TABLE VIEW */}
+            <div className="desktop-only table-responsive-wrapper">
               <div style={{ minWidth: 760 }}>
                 {/* Headers based on Active Tab */}
                 {activeTab === "mid_term" ? (
@@ -518,6 +741,166 @@ export default function Grades() {
               }
             })}
                 </div>
+              </div>
+
+              {/* MOBILE CARDS VIEW (ZERO HORIZONTAL SCROLL) */}
+              <div className="mobile-only" style={{ display: "flex", flexDirection: "column", gap: 14, padding: "14px 12px" }}>
+                {students.map((s) => {
+                  const midTotal = (parseFloat(s.assignment_score) || 0) + (parseFloat(s.project_score) || 0) + (parseFloat(s.mid_term_test) || 0);
+
+                  if (activeTab === "mid_term") {
+                    const rmk = getMidRemark(s.score);
+                    const asgnErr = (parseFloat(s.assignment_score) || 0) > 5;
+                    const projErr = (parseFloat(s.project_score) || 0) > 5;
+                    const testErr = (parseFloat(s.mid_term_test) || 0) > 10;
+
+                    return (
+                      <div key={s.id} style={{ padding: 14, borderRadius: 12, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 12 }}>
+                        {/* Student Name & Total badge */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>{s.name}</div>
+                            <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{s.student_number}</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <span style={{ fontSize: 16, fontWeight: 800, color: rmk.color }}>{s.score.toFixed(1)} <span style={{ fontSize: 11, fontWeight: 500, color: "var(--subtext)" }}>/20</span></span>
+                            <div style={{ marginTop: 2 }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: rmk.bg, color: rmk.color }}>
+                                {rmk.text}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div style={{ height: 5, borderRadius: 3, background: "var(--glass-border)", overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${Math.min((s.score / 20) * 100, 100)}%`, background: rmk.color, borderRadius: 3 }} />
+                        </div>
+
+                        {/* Input Fields */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                          <div>
+                            <label style={{ display: "block", fontSize: 10.5, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Asgn (/5)</label>
+                            <input
+                              type="text"
+                              value={s.assignment_score}
+                              onChange={e => updateField(s.id, "assignment_score", e.target.value)}
+                              disabled={isLocked}
+                              style={{
+                                width: "100%", padding: "8px 6px", borderRadius: 8,
+                                border: `1px solid ${asgnErr ? "#ef4444" : "var(--glass-border)"}`,
+                                background: isLocked ? "transparent" : (asgnErr ? "rgba(239,68,68,0.05)" : "var(--background)"),
+                                fontSize: 13, fontWeight: 600, color: "var(--heading)", textAlign: "center", outline: "none", boxSizing: "border-box"
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", fontSize: 10.5, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Proj (/5)</label>
+                            <input
+                              type="text"
+                              value={s.project_score}
+                              onChange={e => updateField(s.id, "project_score", e.target.value)}
+                              disabled={isLocked}
+                              style={{
+                                width: "100%", padding: "8px 6px", borderRadius: 8,
+                                border: `1px solid ${projErr ? "#ef4444" : "var(--glass-border)"}`,
+                                background: isLocked ? "transparent" : (projErr ? "rgba(239,68,68,0.05)" : "var(--background)"),
+                                fontSize: 13, fontWeight: 600, color: "var(--heading)", textAlign: "center", outline: "none", boxSizing: "border-box"
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", fontSize: 10.5, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Test (/10)</label>
+                            <input
+                              type="text"
+                              value={s.mid_term_test}
+                              onChange={e => updateField(s.id, "mid_term_test", e.target.value)}
+                              disabled={isLocked}
+                              style={{
+                                width: "100%", padding: "8px 6px", borderRadius: 8,
+                                border: `1px solid ${testErr ? "#ef4444" : "var(--glass-border)"}`,
+                                background: isLocked ? "transparent" : (testErr ? "rgba(239,68,68,0.05)" : "var(--background)"),
+                                fontSize: 13, fontWeight: 600, color: "var(--heading)", textAlign: "center", outline: "none", boxSizing: "border-box"
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    const gl = getLetterGrade(s.score);
+                    const ca2Err = (parseFloat(s.ca2) || 0) > 20;
+                    const examErr = (parseFloat(s.exam) || 0) > 60;
+
+                    return (
+                      <div key={s.id} style={{ padding: 14, borderRadius: 12, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 12 }}>
+                        {/* Student Name & Total badge */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>{s.name}</div>
+                            <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{s.student_number}</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <span style={{ fontSize: 16, fontWeight: 800, color: gl.color }}>{s.score.toFixed(1)} <span style={{ fontSize: 11, fontWeight: 500, color: "var(--subtext)" }}>/100</span></span>
+                            <div style={{ marginTop: 2 }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: `${gl.color}18`, color: gl.color }}>
+                                {gl.grade} · {gl.text}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div style={{ height: 5, borderRadius: 3, background: "var(--glass-border)", overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${Math.min(s.score, 100)}%`, background: gl.color, borderRadius: 3 }} />
+                        </div>
+
+                        {/* Input Fields */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                          <div>
+                            <label style={{ display: "block", fontSize: 10.5, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>CA 1 (/20)</label>
+                            <div style={{
+                              width: "100%", padding: "8px 6px", borderRadius: 8, background: "rgba(33,158,188,0.08)",
+                              border: "1px solid rgba(33,158,188,0.2)", fontSize: 13, fontWeight: 700, color: "#219EBC", textAlign: "center", boxSizing: "border-box"
+                            }}>
+                              {midTotal.toFixed(1)}
+                            </div>
+                          </div>
+                          <div>
+                            <label style={{ display: "block", fontSize: 10.5, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>CA 2 (/20)</label>
+                            <input
+                              type="text"
+                              value={s.ca2}
+                              onChange={e => updateField(s.id, "ca2", e.target.value)}
+                              disabled={isLocked}
+                              style={{
+                                width: "100%", padding: "8px 6px", borderRadius: 8,
+                                border: `1px solid ${ca2Err ? "#ef4444" : "var(--glass-border)"}`,
+                                background: isLocked ? "transparent" : (ca2Err ? "rgba(239,68,68,0.05)" : "var(--background)"),
+                                fontSize: 13, fontWeight: 600, color: "var(--heading)", textAlign: "center", outline: "none", boxSizing: "border-box"
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: "block", fontSize: 10.5, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Exam (/60)</label>
+                            <input
+                              type="text"
+                              value={s.exam}
+                              onChange={e => updateField(s.id, "exam", e.target.value)}
+                              disabled={isLocked}
+                              style={{
+                                width: "100%", padding: "8px 6px", borderRadius: 8,
+                                border: `1px solid ${examErr ? "#ef4444" : "var(--glass-border)"}`,
+                                background: isLocked ? "transparent" : (examErr ? "rgba(239,68,68,0.05)" : "var(--background)"),
+                                fontSize: 13, fontWeight: 600, color: "var(--heading)", textAlign: "center", outline: "none", boxSizing: "border-box"
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                })}
               </div>
             </Glass>
         </>

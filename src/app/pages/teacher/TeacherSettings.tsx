@@ -149,7 +149,7 @@ export default function TeacherSettings() {
           </div>
 
           {/* Avatar floating above strip */}
-          <div style={{ paddingInline: 24, marginTop: -40, marginBottom: 16, display: "flex", alignItems: "flex-end", gap: 14 }}>
+          <div style={{ paddingInline: 18, marginTop: -40, marginBottom: 16, display: "flex", alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
               <div style={{
                 width: 80, height: 80, borderRadius: "50%",

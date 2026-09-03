@@ -126,6 +126,7 @@ $router->post('/admin/classes/create', 'ClassController@createClass');
 $router->post('/admin/classes/delete', 'ClassController@deleteClass');
 $router->get('/courses', 'ClassController@getCourses');
 $router->post('/admin/courses/create', 'ClassController@createCourse');
+$router->post('/admin/courses/bulk-import', 'ClassController@bulkImportCourses');
 $router->get('/class-subjects', 'ClassController@getClassSubjects');
 $router->post('/admin/class-subjects/save', 'ClassController@saveClassSubjects');
 
