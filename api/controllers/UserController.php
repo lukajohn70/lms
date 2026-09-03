@@ -95,9 +95,9 @@ class UserController {
             return;
         }
 
-        if (strlen($data['new_password']) < 6) {
+        if (strlen($data['new_password']) < 8) {
             http_response_code(400);
-            echo json_encode(["error" => "New password must be at least 6 characters"]);
+            echo json_encode(["error" => "New password must be at least 8 characters"]);
             return;
         }
 

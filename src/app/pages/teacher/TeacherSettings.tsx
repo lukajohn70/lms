@@ -309,7 +309,7 @@ export default function TeacherSettings() {
                     required
                     value={newPw}
                     onChange={e => setNewPw(e.target.value)}
-                    placeholder="Minimum 6 characters"
+                    placeholder="Minimum 8 characters"
                     style={{ width: "100%", padding: "10px 42px 10px 14px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                   />
                   <button type="button" onClick={() => setShowNew(!showNew)}
