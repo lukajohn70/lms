@@ -112,8 +112,8 @@ export default function Materials() {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 18 }}>
-        {/* File list */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 340px", gap: 18 }} className="cbt-layout">
+        {/* File list — desktop full table, mobile cards */}
         <Glass>
           <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 13.5, fontWeight: 600, color: "var(--heading)" }}>
             Uploaded Materials {!loading && `(${files.length})`}
@@ -131,25 +131,53 @@ export default function Materials() {
               <div style={{ fontSize: 13, color: "var(--subtext)" }}>No materials uploaded yet.</div>
             </div>
           ) : (
-            files.map(f => (
-              <div key={f.id} style={{ display: "grid", gridTemplateColumns: "1fr 100px 80px 60px 50px", padding: "11px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(142,202,230,0.1)", border: "1px solid rgba(142,202,230,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#8ECAE6", flexShrink: 0 }}>
-                    <IconFor t={f.file_type} />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--heading)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.title}</div>
-                    {f.description && <div style={{ fontSize: 10, color: "var(--subtext)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.description}</div>}
-                  </div>
+            <>
+              {/* Desktop table view */}
+              <div className="desktop-only">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 100px 80px 60px 50px", padding: "8px 18px", borderBottom: "1px solid var(--glass-border)" }}>
+                  {["File Name", "Course", "Date", "Type", ""].map(h => (
+                    <span key={h} style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>{h}</span>
+                  ))}
                 </div>
-                <span style={{ fontSize: 11, color: "var(--subtext)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.course_name}</span>
-                <span style={{ fontSize: 11, color: "var(--subtext)" }}>{f.date}</span>
-                <span style={{ fontSize: 10, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 600 }}>{f.ext}</span>
-                <button onClick={() => handleDelete(f.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#FB8500", padding: 4 }}>
-                  <Trash2 size={14} />
-                </button>
+                {files.map(f => (
+                  <div key={f.id} style={{ display: "grid", gridTemplateColumns: "1fr 100px 80px 60px 50px", padding: "11px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(142,202,230,0.1)", border: "1px solid rgba(142,202,230,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#8ECAE6", flexShrink: 0 }}>
+                        <IconFor t={f.file_type} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--heading)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.title}</div>
+                        {f.description && <div style={{ fontSize: 10, color: "var(--subtext)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.description}</div>}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 11, color: "var(--subtext)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.course_name}</span>
+                    <span style={{ fontSize: 11, color: "var(--subtext)" }}>{f.date}</span>
+                    <span style={{ fontSize: 10, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 600 }}>{f.ext}</span>
+                    <button onClick={() => handleDelete(f.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#FB8500", padding: 4 }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))
+
+              {/* Mobile card view */}
+              <div className="mobile-only" style={{ display: "flex", flexDirection: "column" }}>
+                {files.map(f => (
+                  <div key={f.id} style={{ padding: "12px 16px", borderBottom: "1px solid var(--glass-border)", display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(142,202,230,0.1)", border: "1px solid rgba(142,202,230,0.25)", display: "flex", alignItems: "center", justifyContent: "center", color: "#8ECAE6", flexShrink: 0 }}>
+                      <IconFor t={f.file_type} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.title}</div>
+                      <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{f.course_name} · {f.date} · <span style={{ textTransform: "uppercase", fontWeight: 600 }}>{f.ext}</span></div>
+                    </div>
+                    <button onClick={() => handleDelete(f.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#FB8500", padding: 4, flexShrink: 0 }}>
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </Glass>
 

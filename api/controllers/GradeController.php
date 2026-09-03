@@ -272,6 +272,42 @@ class GradeController {
         }
     }
 
+    // Teacher: Request reopening of submitted / locked / published mark sheet
+    public function requestReopenGrades() {
+        $teacher = Auth::requireRole(['teacher', 'admin']);
+        $data = json_decode(file_get_contents("php://input"));
+
+        if (!isset($data->course_id)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Course ID is required."]);
+            return;
+        }
+
+        $courseId = intval($data->course_id);
+        $term = $this->normalizeTerm($data->term ?? null);
+        $session = isset($data->session) ? $data->session : $this->getSetting('academic_session', '2026/2027');
+        $reason = isset($data->reason) && !empty(trim($data->reason)) ? trim($data->reason) : "Teacher requested grade sheet reopening for adjustments.";
+
+        try {
+            $stmt = $this->conn->prepare("
+                UPDATE grades 
+                SET status = 'reopen_requested', reopen_reason = :reason 
+                WHERE course_id = :cid AND academic_term = :term AND academic_session = :session
+            ");
+            $stmt->execute([
+                ':reason' => $reason,
+                ':cid' => $courseId,
+                ':term' => $term,
+                ':session' => $session
+            ]);
+
+            echo json_encode(["success" => true, "message" => "Reopening request sent to Administration for review."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to request reopening: " . $e->getMessage()]);
+        }
+    }
+
     // Admin: List all subject grade submissions across the school
     public function getAdminGradeSubmissions() {
         Auth::requireRole(['admin']);
@@ -280,6 +316,13 @@ class GradeController {
         $session = isset($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
 
         try {
+            // Auto-promote scheduled grades whose auto_publish_at has arrived
+            $this->conn->exec("
+                UPDATE grades 
+                SET status = 'published', auto_publish_at = NULL 
+                WHERE auto_publish_at IS NOT NULL AND auto_publish_at <= NOW() AND status IN ('locked', 'approved', 'submitted')
+            ");
+
             $query = "
                 SELECT 
                     c.id as course_id,
@@ -289,7 +332,9 @@ class GradeController {
                     COUNT(DISTINCT e.student_id) as enrolled_count,
                     COUNT(DISTINCT g.student_id) as graded_count,
                     ROUND(AVG(g.score), 1) as class_average,
-                    COALESCE(MAX(g.status), 'draft') as status
+                    COALESCE(MAX(g.status), 'draft') as status,
+                    MAX(g.reopen_reason) as reopen_reason,
+                    MAX(g.auto_publish_at) as auto_publish_at
                 FROM courses c
                 LEFT JOIN users t ON c.teacher_id = t.id
                 LEFT JOIN enrollments e ON c.id = e.course_id
@@ -340,33 +385,34 @@ class GradeController {
                     u.id, 
                     CONCAT(u.first_name,' ',u.last_name) as student_name,
                     u.admission_number,
-                    cls.name as class_name,
-                    g.ca1, g.ca2, g.exam,
+                    g.ca1,
+                    g.ca2,
+                    g.exam,
                     g.score as total,
                     g.status,
-                    g.remarks
+                    g.reopen_reason,
+                    g.auto_publish_at
                 FROM enrollments e
                 JOIN users u ON e.student_id = u.id
-                LEFT JOIN classes cls ON u.class_id = cls.id
-                LEFT JOIN grades g ON (
-                    g.student_id = u.id 
-                    AND g.course_id = :cid 
-                    AND g.academic_term = :term 
-                    AND g.academic_session = :session
-                )
-                WHERE e.course_id = :cid
+                LEFT JOIN grades g ON (e.student_id = g.student_id AND g.course_id = :cid AND g.academic_term = :term AND g.academic_session = :session)
+                WHERE e.course_id = :cid2
                 ORDER BY u.last_name, u.first_name
             ");
-            $stmt->execute([':cid' => $courseId, ':term' => $term, ':session' => $session]);
+            $stmt->execute([
+                ':cid'     => $courseId,
+                ':term'    => $term,
+                ':session' => $session,
+                ':cid2'    => $courseId
+            ]);
             $students = $stmt->fetchAll();
 
             echo json_encode([
-                "success"    => true,
-                "course"     => $courseInfo,
-                "term"       => $term,
-                "session"    => $session,
-                "students"   => $students,
-                "count"      => count($students)
+                "success"  => true,
+                "course"   => $courseInfo,
+                "term"     => $term,
+                "session"  => $session,
+                "count"    => count($students),
+                "students" => $students
             ]);
         } catch (Exception $e) {
             http_response_code(500);
@@ -374,7 +420,7 @@ class GradeController {
         }
     }
 
-    // Admin: Batch update grade status (approve, publish, reopen/draft)
+    // Admin: Batch update grade status (lock only, lock & publish, reopen/draft, auto-publish date)
     public function updateGradeStatus() {
         Auth::requireRole(['admin']);
         $data = json_decode(file_get_contents("php://input"));
@@ -387,7 +433,7 @@ class GradeController {
 
         $courseId = intval($data->course_id);
         $status = $data->status;
-        if (!in_array($status, ['draft', 'submitted', 'approved', 'published'])) {
+        if (!in_array($status, ['draft', 'submitted', 'locked', 'approved', 'published', 'reopen_requested'])) {
             http_response_code(400);
             echo json_encode(["error" => "Invalid status value."]);
             return;
@@ -395,15 +441,19 @@ class GradeController {
 
         $term = $this->normalizeTerm($data->term ?? null);
         $session = isset($data->session) ? $data->session : $this->getSetting('academic_session', '2026/2027');
+        $autoPublishAt = !empty($data->auto_publish_at) ? $data->auto_publish_at : null;
 
         try {
             $stmt = $this->conn->prepare("
                 UPDATE grades 
-                SET status = :status 
+                SET status = :status,
+                    auto_publish_at = :auto_publish_at,
+                    reopen_reason = CASE WHEN :status = 'draft' THEN NULL ELSE reopen_reason END
                 WHERE course_id = :cid AND academic_term = :term AND academic_session = :session
             ");
             $stmt->execute([
                 ':status' => $status,
+                ':auto_publish_at' => $autoPublishAt,
                 ':cid' => $courseId,
                 ':term' => $term,
                 ':session' => $session
@@ -411,10 +461,14 @@ class GradeController {
 
             $statusLabels = [
                 'draft' => 're-opened for editing',
+                'locked' => 'locked (awaiting publish)',
                 'approved' => 'approved',
                 'published' => 'published & locked'
             ];
             $msg = "Grades have been " . ($statusLabels[$status] ?? $status);
+            if ($autoPublishAt) {
+                $msg .= " and scheduled to auto-publish on " . $autoPublishAt;
+            }
 
             echo json_encode(["success" => true, "message" => $msg]);
         } catch (Exception $e) {
@@ -479,7 +533,8 @@ class GradeController {
                 g.mid_term_test,
                 g.score as total,
                 g.remarks,
-                g.status
+                g.status,
+                g.auto_publish_at
             FROM enrollments e
             JOIN courses c ON e.course_id = c.id
             LEFT JOIN users u ON c.teacher_id = u.id
@@ -488,6 +543,7 @@ class GradeController {
                 AND g.course_id = c.id
                 AND g.academic_term = :term
                 AND g.academic_session = :session
+                AND (g.status = 'published' OR (g.auto_publish_at IS NOT NULL AND g.auto_publish_at <= NOW()))
             )
             WHERE e.student_id = :sid
             ORDER BY c.name

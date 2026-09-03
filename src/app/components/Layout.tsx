@@ -42,6 +42,7 @@ const NAV: Record<Role, NavItem[]> = {
     { icon: <CalendarDays size={17} />, label: "Attendance", to: "/teacher/attendance" },
     { icon: <CheckSquare size={17} />, label: "Grade Submissions", to: "/teacher/grades" },
     { icon: <UserCheck size={17} />, label: "Assessments", to: "/teacher/assessments" },
+    { icon: <Settings size={17} />, label: "Account Settings", to: "/teacher/settings" },
   ],
   admin: [
     { icon: <LayoutDashboard size={17} />, label: "Dashboard", to: "/admin" },
@@ -475,6 +476,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 if (user.role === 'student') navigate('/student/settings');
                 else if (user.role === 'admin') navigate('/admin/settings');
                 else if (user.role === 'parent') navigate('/parent/settings');
+                else if (user.role === 'teacher') navigate('/teacher/settings');
               }}
               title="Account Settings"
               style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}

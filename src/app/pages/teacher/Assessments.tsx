@@ -129,7 +129,7 @@ export default function TeacherAssessments() {
           No enrolled students found.
         </Glass>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 20, alignItems: "start" }}>
+        <div className="cbt-layout" style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 20, alignItems: "start" }}>
           {/* Left panel: student lists */}
           <Glass style={{ padding: "16px 14px", height: "fit-content" }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12, borderBottom: "1px solid var(--glass-border)", paddingBottom: 6 }}>Class List</div>
@@ -193,7 +193,7 @@ export default function TeacherAssessments() {
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", marginBottom: 12, textTransform: "uppercase" }}>
                   Report Card Profile &amp; Awards
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <div className="responsive-grid-3" style={{ gap: 12, marginBottom: 12 }}>
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Sex / Gender</label>
                     <select
@@ -227,7 +227,7 @@ export default function TeacherAssessments() {
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="responsive-grid-2" style={{ gap: 12 }}>
                   <div>
                     <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Award / Prize 1</label>
                     <input

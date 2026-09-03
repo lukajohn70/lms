@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Save, CheckCircle, TrendingUp, Sparkles, BookOpen, Send, Lock, AlertCircle } from "lucide-react";
+import { Save, CheckCircle, TrendingUp, Sparkles, BookOpen, Send, Lock, AlertCircle, RotateCcw, X } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 
 const getMidRemark = (total: number) => {
@@ -32,7 +32,13 @@ export default function Grades() {
   const [saved, setSaved] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [activeTab, setActiveTab] = useState<"mid_term" | "end_of_term">("end_of_term");
-  const [courseStatus, setCourseStatus] = useState<"draft" | "submitted" | "approved" | "published">("draft");
+  const [courseStatus, setCourseStatus] = useState<string>("draft");
+
+  // Reopen request modal
+  const [showReopenModal, setShowReopenModal] = useState(false);
+  const [reopenReason, setReopenReason] = useState("");
+  const [reopenLoading, setReopenLoading] = useState(false);
+  const [reopenSent, setReopenSent] = useState(false);
 
   const loadGrades = () => {
     setLoading(true);
@@ -175,11 +181,34 @@ export default function Grades() {
       .catch((err: any) => alert(err.message || "Failed to submit grades"));
   };
 
+  const handleRequestReopen = async () => {
+    if (!selectedCourseId) return;
+    setReopenLoading(true);
+    try {
+      const res: any = await apiClient.post("/teacher/grades/request-reopen", {
+        course_id: selectedCourseId,
+        term: selectedTerm,
+        reason: reopenReason.trim() || "Teacher requested grade sheet reopening for adjustments."
+      });
+      if (res.success) {
+        setCourseStatus("reopen_requested");
+        setReopenSent(true);
+        setShowReopenModal(false);
+        setReopenReason("");
+        setTimeout(() => setReopenSent(false), 5000);
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to send reopen request.");
+    } finally {
+      setReopenLoading(false);
+    }
+  };
+
   const avg = students.length > 0 
     ? Math.round(students.reduce((acc, s) => acc + s.score, 0) / students.length)
     : 0;
 
-  const isLocked = courseStatus === "published";
+  const isLocked = courseStatus === "published" || courseStatus === "locked";
 
   return (
     <div>
@@ -193,9 +222,24 @@ export default function Grades() {
                 <Lock size={12}/> Published &amp; Locked
               </span>
             )}
+            {courseStatus === "locked" && (
+              <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(2,48,71,0.3)", border: "1px solid rgba(2,48,71,0.5)", color: "#8ECAE6", fontSize: 11, fontWeight: 700 }}>
+                <Lock size={12}/> Locked by Admin
+              </span>
+            )}
             {courseStatus === "submitted" && (
               <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(255,183,3,0.15)", border: "1px solid rgba(255,183,3,0.3)", color: "#FFB703", fontSize: 11, fontWeight: 700 }}>
                 ⏳ Pending Admin Approval
+              </span>
+            )}
+            {courseStatus === "approved" && (
+              <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(33,158,188,0.15)", border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 11, fontWeight: 700 }}>
+                ✅ Approved
+              </span>
+            )}
+            {courseStatus === "reopen_requested" && (
+              <span style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 6, background: "rgba(251,133,0,0.15)", border: "1px solid rgba(251,133,0,0.3)", color: "#FB8500", fontSize: 11, fontWeight: 700 }}>
+                🔓 Reopen Requested
               </span>
             )}
             {courseStatus === "draft" && (
@@ -255,14 +299,66 @@ export default function Grades() {
             </>
           )}
 
-          {isLocked && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--subtext)", background: "var(--muted)", padding: "6px 12px", borderRadius: 8, border: "1px solid var(--glass-border)" }}>
-              <Lock size={13} style={{ color: "#2a9d8f" }} />
-              <span>Results Locked by Admin</span>
+          {isLocked && courseStatus !== "reopen_requested" && (
+            <button onClick={() => setShowReopenModal(true)}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 8, background: "rgba(251,133,0,0.12)", border: "1px solid rgba(251,133,0,0.3)", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#FB8500" }}>
+              <RotateCcw size={13}/> Request Reopen
+            </button>
+          )}
+          {courseStatus === "submitted" && (
+            <button onClick={() => setShowReopenModal(true)}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 8, background: "rgba(251,133,0,0.12)", border: "1px solid rgba(251,133,0,0.3)", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#FB8500" }}>
+              <RotateCcw size={13}/> Request Reopen
+            </button>
+          )}
+          {courseStatus === "reopen_requested" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#FB8500", background: "rgba(251,133,0,0.08)", padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(251,133,0,0.25)" }}>
+              ⏳ Awaiting Admin Reopening
             </div>
           )}
         </div>
       </div>
+
+      {/* Reopen Request Modal */}
+      {showReopenModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: 16, boxShadow: "var(--glass-shadow)", padding: 28, width: "100%", maxWidth: 440 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)" }}>Request Grade Sheet Reopen</div>
+              <button onClick={() => setShowReopenModal(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--subtext)" }}>
+                <X size={18} />
+              </button>
+            </div>
+            <p style={{ fontSize: 13, color: "var(--subtext)", marginBottom: 16, lineHeight: 1.5 }}>
+              Send a request to Administration to reopen this grade sheet for editing. Please provide a reason.
+            </p>
+            <textarea
+              value={reopenReason}
+              onChange={e => setReopenReason(e.target.value)}
+              placeholder="Reason for requesting reopen (e.g. score entry error)…"
+              rows={4}
+              style={{ width: "100%", padding: "10px 14px", borderRadius: 9, border: "1px solid var(--glass-border)", background: "var(--muted)", color: "var(--heading)", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "'Poppins',sans-serif", boxSizing: "border-box", marginBottom: 16 }}
+            />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowReopenModal(false)}
+                style={{ flex: 1, padding: "10px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--subtext)" }}>
+                Cancel
+              </button>
+              <button onClick={handleRequestReopen} disabled={reopenLoading}
+                style={{ flex: 2, padding: "10px", borderRadius: 9, background: "linear-gradient(135deg,#FB8500,#e67600)", border: "none", cursor: reopenLoading ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 700, color: "#fff", boxShadow: "0 4px 12px rgba(251,133,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <RotateCcw size={13} /> {reopenLoading ? "Sending..." : "Send Reopen Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reopenSent && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 9, background: "rgba(251,133,0,0.1)", border: "1px solid rgba(251,133,0,0.25)", marginBottom: 16 }}>
+          <CheckCircle size={14} style={{ color: "#FB8500" }} />
+          <span style={{ fontSize: 12.5, color: "#FB8500" }}>Reopen request sent to Administration successfully!</span>
+        </div>
+      )}
 
       {isLocked && (
         <div style={{ marginBottom: 16, background: "rgba(42,157,143,0.08)", border: "1px solid rgba(42,157,143,0.25)", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, color: "var(--heading)" }}>

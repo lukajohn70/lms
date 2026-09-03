@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BarChart2, TrendingUp, Users, BookOpen, CheckCircle, Lock, Unlock, Clock, Eye, X, ShieldCheck } from "lucide-react";
+import { BarChart2, TrendingUp, Users, BookOpen, CheckCircle, Lock, Unlock, Clock, Eye, X, ShieldCheck, CalendarClock, RotateCcw, AlertCircle } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, PieChart, Pie } from "recharts";
 import { apiClient } from "../../lib/apiClient";
 
@@ -38,6 +38,10 @@ export default function Reports() {
   const [previewData, setPreviewData] = useState<any>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
+  // Auto-publish modal
+  const [autoPubModal, setAutoPubModal] = useState<any>(null); // { sub }
+  const [autoPubDate, setAutoPubDate] = useState("");
+
   useEffect(() => {
     apiClient.get("/admin/reports")
       .then((res: any) => {
@@ -62,9 +66,12 @@ export default function Reports() {
 
   useEffect(() => { if (activeTab === "approvals") loadSubmissions(); }, [activeTab, selectedTerm]);
 
-  const handleUpdateStatus = (courseId: number, newStatus: "draft" | "approved" | "published") => {
-    apiClient.post("/admin/grades/update-status", { course_id: courseId, term: selectedTerm, status: newStatus })
-      .then((res: any) => { setActionSuccess(res.message || "Status updated."); setTimeout(() => setActionSuccess(""), 3000); loadSubmissions(); })
+  const handleUpdateStatus = (courseId: number, newStatus: string, autoPublishAt?: string) => {
+    apiClient.post("/admin/grades/update-status", { 
+      course_id: courseId, term: selectedTerm, status: newStatus,
+      ...(autoPublishAt ? { auto_publish_at: autoPublishAt } : {})
+    })
+      .then((res: any) => { setActionSuccess(res.message || "Status updated."); setTimeout(() => setActionSuccess(""), 4000); loadSubmissions(); })
       .catch((err: any) => alert(err.message || "Failed to update status"));
   };
 
@@ -232,21 +239,32 @@ export default function Reports() {
               {/* DESKTOP TABLE VIEW */}
               <div className="desktop-only table-responsive-wrapper">
                 <div style={{ minWidth: 820 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 140px 260px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 150px 1fr", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase" }}>
                     <span>Subject</span><span>Assigned Teacher</span>
                     <span style={{ textAlign:"center" }}>Graded/Total</span>
                     <span style={{ textAlign:"center" }}>Class Avg</span>
-                    <span style={{ textAlign:"center" }}>Approval State</span>
+                    <span style={{ textAlign:"center" }}>State</span>
                     <span style={{ textAlign:"right" }}>Governance Action</span>
                   </div>
                   {submissions.map(sub => {
                     const isPublished = sub.status === "published";
+                    const isLocked = sub.status === "locked";
+                    const isReopenReq = sub.status === "reopen_requested";
                     const isSubmitted = sub.status === "submitted";
                     return (
-                      <div key={sub.course_id} style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 140px 260px", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
+                      <div key={sub.course_id} style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 150px 1fr", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", background: isReopenReq ? "rgba(251,133,0,0.04)" : "transparent", borderLeft: isReopenReq ? "3px solid #FB8500" : "3px solid transparent" }}>
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{sub.course_name}</div>
-                          <div style={{ fontSize: 10, color: "var(--subtext)" }}>ID: CRS-{strPad(sub.course_id)}</div>
+                          {isReopenReq && sub.reopen_reason && (
+                            <div style={{ fontSize: 10, color: "#FB8500", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>
+                              ⚠ {sub.reopen_reason}
+                            </div>
+                          )}
+                          {sub.auto_publish_at && !isPublished && (
+                            <div style={{ fontSize: 10, color: "#8ECAE6", marginTop: 2 }}>
+                              🕐 Auto-publish: {new Date(sub.auto_publish_at).toLocaleString()}
+                            </div>
+                          )}
                         </div>
                         <div>
                           <div style={{ fontSize: 12.5, color: "var(--heading)" }}>{sub.teacher_name || "Unassigned"}</div>
@@ -256,21 +274,32 @@ export default function Reports() {
                         <div style={{ textAlign:"center", fontSize:13, fontWeight:700, color:"#219EBC" }}>{sub.class_average ? `${sub.class_average}%` : "—"}</div>
                         <div style={{ textAlign:"center" }}>
                           {isPublished && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(42,157,143,0.12)",color:"#2a9d8f",border:"1px solid rgba(42,157,143,0.3)",fontSize:11,fontWeight:700 }}><Lock size={11}/> Published</span>}
-                          {isSubmitted && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(255,183,3,0.15)",color:"#FFB703",border:"1px solid rgba(255,183,3,0.3)",fontSize:11,fontWeight:700 }}><Clock size={11}/> Pending Review</span>}
+                          {isLocked && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(2,48,71,0.2)",color:"#8ECAE6",border:"1px solid rgba(2,48,71,0.4)",fontSize:11,fontWeight:700 }}><Lock size={11}/> Locked</span>}
+                          {isReopenReq && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(251,133,0,0.15)",color:"#FB8500",border:"1px solid rgba(251,133,0,0.3)",fontSize:11,fontWeight:700 }}><AlertCircle size={11}/> Reopen Req.</span>}
+                          {isSubmitted && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(255,183,3,0.15)",color:"#FFB703",border:"1px solid rgba(255,183,3,0.3)",fontSize:11,fontWeight:700 }}><Clock size={11}/> Pending</span>}
                           {sub.status==="draft" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(33,158,188,0.1)",color:"var(--subtext)",border:"1px solid var(--glass-border)",fontSize:11,fontWeight:600 }}>Draft</span>}
+                          {sub.status==="approved" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(33,158,188,0.15)",color:"#219EBC",border:"1px solid rgba(33,158,188,0.3)",fontSize:11,fontWeight:700 }}><CheckCircle size={11}/> Approved</span>}
                         </div>
-                        <div style={{ display:"flex",gap:6,justifyContent:"flex-end" }}>
-                          <button onClick={() => handlePreview(sub)} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 10px",borderRadius:6,background:"rgba(33,158,188,0.1)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:11,fontWeight:600,cursor:"pointer" }}>
+                        <div style={{ display:"flex",gap:5,justifyContent:"flex-end",flexWrap:"wrap" }}>
+                          <button onClick={() => handlePreview(sub)} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(33,158,188,0.1)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:11,fontWeight:600,cursor:"pointer" }}>
                             <Eye size={12} /> Preview
                           </button>
-                          {isPublished ? (
-                            <button onClick={() => handleUpdateStatus(sub.course_id,"draft")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 10px",borderRadius:6,background:"rgba(231,111,81,0.1)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:11,fontWeight:600,cursor:"pointer" }}>
-                              <Unlock size={12} /> Unlock for Teacher
+                          {(isPublished || isLocked) ? (
+                            <button onClick={() => handleUpdateStatus(sub.course_id, "draft")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(231,111,81,0.1)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:11,fontWeight:600,cursor:"pointer" }}>
+                              <Unlock size={12} /> Reopen
                             </button>
                           ) : (
-                            <button onClick={() => handleUpdateStatus(sub.course_id,"published")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 12px",borderRadius:6,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px rgba(33,158,188,0.3)" }}>
-                              <CheckCircle size={12} /> Approve &amp; Publish
-                            </button>
+                            <>
+                              <button onClick={() => handleUpdateStatus(sub.course_id, "locked")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(2,48,71,0.2)",border:"1px solid rgba(142,202,230,0.3)",color:"#8ECAE6",fontSize:11,fontWeight:600,cursor:"pointer" }}>
+                                <Lock size={12} /> Lock Only
+                              </button>
+                              <button onClick={() => handleUpdateStatus(sub.course_id, "published")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer" }}>
+                                <CheckCircle size={12} /> Lock &amp; Publish
+                              </button>
+                              <button onClick={() => { setAutoPubModal(sub); setAutoPubDate(""); }} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(255,183,3,0.1)",border:"1px solid rgba(255,183,3,0.3)",color:"#FFB703",fontSize:11,fontWeight:600,cursor:"pointer" }}>
+                                <CalendarClock size={12} /> Auto Date
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -279,20 +308,26 @@ export default function Reports() {
                 </div>
               </div>
 
-              {/* MOBILE CARD VIEW (NO HORIZONTAL SCROLLING) */}
               <div className="mobile-only" style={{ display: "flex", flexDirection: "column", gap: 12, padding: 14 }}>
                 {submissions.map(sub => {
                   const isPublished = sub.status === "published";
+                  const isLocked = sub.status === "locked";
+                  const isReopenReq = sub.status === "reopen_requested";
                   const isSubmitted = sub.status === "submitted";
                   return (
-                    <div key={sub.course_id} style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div key={sub.course_id} style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: `1px solid ${isReopenReq ? "rgba(251,133,0,0.4)" : "var(--glass-border)"}`, display: "flex", flexDirection: "column", gap: 10, borderLeft: isReopenReq ? "3px solid #FB8500" : undefined }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>{sub.course_name}</div>
                           <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>Teacher: {sub.teacher_name || "Unassigned"}</div>
+                          {isReopenReq && sub.reopen_reason && (
+                            <div style={{ fontSize: 11, color: "#FB8500", marginTop: 3, fontStyle: "italic" }}>⚠ {sub.reopen_reason}</div>
+                          )}
                         </div>
                         <div>
                           {isPublished && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(42,157,143,0.12)",color:"#2a9d8f",border:"1px solid rgba(42,157,143,0.3)",fontSize:11,fontWeight:700 }}><Lock size={10}/> Published</span>}
+                          {isLocked && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(2,48,71,0.2)",color:"#8ECAE6",border:"1px solid rgba(2,48,71,0.4)",fontSize:11,fontWeight:700 }}><Lock size={10}/> Locked</span>}
+                          {isReopenReq && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(251,133,0,0.15)",color:"#FB8500",border:"1px solid rgba(251,133,0,0.3)",fontSize:11,fontWeight:700 }}><AlertCircle size={10}/> Reopen Req.</span>}
                           {isSubmitted && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(255,183,3,0.15)",color:"#FFB703",border:"1px solid rgba(255,183,3,0.3)",fontSize:11,fontWeight:700 }}><Clock size={10}/> Pending</span>}
                           {sub.status==="draft" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(33,158,188,0.1)",color:"var(--subtext)",border:"1px solid var(--glass-border)",fontSize:11,fontWeight:600 }}>Draft</span>}
                         </div>
@@ -304,17 +339,25 @@ export default function Reports() {
                       </div>
 
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
-                        <button onClick={() => handlePreview(sub)} style={{ flex: "1 1 90px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(33,158,188,0.12)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:12,fontWeight:600,cursor:"pointer" }}>
+                        <button onClick={() => handlePreview(sub)} style={{ flex: "1 1 80px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(33,158,188,0.12)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:12,fontWeight:600,cursor:"pointer" }}>
                           <Eye size={13} /> Preview
                         </button>
-                        {isPublished ? (
-                          <button onClick={() => handleUpdateStatus(sub.course_id,"draft")} style={{ flex: "1 1 120px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(231,111,81,0.12)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:12,fontWeight:600,cursor:"pointer" }}>
-                            <Unlock size={13} /> Unlock
+                        {(isPublished || isLocked) ? (
+                          <button onClick={() => handleUpdateStatus(sub.course_id, "draft")} style={{ flex: "1 1 100px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(231,111,81,0.12)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:12,fontWeight:600,cursor:"pointer" }}>
+                            <Unlock size={13} /> Reopen
                           </button>
                         ) : (
-                          <button onClick={() => handleUpdateStatus(sub.course_id,"published")} style={{ flex: "1 1 140px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 12px",borderRadius:7,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>
-                            <CheckCircle size={13} /> Approve &amp; Publish
-                          </button>
+                          <>
+                            <button onClick={() => handleUpdateStatus(sub.course_id, "locked")} style={{ flex: "1 1 100px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(2,48,71,0.2)",border:"1px solid rgba(142,202,230,0.3)",color:"#8ECAE6",fontSize:12,fontWeight:600,cursor:"pointer" }}>
+                              <Lock size={13} /> Lock Only
+                            </button>
+                            <button onClick={() => handleUpdateStatus(sub.course_id, "published")} style={{ flex: "1 1 120px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>
+                              <CheckCircle size={13} /> Lock &amp; Publish
+                            </button>
+                            <button onClick={() => { setAutoPubModal(sub); setAutoPubDate(""); }} style={{ flex: "1 1 120px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(255,183,3,0.1)",border:"1px solid rgba(255,183,3,0.3)",color:"#FFB703",fontSize:12,fontWeight:600,cursor:"pointer" }}>
+                              <CalendarClock size={13} /> Auto-Publish Date
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -323,6 +366,38 @@ export default function Reports() {
               </div>
             </Glass>
           )}
+        </div>
+      )}
+
+      {/* Auto-Publish Date Modal */}
+      {autoPubModal && (
+        <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(4px)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16 }}>
+          <div style={{ background:"var(--glass-bg)",border:"1px solid var(--glass-border)",borderRadius:16,boxShadow:"var(--glass-shadow)",padding:28,width:"100%",maxWidth:420 }}>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
+              <div style={{ fontSize:16,fontWeight:800,color:"var(--heading)" }}>Set Auto-Publish Date</div>
+              <button onClick={() => setAutoPubModal(null)} style={{ background:"none",border:"none",cursor:"pointer",color:"var(--subtext)" }}><X size={18} /></button>
+            </div>
+            <p style={{ fontSize:13,color:"var(--subtext)",marginBottom:4,lineHeight:1.5 }}>
+              <strong style={{ color:"var(--heading)" }}>{autoPubModal.course_name}</strong>
+            </p>
+            <p style={{ fontSize:12.5,color:"var(--subtext)",marginBottom:16,lineHeight:1.5 }}>
+              Results will be automatically published (made visible to students &amp; parents) at the selected date &amp; time.
+            </p>
+            <label style={{ display:"block",fontSize:11,fontWeight:700,color:"var(--subtext)",textTransform:"uppercase",marginBottom:6 }}>Auto-Publish Date &amp; Time</label>
+            <input
+              type="datetime-local"
+              value={autoPubDate}
+              onChange={e => setAutoPubDate(e.target.value)}
+              style={{ width:"100%",padding:"10px 14px",borderRadius:9,border:"1px solid var(--glass-border)",background:"var(--muted)",color:"var(--heading)",fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:16 }}
+            />
+            <div style={{ display:"flex",gap:10 }}>
+              <button onClick={() => setAutoPubModal(null)} style={{ flex:1,padding:"10px",borderRadius:9,background:"var(--muted)",border:"1px solid var(--glass-border)",cursor:"pointer",fontSize:13,fontWeight:600,color:"var(--subtext)" }}>Cancel</button>
+              <button onClick={() => { if (!autoPubDate) { alert("Please select a date and time."); return; } handleUpdateStatus(autoPubModal.course_id, "locked", autoPubDate); setAutoPubModal(null); }}
+                style={{ flex:2,padding:"10px",borderRadius:9,background:"linear-gradient(135deg,#FFB703,#e67600)",border:"none",cursor:"pointer",fontSize:13,fontWeight:700,color:"#011d2f",display:"flex",alignItems:"center",justifyContent:"center",gap:6 }}>
+                <CalendarClock size={14} /> Schedule Auto-Publish
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

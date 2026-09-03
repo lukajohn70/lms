@@ -180,3 +180,15 @@ html, body {
     gap: 14px;
   }
 }
+
+/* CBT / Materials / Assessments 2-column sidebar layout — collapses on mobile */
+.cbt-layout {
+  display: grid;
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .cbt-layout {
+    grid-template-columns: 1fr !important;
+  }
+}

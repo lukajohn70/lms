@@ -29,6 +29,7 @@ const TeacherMaterials = lazy(() => import("./pages/teacher/Materials"));
 const TeacherAttendance = lazy(() => import("./pages/teacher/Attendance"));
 const TeacherGrades = lazy(() => import("./pages/teacher/Grades"));
 const TeacherAssessments = lazy(() => import("./pages/teacher/Assessments"));
+const TeacherSettings = lazy(() => import("./pages/teacher/TeacherSettings"));
 
 // Admin
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
@@ -90,6 +91,7 @@ export const router = createBrowserRouter([
           { path: "attendance", Component: TeacherAttendance },
           { path: "grades", Component: TeacherGrades },
           { path: "assessments", Component: TeacherAssessments },
+          { path: "settings", Component: TeacherSettings },
           { path: "*", Component: NotFound },
         ],
       },

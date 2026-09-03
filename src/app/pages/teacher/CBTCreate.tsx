@@ -70,7 +70,7 @@ export default function CBTCreate() {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 18 }}>
+      <div className="cbt-layout" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 18 }}>
         {/* Questions panel */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {questions.map((q, qi) => (
