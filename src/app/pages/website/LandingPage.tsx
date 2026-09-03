@@ -297,20 +297,194 @@ export default function LandingPage() {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-8px); }
         }
+
+        /* ===== Mobile Navigation & Drawer ===== */
+        .landing-desktop-nav {
+          display: flex;
+          align-items: center;
+          gap: 28px;
+        }
+
+        .mobile-menu-trigger {
+          display: none;
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 8px;
+          color: inherit;
+        }
+
+        .mobile-menu-drawer {
+          position: fixed;
+          inset: 0;
+          z-index: 999;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .mobile-menu-backdrop {
+          position: absolute;
+          inset: 0;
+          background: rgba(1, 18, 29, 0.7);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        }
+
+        .mobile-menu-content {
+          position: relative;
+          z-index: 10;
+          background: ${theme === "dark" ? "#011827" : "#ffffff"};
+          border-bottom: 2px solid #219EBC;
+          padding: 20px 20px 28px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+          animation: slideDownMenu 0.25s ease-out;
+        }
+
+        @keyframes slideDownMenu {
+          from { transform: translateY(-100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+
+        .mobile-nav-list {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .mobile-nav-item {
+          font-size: 15.5px;
+          font-weight: 700;
+          color: inherit;
+          text-decoration: none;
+          cursor: pointer;
+          padding: 12px 14px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          transition: background 0.2s;
+        }
+
+        .mobile-nav-item:hover {
+          background: ${theme === "dark" ? "rgba(33,158,188,0.12)" : "rgba(33,158,188,0.08)"};
+          color: #219EBC;
+        }
+
+        /* Responsive Layout Overrides */
+        @media (max-width: 900px) {
+          .landing-desktop-nav {
+            display: none !important;
+          }
+          .mobile-menu-trigger {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+          }
+          .header-portal-btn {
+            display: none !important;
+          }
+          .header-inner {
+            padding: 12px 16px !important;
+          }
+          .hero-banner {
+            padding: 50px 16px 40px !important;
+            min-height: auto !important;
+          }
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+            gap: 28px !important;
+          }
+          .hero-title {
+            font-size: clamp(28px, 7vw, 44px) !important;
+            letter-spacing: -1px !important;
+          }
+          .hero-btn-row {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            width: 100% !important;
+          }
+          .hero-btn-row button, .hero-btn-row a {
+            width: 100% !important;
+            justify-content: center !important;
+            text-align: center !important;
+            box-sizing: border-box !important;
+          }
+          .section-padding {
+            padding: 48px 16px !important;
+          }
+          .grid-about {
+            grid-template-columns: 1fr !important;
+            gap: 28px !important;
+          }
+          .about-img-container {
+            height: 240px !important;
+          }
+          .about-mission-grid {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .academics-tabs {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+            justify-content: center !important;
+          }
+          .academics-tabs button {
+            padding: 8px 16px !important;
+            font-size: 13px !important;
+          }
+          .grid-admissions {
+            grid-template-columns: 1fr !important;
+            gap: 32px !important;
+          }
+          .grid-contact {
+            grid-template-columns: 1fr !important;
+            gap: 32px !important;
+          }
+          .contact-form-card {
+            padding: 20px 16px !important;
+          }
+          .contact-form-card .grid-2 {
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+          }
+          .contact-form-card button {
+            width: 100% !important;
+          }
+          .footer-padding {
+            padding: 40px 16px 20px !important;
+          }
+          .footer-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 28px !important;
+          }
+        }
+
+        @media (max-width: 550px) {
+          .footer-grid {
+            grid-template-columns: 1fr !important;
+            gap: 24px !important;
+          }
+        }
       `}</style>
 
       <div className="web-body min-h-screen">
         
         {/* ===== HEADER / NAVIGATION ===== */}
         <header className="glass-nav sticky top-0 z-50 transition-all">
-          <div style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-              <img src="/logo.png" alt="Aroura Academy" style={{ width: 40, height: 40, borderRadius: 10 }} />
-              <span className="web-heading" style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>Aroura Academy</span>
+          <div className="header-inner" style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+              <img src="/logo.png" alt="Aroura Academy" style={{ width: 38, height: 38, borderRadius: 10 }} />
+              <span className="web-heading" style={{ fontSize: "clamp(17px, 4vw, 20px)", fontWeight: 800, letterSpacing: "-0.5px" }}>Aroura Academy</span>
             </div>
 
             {/* Desktop Navigation Links */}
-            <nav className="desktop-only" style={{ display: "flex", alignItems: "center", gap: 28 }}>
+            <nav className="landing-desktop-nav">
               <a href="#about" style={{ textDecoration: "none", fontSize: 14, fontWeight: 600, color: "inherit" }}>About</a>
               <a href="#academics" style={{ textDecoration: "none", fontSize: 14, fontWeight: 600, color: "inherit" }}>Programmes</a>
               <a onClick={() => setShowAdmsModal(true)} style={{ cursor: "pointer", textDecoration: "none", fontSize: 14, fontWeight: 600, color: "inherit" }}>Admissions</a>
@@ -318,65 +492,129 @@ export default function LandingPage() {
               <a href="#contact" style={{ textDecoration: "none", fontSize: 14, fontWeight: 600, color: "inherit" }}>Contact</a>
             </nav>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* Theme toggle */}
               <button 
                 onClick={toggleTheme} 
+                aria-label="Toggle Theme"
                 style={{ 
                   background: "none", border: "none", cursor: "pointer", 
-                  color: theme === "dark" ? "#FFB703" : "#219EBC", display: "flex", alignItems: "center" 
+                  color: theme === "dark" ? "#FFB703" : "#219EBC", display: "flex", alignItems: "center", padding: 6
                 }}
               >
                 {theme === "dark" ? <School size={20} /> : <BookOpen size={20} />}
               </button>
 
               <button 
-                className="portal-btn" 
+                className="portal-btn header-portal-btn" 
                 onClick={() => navigate("/login")}
                 style={{ 
-                  padding: "10px 20px", borderRadius: 10, border: "none", color: "white", 
+                  padding: "10px 18px", borderRadius: 10, border: "none", color: "white", 
                   fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
                 }}
               >
                 Portal Login <ArrowRight size={14} />
               </button>
 
+              {/* Hamburger Button for Mobile */}
               <button 
-                style={{ display: "none", background: "none", border: "none", cursor: "pointer", padding: 4 }}
                 className="mobile-menu-trigger"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle navigation menu"
               >
-                <Menu size={24} />
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
           </div>
         </header>
 
+        {/* ===== MOBILE DRAWER MENU ===== */}
+        {mobileMenuOpen && (
+          <div className="mobile-menu-drawer">
+            <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} />
+            <div className="mobile-menu-content">
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <img src="/logo.png" alt="Aroura Academy" style={{ width: 34, height: 34, borderRadius: 8 }} />
+                  <span className="web-heading" style={{ fontSize: 17, fontWeight: 800 }}>Aroura Academy</span>
+                </div>
+                <button 
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", padding: 6 }}
+                >
+                  <X size={22} />
+                </button>
+              </div>
+
+              <nav className="mobile-nav-list">
+                <a href="#about" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                  About Us <ChevronRight size={16} style={{ opacity: 0.5 }} />
+                </a>
+                <a href="#academics" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                  Academic Programmes <ChevronRight size={16} style={{ opacity: 0.5 }} />
+                </a>
+                <span className="mobile-nav-item" onClick={() => { setMobileMenuOpen(false); setShowAdmsModal(true); }}>
+                  Admission Procedure <ChevronRight size={16} style={{ opacity: 0.5 }} />
+                </span>
+                <a href="#fees" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                  School Fees Policy <ChevronRight size={16} style={{ opacity: 0.5 }} />
+                </a>
+                <a href="#contact" className="mobile-nav-item" onClick={() => setMobileMenuOpen(false)}>
+                  Contact Us <ChevronRight size={16} style={{ opacity: 0.5 }} />
+                </a>
+              </nav>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 6, borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(2,48,71,0.08)"}` }}>
+                <button 
+                  className="portal-btn" 
+                  onClick={() => { setMobileMenuOpen(false); navigate("/login"); }}
+                  style={{ 
+                    width: "100%", padding: "13px", borderRadius: 10, border: "none", color: "white", 
+                    fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 
+                  }}
+                >
+                  Access Portal Login <ArrowRight size={16} />
+                </button>
+                <button 
+                  className="glow-btn"
+                  onClick={() => { setMobileMenuOpen(false); handleOpenAdmissions(); }}
+                  style={{ 
+                    width: "100%", padding: "13px", borderRadius: 10, border: "none", color: "white", 
+                    fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 
+                  }}
+                >
+                  Apply Online Now <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ===== HERO SECTION ===== */}
-        <section className="hero-banner" style={{ padding: "100px 24px 80px", display: "flex", alignItems: "center", minHeight: "80vh" }}>
+        <section className="hero-banner" style={{ padding: "90px 24px 70px", display: "flex", alignItems: "center" }}>
           <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 40, alignItems: "center" }} className="hero-grid">
             <div>
               <div style={{ 
                 display: "inline-flex", alignItems: "center", gap: 8, 
                 background: "rgba(251, 133, 0, 0.12)", border: "1px solid rgba(251, 133, 0, 0.25)",
-                padding: "6px 16px", borderRadius: 100, marginBottom: 24
+                padding: "6px 14px", borderRadius: 100, marginBottom: 20
               }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#fb8500", textTransform: "uppercase", letterSpacing: "1px" }}>Admissions Open for 2026/2027</span>
               </div>
-              <h1 className="web-heading" style={{ fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 800, lineHeight: 1.1, marginBottom: 20, letterSpacing: "-1.5px" }}>
+              <h1 className="web-heading hero-title" style={{ fontSize: "clamp(32px, 5vw, 54px)", fontWeight: 800, lineHeight: 1.15, marginBottom: 18, letterSpacing: "-1.2px" }}>
                 Shaping Tomorrow's <span style={{ color: "#219EBC" }}>Leaders</span> Today
               </h1>
-              <p style={{ fontSize: "clamp(15px, 2vw, 17px)", lineHeight: 1.7, opacity: 0.85, marginBottom: 36, maxWidth: 600 }}>
+              <p className="hero-subtitle" style={{ fontSize: "clamp(14.5px, 2vw, 17px)", lineHeight: 1.7, opacity: 0.85, marginBottom: 30, maxWidth: 600 }}>
                 Welcome to Aroura Academy, where academic excellence meets holistic character development. We nurture curious minds, foster innovation, and build compassionate leaders equipped for global impact.
               </p>
               
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              <div className="hero-btn-row" style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                 <button 
                   className="glow-btn"
                   onClick={handleOpenAdmissions}
                   style={{ 
-                    padding: "16px 32px", borderRadius: 12, border: "none", color: "white", 
-                    fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 
+                    padding: "15px 30px", borderRadius: 12, border: "none", color: "white", 
+                    fontSize: 14.5, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 
                   }}
                 >
                   Apply Online Now <ChevronRight size={18} />
@@ -384,20 +622,36 @@ export default function LandingPage() {
                 <a 
                   href="#admissions"
                   style={{ 
-                    padding: "16px 28px", borderRadius: 12, border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.15)" : "#dde3e8"}`, 
-                    color: "inherit", textDecoration: "none", fontSize: 15, fontWeight: 700, cursor: "pointer",
-                    display: "inline-flex", alignItems: "center", background: theme === "dark" ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.4)",
+                    padding: "15px 26px", borderRadius: 12, border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.15)" : "#dde3e8"}`, 
+                    color: "inherit", textDecoration: "none", fontSize: 14.5, fontWeight: 700, cursor: "pointer",
+                    display: "inline-flex", alignItems: "center", background: theme === "dark" ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.5)",
                     backdropFilter: "blur(5px)"
                   }}
                 >
                   Track Admission
                 </a>
               </div>
+
+              {/* Mobile Stats Counter */}
+              <div className="md-hidden" style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div className="glass-card" style={{ padding: "12px 6px", textAlign: "center" }}>
+                  <div style={{ fontSize: 19, fontWeight: 800, color: "#219EBC" }} className="web-heading">150+</div>
+                  <div style={{ fontSize: 11, opacity: 0.75, fontWeight: 600, marginTop: 2 }}>Students</div>
+                </div>
+                <div className="glass-card" style={{ padding: "12px 6px", textAlign: "center" }}>
+                  <div style={{ fontSize: 19, fontWeight: 800, color: "#fb8500" }} className="web-heading">98.6%</div>
+                  <div style={{ fontSize: 11, opacity: 0.75, fontWeight: 600, marginTop: 2 }}>Pass Rate</div>
+                </div>
+                <div className="glass-card" style={{ padding: "12px 6px", textAlign: "center" }}>
+                  <div style={{ fontSize: 19, fontWeight: 800, color: "#2a9d8f" }} className="web-heading">20+</div>
+                  <div style={{ fontSize: 11, opacity: 0.75, fontWeight: 600, marginTop: 2 }}>Teachers</div>
+                </div>
+              </div>
             </div>
 
-            {/* Floating Stats Block */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }} className="desktop-only">
-              <div className="glass-card floating-stat" style={{ padding: 24, display: "flex", alignItems: "center", gap: 16, animationDelay: "0s" }}>
+            {/* Desktop Floating Stats Block */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }} className="desktop-only">
+              <div className="glass-card floating-stat" style={{ padding: 22, display: "flex", alignItems: "center", gap: 16, animationDelay: "0s" }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(33,158,188,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
                   <Users size={24} />
                 </div>
@@ -407,7 +661,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="glass-card floating-stat" style={{ padding: 24, display: "flex", alignItems: "center", gap: 16, animationDelay: "1.5s" }}>
+              <div className="glass-card floating-stat" style={{ padding: 22, display: "flex", alignItems: "center", gap: 16, animationDelay: "1.5s" }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(251,133,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fb8500" }}>
                   <Award size={24} />
                 </div>
@@ -417,7 +671,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="glass-card floating-stat" style={{ padding: 24, display: "flex", alignItems: "center", gap: 16, animationDelay: "0.7s" }}>
+              <div className="glass-card floating-stat" style={{ padding: 22, display: "flex", alignItems: "center", gap: 16, animationDelay: "0.7s" }}>
                 <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(42,157,143,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#2a9d8f" }}>
                   <School size={24} />
                 </div>
@@ -431,35 +685,35 @@ export default function LandingPage() {
         </section>
 
         {/* ===== ABOUT SECTION ===== */}
-        <section id="about" style={{ padding: "80px 24px", maxWidth: 1200, margin: "0 auto" }}>
+        <section id="about" className="section-padding" style={{ padding: "80px 24px", maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 48, alignItems: "center" }} className="grid-about">
-            <div style={{ borderRadius: 20, overflow: "hidden", border: "1.5px solid rgba(33, 158, 188, 0.15)", position: "relative", height: 420 }}>
+            <div className="about-img-container" style={{ borderRadius: 20, overflow: "hidden", border: "1.5px solid rgba(33, 158, 188, 0.15)", position: "relative", height: 420 }}>
               <img 
                 src="/school_hero.png" 
                 alt="School Campus" 
                 style={{ width: "100%", height: "100%", objectFit: "cover" }} 
               />
-              <div style={{ position: "absolute", bottom: 20, left: 20, right: 20, background: "rgba(1,18,29,0.85)", backdropFilter: "blur(8px)", borderRadius: 12, padding: 18, color: "white" }}>
-                <h4 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700 }} className="web-heading">Nurturing Excellence</h4>
-                <p style={{ margin: 0, fontSize: 12, opacity: 0.8 }}>Founded in 2012, Aroura Academy has been a beacon of quality education for over a decade.</p>
+              <div style={{ position: "absolute", bottom: 16, left: 16, right: 16, background: "rgba(1,18,29,0.85)", backdropFilter: "blur(8px)", borderRadius: 12, padding: 14, color: "white" }}>
+                <h4 style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700 }} className="web-heading">Nurturing Excellence</h4>
+                <p style={{ margin: 0, fontSize: 11.5, opacity: 0.85 }}>Founded in 2012, Aroura Academy has been a beacon of quality education for over a decade.</p>
               </div>
             </div>
             
             <div>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#fb8500", textTransform: "uppercase", letterSpacing: "1px" }}>Our Identity</span>
-              <h2 className="web-heading" style={{ fontSize: 32, fontWeight: 800, marginTop: 8, marginBottom: 20 }}>Nurturing Intellectual Growth and Moral Values</h2>
-              <p style={{ lineHeight: 1.7, opacity: 0.8, marginBottom: 20 }}>
+              <h2 className="web-heading" style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight: 800, marginTop: 8, marginBottom: 18 }}>Nurturing Intellectual Growth and Moral Values</h2>
+              <p style={{ lineHeight: 1.7, opacity: 0.8, marginBottom: 20, fontSize: 14.5 }}>
                 At Aroura Academy, we believe education goes beyond text books. Our comprehensive curriculum is designed to stimulate critical thinking, solve real-world problems, and nurture creativity in every student.
               </p>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 28 }}>
+              <div className="about-mission-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 24 }}>
                 <div>
-                  <h4 className="web-heading" style={{ color: "#219EBC", fontSize: 16, fontWeight: 700, margin: "0 0 8px" }}>Our Mission</h4>
-                  <p style={{ fontSize: 13.5, lineHeight: 1.6, opacity: 0.75, margin: 0 }}>To provide qualitative, accessible, and technology-driven education that molds students into self-reliant, ethical, and global leaders.</p>
+                  <h4 className="web-heading" style={{ color: "#219EBC", fontSize: 15.5, fontWeight: 700, margin: "0 0 6px" }}>Our Mission</h4>
+                  <p style={{ fontSize: 13, lineHeight: 1.6, opacity: 0.75, margin: 0 }}>To provide qualitative, accessible, and technology-driven education that molds students into self-reliant, ethical, and global leaders.</p>
                 </div>
                 <div>
-                  <h4 className="web-heading" style={{ color: "#219EBC", fontSize: 16, fontWeight: 700, margin: "0 0 8px" }}>Our Core Values</h4>
-                  <p style={{ fontSize: 13.5, lineHeight: 1.6, opacity: 0.75, margin: 0 }}>Integrity, academic excellence, innovation, perseverance, and respect for diversity in all areas of learning.</p>
+                  <h4 className="web-heading" style={{ color: "#219EBC", fontSize: 15.5, fontWeight: 700, margin: "0 0 6px" }}>Our Core Values</h4>
+                  <p style={{ fontSize: 13, lineHeight: 1.6, opacity: 0.75, margin: 0 }}>Integrity, academic excellence, innovation, perseverance, and respect for diversity in all areas of learning.</p>
                 </div>
               </div>
             </div>
@@ -467,47 +721,47 @@ export default function LandingPage() {
         </section>
 
         {/* ===== ACADEMICS SECTION ===== */}
-        <section id="academics" style={{ padding: "80px 24px", background: theme === "dark" ? "#011c2f" : "#f0f7fa" }}>
+        <section id="academics" className="section-padding" style={{ padding: "80px 24px", background: theme === "dark" ? "#011c2f" : "#f0f7fa" }}>
           <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <div style={{ textAlign: "center", marginBottom: 36 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#fb8500", textTransform: "uppercase", letterSpacing: "1px" }}>Academic Programs</span>
-              <h2 className="web-heading" style={{ fontSize: 32, fontWeight: 800, marginTop: 8, marginBottom: 12 }}>Curated For Global Competence</h2>
-              <p style={{ opacity: 0.75, maxWidth: 600, margin: "0 auto", fontSize: 15 }}>We offer a blend of national and international curricula that builds core cognitive, social, and physical skills.</p>
+              <h2 className="web-heading" style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight: 800, marginTop: 8, marginBottom: 10 }}>Curated For Global Competence</h2>
+              <p style={{ opacity: 0.75, maxWidth: 600, margin: "0 auto", fontSize: 14.5 }}>We offer a blend of national and international curricula that builds core cognitive, social, and physical skills.</p>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 36 }}>
+            <div className="academics-tabs" style={{ display: "flex", justifyContent: "center", gap: 10, marginBottom: 30 }}>
               {["primary", "junior", "senior"].map((tab) => (
                 <button
                   key={tab}
                   className={`tab-btn-${academicsTab === tab ? "active" : "inactive"}`}
                   onClick={() => setAcademicsTab(tab as any)}
-                  style={{ padding: "10px 24px", borderRadius: 100, border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+                  style={{ padding: "10px 22px", borderRadius: 100, border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)} School
                 </button>
               ))}
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
+            <div className="academics-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
               {academicsTab === "primary" && (
                 <>
-                  <div className="glass-card" style={{ padding: 30 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", marginBottom: 20 }}>
+                  <div className="glass-card" style={{ padding: "24px 20px" }}>
+                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", marginBottom: 16 }}>
                       <BookOpen size={20} />
                     </div>
-                    <h3 className="web-heading" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>Early Years & Nursery</h3>
-                    <p style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.6, margin: "0 0 18px" }}>Nurturing foundational skills in writing, basic arithmetic, creative art, and social interaction in a playful atmosphere.</p>
-                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 14, fontSize: 12, fontWeight: 600, opacity: 0.7 }}>
+                    <h3 className="web-heading" style={{ fontSize: 17, fontWeight: 700, margin: "0 0 8px" }}>Early Years & Nursery</h3>
+                    <p style={{ fontSize: 13.5, opacity: 0.75, lineHeight: 1.6, margin: "0 0 16px" }}>Nurturing foundational skills in writing, basic arithmetic, creative art, and social interaction in a playful atmosphere.</p>
+                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 12, fontSize: 11.5, fontWeight: 600, opacity: 0.7 }}>
                       Focus: Literacy · Numeracy · Fine Motor Skills · Phonics
                     </div>
                   </div>
-                  <div className="glass-card" style={{ padding: 30 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(251,133,0,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fb8500", marginBottom: 20 }}>
+                  <div className="glass-card" style={{ padding: "24px 20px" }}>
+                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(251,133,0,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fb8500", marginBottom: 16 }}>
                       <Award size={20} />
                     </div>
-                    <h3 className="web-heading" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>Primary (Grades 1-6)</h3>
-                    <p style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.6, margin: "0 0 18px" }}>Comprehensive learning covering core sciences, humanities, mathematics, and introducing ICT skills at an early stage.</p>
-                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 14, fontSize: 12, fontWeight: 600, opacity: 0.7 }}>
+                    <h3 className="web-heading" style={{ fontSize: 17, fontWeight: 700, margin: "0 0 8px" }}>Primary (Grades 1-6)</h3>
+                    <p style={{ fontSize: 13.5, opacity: 0.75, lineHeight: 1.6, margin: "0 0 16px" }}>Comprehensive learning covering core sciences, humanities, mathematics, and introducing ICT skills at an early stage.</p>
+                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 12, fontSize: 11.5, fontWeight: 600, opacity: 0.7 }}>
                       Subjects: Mathematics · Basic Science · Coding · Social Studies
                     </div>
                   </div>
@@ -516,23 +770,23 @@ export default function LandingPage() {
 
               {academicsTab === "junior" && (
                 <>
-                  <div className="glass-card" style={{ padding: 30 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", marginBottom: 20 }}>
+                  <div className="glass-card" style={{ padding: "24px 20px" }}>
+                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", marginBottom: 16 }}>
                       <School size={20} />
                     </div>
-                    <h3 className="web-heading" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>Junior Secondary (JSS 1-3)</h3>
-                    <p style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.6, margin: "0 0 18px" }}>Transitioning to advanced logic, pre-vocational studies, computer science, and preparing students for regional BECE exams.</p>
-                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 14, fontSize: 12, fontWeight: 600, opacity: 0.7 }}>
+                    <h3 className="web-heading" style={{ fontSize: 17, fontWeight: 700, margin: "0 0 8px" }}>Junior Secondary (JSS 1-3)</h3>
+                    <p style={{ fontSize: 13.5, opacity: 0.75, lineHeight: 1.6, margin: "0 0 16px" }}>Transitioning to advanced logic, pre-vocational studies, computer science, and preparing students for regional BECE exams.</p>
+                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 12, fontSize: 11.5, fontWeight: 600, opacity: 0.7 }}>
                       Focus: Pre-Algebra · French · Basic Tech · Agricultural Science
                     </div>
                   </div>
-                  <div className="glass-card" style={{ padding: 30 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(42,157,143,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#2a9d8f", marginBottom: 20 }}>
+                  <div className="glass-card" style={{ padding: "24px 20px" }}>
+                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(42,157,143,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#2a9d8f", marginBottom: 16 }}>
                       <Users size={20} />
                     </div>
-                    <h3 className="web-heading" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>STEM and Coding Clubs</h3>
-                    <p style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.6, margin: "0 0 18px" }}>Fostering analytical mindsets through practical science experiments, introductory robotics, web development, and coding.</p>
-                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 14, fontSize: 12, fontWeight: 600, opacity: 0.7 }}>
+                    <h3 className="web-heading" style={{ fontSize: 17, fontWeight: 700, margin: "0 0 8px" }}>STEM and Coding Clubs</h3>
+                    <p style={{ fontSize: 13.5, opacity: 0.75, lineHeight: 1.6, margin: "0 0 16px" }}>Fostering analytical mindsets through practical science experiments, introductory robotics, web development, and coding.</p>
+                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 12, fontSize: 11.5, fontWeight: 600, opacity: 0.7 }}>
                       Activities: Scratch · Robotics · Electronics · Science Fair
                     </div>
                   </div>
@@ -541,23 +795,23 @@ export default function LandingPage() {
 
               {academicsTab === "senior" && (
                 <>
-                  <div className="glass-card" style={{ padding: 30 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(251,133,0,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fb8500", marginBottom: 20 }}>
+                  <div className="glass-card" style={{ padding: "24px 20px" }}>
+                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(251,133,0,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fb8500", marginBottom: 16 }}>
                       <Award size={20} />
                     </div>
-                    <h3 className="web-heading" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>Science and Math Track</h3>
-                    <p style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.6, margin: "0 0 18px" }}>Advanced courses in physics, chemistry, biology, further mathematics, and software development preparing for WAEC/JAMB/SAT.</p>
-                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 14, fontSize: 12, fontWeight: 600, opacity: 0.7 }}>
+                    <h3 className="web-heading" style={{ fontSize: 17, fontWeight: 700, margin: "0 0 8px" }}>Science and Math Track</h3>
+                    <p style={{ fontSize: 13.5, opacity: 0.75, lineHeight: 1.6, margin: "0 0 16px" }}>Advanced courses in physics, chemistry, biology, further mathematics, and software development preparing for WAEC/JAMB/SAT.</p>
+                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 12, fontSize: 11.5, fontWeight: 600, opacity: 0.7 }}>
                       Subjects: Physics · Chemistry · Further Math · Technical Drawing
                     </div>
                   </div>
-                  <div className="glass-card" style={{ padding: 30 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", marginBottom: 20 }}>
+                  <div className="glass-card" style={{ padding: "24px 20px" }}>
+                    <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", marginBottom: 16 }}>
                       <BookOpen size={20} />
                     </div>
-                    <h3 className="web-heading" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>Arts and Social Sciences</h3>
-                    <p style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.6, margin: "0 0 18px" }}>Nurturing artistic skills, economics, government, literature, and accounting preparing students for law, humanities, and business.</p>
-                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 14, fontSize: 12, fontWeight: 600, opacity: 0.7 }}>
+                    <h3 className="web-heading" style={{ fontSize: 17, fontWeight: 700, margin: "0 0 8px" }}>Arts and Social Sciences</h3>
+                    <p style={{ fontSize: 13.5, opacity: 0.75, lineHeight: 1.6, margin: "0 0 16px" }}>Nurturing artistic skills, economics, government, literature, and accounting preparing students for law, humanities, and business.</p>
+                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 12, fontSize: 11.5, fontWeight: 600, opacity: 0.7 }}>
                       Subjects: Literature in English · Economics · Financial Accounting · Govt
                     </div>
                   </div>
@@ -568,53 +822,53 @@ export default function LandingPage() {
         </section>
 
         {/* ===== ADMISSIONS PORTAL TRACKING SECTION ===== */}
-        <section id="admissions" style={{ padding: "80px 24px", maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 48, alignItems: "start" }} className="grid-admissions">
+        <section id="admissions" className="section-padding" style={{ padding: "80px 24px", maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 40, alignItems: "start" }} className="grid-admissions">
             <div>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#fb8500", textTransform: "uppercase", letterSpacing: "1px" }}>Admission Flow</span>
-              <h2 className="web-heading" style={{ fontSize: 32, fontWeight: 800, marginTop: 8, marginBottom: 24 }}>Standard Entrance & Enrollment Procedure</h2>
+              <h2 className="web-heading" style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight: 800, marginTop: 8, marginBottom: 20 }}>Standard Entrance & Enrollment Procedure</h2>
               
-              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                <div style={{ display: "flex", gap: 16 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#219EBC", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0 }}>1</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <div style={{ display: "flex", gap: 14 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#219EBC", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0, fontSize: 13 }}>1</div>
                   <div>
-                    <h4 className="web-heading" style={{ fontSize: 16, fontWeight: 700, margin: "0 0 4px" }}>Purchase Application Form</h4>
-                    <p style={{ fontSize: 13.5, opacity: 0.75, margin: 0 }}>Pay the application fee of ₦10,000 securely online using the admission form dialog.</p>
+                    <h4 className="web-heading" style={{ fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>Purchase Application Form</h4>
+                    <p style={{ fontSize: 13, opacity: 0.75, margin: 0 }}>Pay the application fee of ₦10,000 securely online using the admission form dialog.</p>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 16 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#219EBC", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0 }}>2</div>
+                <div style={{ display: "flex", gap: 14 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#219EBC", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0, fontSize: 13 }}>2</div>
                   <div>
-                    <h4 className="web-heading" style={{ fontSize: 16, fontWeight: 700, margin: "0 0 4px" }}>Fill & Submit Application</h4>
-                    <p style={{ fontSize: 13.5, opacity: 0.75, margin: 0 }}>Complete the online form with your child's data. Upon submission, an application code (e.g. APP-2026-XXXX) will be generated.</p>
+                    <h4 className="web-heading" style={{ fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>Fill & Submit Application</h4>
+                    <p style={{ fontSize: 13, opacity: 0.75, margin: 0 }}>Complete the online form with your child's data. Upon submission, an application code (e.g. APP-2026-XXXX) will be generated.</p>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 16 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#219EBC", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0 }}>3</div>
+                <div style={{ display: "flex", gap: 14 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#219EBC", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0, fontSize: 13 }}>3</div>
                   <div>
-                    <h4 className="web-heading" style={{ fontSize: 16, fontWeight: 700, margin: "0 0 4px" }}>Entrance Exam & Photo Card</h4>
-                    <p style={{ fontSize: 13.5, opacity: 0.75, margin: 0 }}>Download and print the auto-generated **Exam Card**. Bring it to the exam venue. Supplemental exams can be scheduled if the first date is missed.</p>
+                    <h4 className="web-heading" style={{ fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>Entrance Exam & Photo Card</h4>
+                    <p style={{ fontSize: 13, opacity: 0.75, margin: 0 }}>Download and print the auto-generated **Exam Card**. Bring it to the exam venue. Supplemental exams can be scheduled if the first date is missed.</p>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 16 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#219EBC", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0 }}>4</div>
+                <div style={{ display: "flex", gap: 14 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#219EBC", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0, fontSize: 13 }}>4</div>
                   <div>
-                    <h4 className="web-heading" style={{ fontSize: 16, fontWeight: 700, margin: "0 0 4px" }}>Review, Admission & Portal Setup</h4>
-                    <p style={{ fontSize: 13.5, opacity: 0.75, margin: 0 }}>Admin reviews the scores in the LMS, generates an **Admission Number** (e.g. SCH-2026-XXXX) and grants admission. Parents accept, see the fees schedule, set a password, and auto-create portal accounts.</p>
+                    <h4 className="web-heading" style={{ fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>Review, Admission & Portal Setup</h4>
+                    <p style={{ fontSize: 13, opacity: 0.75, margin: 0 }}>Admin reviews scores, generates an **Admission Number** (e.g. SCH-2026-XXXX) and grants admission. Parents accept, see fees, and auto-create portal accounts.</p>
                   </div>
                 </div>
               </div>
 
-              <div style={{ marginTop: 32 }}>
+              <div className="admissions-flow-cta" style={{ marginTop: 28 }}>
                 <button 
                   className="glow-btn"
                   onClick={handleOpenAdmissions}
                   style={{ 
-                    padding: "16px 30px", borderRadius: 12, border: "none", color: "white", 
-                    fontSize: 14.5, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 
+                    padding: "15px 28px", borderRadius: 12, border: "none", color: "white", 
+                    fontSize: 14, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 
                   }}
                 >
                   Start New Application <ArrowRight size={16} />
@@ -802,23 +1056,26 @@ export default function LandingPage() {
         </section>
 
         {/* ===== FEES SCHEDULE SECTION ===== */}
-        <section id="fees" style={{ padding: "80px 24px", background: theme === "dark" ? "#011c2f" : "#f0f7fa" }}>
+        <section id="fees" className="section-padding" style={{ padding: "80px 24px", background: theme === "dark" ? "#011c2f" : "#f0f7fa" }}>
           <div style={{ maxWidth: 900, margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <div style={{ textAlign: "center", marginBottom: 36 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#fb8500", textTransform: "uppercase", letterSpacing: "1px" }}>Fees Structure</span>
-              <h2 className="web-heading" style={{ fontSize: 32, fontWeight: 800, marginTop: 8, marginBottom: 12 }}>Annual Fee Schedule</h2>
+              <h2 className="web-heading" style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight: 800, marginTop: 8, marginBottom: 10 }}>Annual Fee Schedule</h2>
               <p style={{ opacity: 0.75, fontSize: 14 }}>A transparent breakdown of school levies and tuition for the 2026/2027 academic session.</p>
             </div>
 
-            <div className="glass-card" style={{ padding: 28, overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
+            <div className="glass-card fees-table-card" style={{ padding: 24, overflowX: "auto" }}>
+              <div className="md-hidden" style={{ fontSize: 11.5, color: "#219EBC", fontWeight: 600, textAlign: "center", marginBottom: 12 }}>
+                ← Swipe horizontally to view full fees schedule →
+              </div>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${theme === "dark" ? "rgba(255,255,255,0.1)" : "rgba(2, 48, 71, 0.1)"}`, textAlign: "left" }}>
-                    <th style={{ padding: "12px 8px", fontSize: 14, fontWeight: 700 }}>Grade Class</th>
-                    <th style={{ padding: "12px 8px", fontSize: 14, fontWeight: 700 }}>Tuition (Per Term)</th>
-                    <th style={{ padding: "12px 8px", fontSize: 14, fontWeight: 700 }}>Development Levy</th>
-                    <th style={{ padding: "12px 8px", fontSize: 14, fontWeight: 700 }}>ICT & Lab</th>
-                    <th style={{ padding: "12px 8px", fontSize: 14, fontWeight: 700 }}>Books & Uniform</th>
+                    <th style={{ padding: "12px 8px", fontSize: 13.5, fontWeight: 700 }}>Grade Class</th>
+                    <th style={{ padding: "12px 8px", fontSize: 13.5, fontWeight: 700 }}>Tuition (Per Term)</th>
+                    <th style={{ padding: "12px 8px", fontSize: 13.5, fontWeight: 700 }}>Development Levy</th>
+                    <th style={{ padding: "12px 8px", fontSize: 13.5, fontWeight: 700 }}>ICT &amp; Lab</th>
+                    <th style={{ padding: "12px 8px", fontSize: 13.5, fontWeight: 700 }}>Books &amp; Uniform</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -830,16 +1087,16 @@ export default function LandingPage() {
                     { grade: "Senior Secondary (SSS)", tuition: "₦170,000", dev: "₦30,000", ict: "₦30,000", books: "₦45,000" }
                   ].map((row, idx) => (
                     <tr key={idx} style={{ borderBottom: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.05)" : "rgba(2, 48, 71, 0.05)"}` }}>
-                      <td style={{ padding: "14px 8px", fontSize: 13.5, fontWeight: 600 }}>{row.grade}</td>
-                      <td style={{ padding: "14px 8px", fontSize: 13.5 }}>{row.tuition}</td>
-                      <td style={{ padding: "14px 8px", fontSize: 13.5 }}>{row.dev}</td>
-                      <td style={{ padding: "14px 8px", fontSize: 13.5 }}>{row.ict}</td>
-                      <td style={{ padding: "14px 8px", fontSize: 13.5 }}>{row.books}</td>
+                      <td style={{ padding: "13px 8px", fontSize: 13, fontWeight: 600 }}>{row.grade}</td>
+                      <td style={{ padding: "13px 8px", fontSize: 13 }}>{row.tuition}</td>
+                      <td style={{ padding: "13px 8px", fontSize: 13 }}>{row.dev}</td>
+                      <td style={{ padding: "13px 8px", fontSize: 13 }}>{row.ict}</td>
+                      <td style={{ padding: "13px 8px", fontSize: 13 }}>{row.books}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div style={{ marginTop: 20, fontSize: 11.5, opacity: 0.6, fontStyle: "italic", textAlign: "center" }}>
+              <div style={{ marginTop: 18, fontSize: 11.5, opacity: 0.6, fontStyle: "italic", textAlign: "center" }}>
                 *Note: Tuition fees are paid per term. Other levies are paid once per session (annual).
               </div>
             </div>
@@ -847,69 +1104,69 @@ export default function LandingPage() {
         </section>
 
         {/* ===== CONTACT SECTION ===== */}
-        <section id="contact" style={{ padding: "80px 24px", maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "0.8fr 1.2fr", gap: 48 }} className="grid-contact">
+        <section id="contact" className="section-padding" style={{ padding: "80px 24px", maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "0.8fr 1.2fr", gap: 40 }} className="grid-contact">
             <div>
               <span style={{ fontSize: 13, fontWeight: 700, color: "#fb8500", textTransform: "uppercase", letterSpacing: "1px" }}>Get In Touch</span>
-              <h2 className="web-heading" style={{ fontSize: 32, fontWeight: 800, marginTop: 8, marginBottom: 20 }}>We'd Love to Hear From You</h2>
-              <p style={{ opacity: 0.75, lineHeight: 1.6, marginBottom: 30 }}>Have questions about the admission process, school fees, or scheduling a campus tour? Send us a message or call.</p>
+              <h2 className="web-heading" style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight: 800, marginTop: 8, marginBottom: 18 }}>We'd Love to Hear From You</h2>
+              <p style={{ opacity: 0.75, lineHeight: 1.6, marginBottom: 26, fontSize: 14 }}>Have questions about the admission process, school fees, or scheduling a campus tour? Send us a message or call.</p>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", flexShrink: 0 }}>
                     <Phone size={18} />
                   </div>
                   <div>
                     <div style={{ fontSize: 11, opacity: 0.6, fontWeight: 600 }}>Call/WhatsApp</div>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>+234 (0) 803 123 4567</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>+234 (0) 803 123 4567</div>
                   </div>
                 </div>
 
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", flexShrink: 0 }}>
                     <Mail size={18} />
                   </div>
                   <div>
                     <div style={{ fontSize: 11, opacity: 0.6, fontWeight: 600 }}>Email Address</div>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>info@aroura.com</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>info@aroura.com</div>
                   </div>
                 </div>
 
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", flexShrink: 0 }}>
                     <MapPin size={18} />
                   </div>
                   <div>
                     <div style={{ fontSize: 11, opacity: 0.6, fontWeight: 600 }}>Campus Address</div>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>12 Academy Way, Lekki Phase 1, Lagos</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>12 Academy Way, Lekki Phase 1, Lagos</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Quick message form */}
-            <div className="glass-card" style={{ padding: 32 }}>
-              <h3 className="web-heading" style={{ fontSize: 20, fontWeight: 800, margin: "0 0 20px" }}>Send a Quick Message</h3>
-              <form style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="grid-2">
+            <div className="glass-card contact-form-card" style={{ padding: 28 }}>
+              <h3 className="web-heading" style={{ fontSize: 19, fontWeight: 800, margin: "0 0 16px" }}>Send a Quick Message</h3>
+              <form style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }} className="grid-2">
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Full Name</label>
-                    <input type="text" placeholder="Your name" className="input-style" style={{ width: "100%", padding: "11px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box" }} />
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Full Name</label>
+                    <input type="text" placeholder="Your name" className="input-style" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box" }} />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Email Address</label>
-                    <input type="email" placeholder="Your email" className="input-style" style={{ width: "100%", padding: "11px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box" }} />
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Email Address</label>
+                    <input type="email" placeholder="Your email" className="input-style" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box" }} />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Subject</label>
-                  <input type="text" placeholder="Subject" className="input-style" style={{ width: "100%", padding: "11px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box" }} />
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Subject</label>
+                  <input type="text" placeholder="Subject" className="input-style" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box" }} />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Message Body</label>
-                  <textarea rows={4} placeholder="Type your message here..." className="input-style" style={{ width: "100%", padding: "11px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box", fontFamily: "inherit" }} />
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Message Body</label>
+                  <textarea rows={4} placeholder="Type your message here..." className="input-style" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box", fontFamily: "inherit" }} />
                 </div>
 
                 <button type="button" onClick={() => alert("Thank you! Your message has been sent.")} style={{ padding: "12px 24px", background: "#219EBC", color: "white", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: "pointer", alignSelf: "flex-start" }}>
@@ -921,39 +1178,39 @@ export default function LandingPage() {
         </section>
 
         {/* ===== FOOTER ===== */}
-        <footer style={{ background: theme === "dark" ? "#00080e" : "#022131", color: "#e8f4f8", padding: "60px 24px 20px" }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1.2fr 0.8fr 0.8fr 1.2fr", gap: 36, marginBottom: 40 }} className="footer-grid">
+        <footer className="footer-padding" style={{ background: theme === "dark" ? "#00080e" : "#022131", color: "#e8f4f8", padding: "60px 24px 20px" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1.2fr 0.8fr 0.8fr 1.2fr", gap: 32, marginBottom: 36 }} className="footer-grid">
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
                 <img src="/logo.png" alt="Aroura Academy" style={{ width: 34, height: 34, borderRadius: 8 }} />
-                <span className="web-heading" style={{ fontSize: 18, fontWeight: 800 }}>Aroura Academy</span>
+                <span className="web-heading" style={{ fontSize: 17, fontWeight: 800 }}>Aroura Academy</span>
               </div>
-              <p style={{ fontSize: 13, opacity: 0.6, lineHeight: 1.6 }}>Nurturing potential and cultivating leadership in learners. A modern institute for modern times.</p>
+              <p style={{ fontSize: 12.5, opacity: 0.65, lineHeight: 1.6 }}>Nurturing potential and cultivating leadership in learners. A modern institute for modern times.</p>
             </div>
 
             <div>
-              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, color: "#fb8500" }}>Quick Links</h4>
+              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: "#fb8500" }}>Quick Links</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
-                <a href="#about" style={{ color: "inherit", opacity: 0.7, textDecoration: "none" }}>About Us</a>
-                <a href="#academics" style={{ color: "inherit", opacity: 0.7, textDecoration: "none" }}>Programmes</a>
-                <span onClick={() => setShowAdmsModal(true)} style={{ cursor: "pointer", color: "inherit", opacity: 0.7, textDecoration: "none" }}>Admissions</span>
-                <a href="#fees" style={{ color: "inherit", opacity: 0.7, textDecoration: "none" }}>Fees Policy</a>
+                <a href="#about" style={{ color: "inherit", opacity: 0.75, textDecoration: "none" }}>About Us</a>
+                <a href="#academics" style={{ color: "inherit", opacity: 0.75, textDecoration: "none" }}>Programmes</a>
+                <span onClick={() => setShowAdmsModal(true)} style={{ cursor: "pointer", color: "inherit", opacity: 0.75, textDecoration: "none" }}>Admissions</span>
+                <a href="#fees" style={{ color: "inherit", opacity: 0.75, textDecoration: "none" }}>Fees Policy</a>
               </div>
             </div>
 
             <div>
-              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, color: "#fb8500" }}>Portal Links</h4>
+              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: "#fb8500" }}>Portal Links</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
-                <span onClick={() => navigate("/login")} style={{ opacity: 0.7, cursor: "pointer" }}>Student Portal</span>
-                <span onClick={() => navigate("/login")} style={{ opacity: 0.7, cursor: "pointer" }}>Parent Portal</span>
-                <span onClick={() => navigate("/login")} style={{ opacity: 0.7, cursor: "pointer" }}>Teacher Portal</span>
-                <span onClick={() => navigate("/login")} style={{ opacity: 0.7, cursor: "pointer" }}>Admin Portal</span>
+                <span onClick={() => navigate("/login")} style={{ opacity: 0.75, cursor: "pointer" }}>Student Portal</span>
+                <span onClick={() => navigate("/login")} style={{ opacity: 0.75, cursor: "pointer" }}>Parent Portal</span>
+                <span onClick={() => navigate("/login")} style={{ opacity: 0.75, cursor: "pointer" }}>Teacher Portal</span>
+                <span onClick={() => navigate("/login")} style={{ opacity: 0.75, cursor: "pointer" }}>Admin Portal</span>
               </div>
             </div>
 
             <div>
-              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 700, marginBottom: 16, color: "#fb8500" }}>School Portal Access</h4>
-              <p style={{ fontSize: 12.5, opacity: 0.6, marginBottom: 16 }}>Authorized personnel, teachers, parents and students should click below to enter the portal.</p>
+              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: "#fb8500" }}>School Portal Access</h4>
+              <p style={{ fontSize: 12, opacity: 0.65, marginBottom: 14 }}>Authorized personnel, teachers, parents and students should click below to enter the portal.</p>
               <button 
                 onClick={() => navigate("/login")}
                 className="portal-btn"
@@ -964,7 +1221,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 20, textAlign: "center", fontSize: 12, opacity: 0.5 }}>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 18, textAlign: "center", fontSize: 11.5, opacity: 0.55 }}>
             © {new Date().getFullYear()} Aroura Academy. All Rights Reserved. Powered by <a href="https://jlm.com.ng" style={{ color: "inherit", fontWeight: 700 }}>JLM</a>.
           </div>
         </footer>
@@ -981,16 +1238,18 @@ export default function LandingPage() {
             alignItems: "center",
             justifyContent: "center",
             zIndex: 9999,
-            padding: 20,
+            padding: 16,
             boxSizing: "border-box"
           }}>
-            <div style={{
+            <div className="adms-modal-content" style={{
               background: theme === "dark" ? "#011d2f" : "#ffffff",
               border: `1.5px solid ${theme === "dark" ? "rgba(142,202,230,0.18)" : "rgba(33,158,188,0.15)"}`,
-              borderRadius: 24,
-              padding: "36px 40px",
+              borderRadius: 20,
+              padding: "32px 32px",
               maxWidth: 600,
               width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
               boxShadow: "0 20px 50px rgba(1, 48, 71, 0.25)",
               position: "relative",
               color: theme === "dark" ? "#e8f4f8" : "#023047",
@@ -1001,12 +1260,12 @@ export default function LandingPage() {
                 onClick={() => setShowAdmsModal(false)}
                 style={{
                   position: "absolute",
-                  top: 24,
-                  right: 24,
+                  top: 20,
+                  right: 20,
                   background: theme === "dark" ? "rgba(255,255,255,0.05)" : "rgba(2,48,71,0.05)",
                   border: "none",
-                  width: 36,
-                  height: 36,
+                  width: 34,
+                  height: 34,
                   borderRadius: "50%",
                   cursor: "pointer",
                   display: "flex",
@@ -1020,24 +1279,24 @@ export default function LandingPage() {
               </button>
 
               {/* Header */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-                <School size={28} style={{ color: "#219EBC" }} />
-                <h3 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Admission Procedure</h3>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+                <School size={26} style={{ color: "#219EBC" }} />
+                <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Admission Procedure</h3>
               </div>
 
-              <p style={{ fontSize: 13.5, opacity: 0.85, lineHeight: 1.6, margin: "0 0 28px" }}>
+              <p style={{ fontSize: 13, opacity: 0.85, lineHeight: 1.6, margin: "0 0 24px" }}>
                 Follow these simple steps to enroll your child at Aroura Academy. You must create or log into a parent profile before starting the application.
               </p>
 
               {/* Steps Timeline */}
-              <div style={{ display: "grid", gap: 20, marginBottom: 36 }}>
+              <div style={{ display: "grid", gap: 18, marginBottom: 30 }}>
                 {[
                   { step: "1", title: "Create or Sign In to Parent Account", desc: "A registered parent profile is required for all candidate applications." },
                   { step: "2", title: "Pay Form Purchase Fee (₦10,000)", desc: "Pay securely via Card, Bank Transfer, or USSD code selection." },
                   { step: "3", title: "Fill Child Details Form", desc: "Provide personal details, previous school history, and documents." },
                   { step: "4", title: "Print Exam Card & Sit Entrance Exam", desc: "Download the auto-generated Photo Exam Card and bring it to the venue." }
                 ].map(s => (
-                  <div key={s.step} style={{ display: "flex", gap: 16 }}>
+                  <div key={s.step} style={{ display: "flex", gap: 14 }}>
                     <div style={{
                       width: 26,
                       height: 26,
@@ -1052,15 +1311,15 @@ export default function LandingPage() {
                       flexShrink: 0
                     }}>{s.step}</div>
                     <div>
-                      <h4 style={{ margin: "0 0 3px", fontSize: 14, fontWeight: 700 }}>{s.title}</h4>
-                      <p style={{ margin: 0, fontSize: 12.5, opacity: 0.7, lineHeight: 1.5 }}>{s.desc}</p>
+                      <h4 style={{ margin: "0 0 3px", fontSize: 13.5, fontWeight: 700 }}>{s.title}</h4>
+                      <p style={{ margin: 0, fontSize: 12, opacity: 0.7, lineHeight: 1.5 }}>{s.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
               {/* Links and CTA Action Buttons */}
-              <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <button
                   onClick={() => {
                     setShowAdmsModal(false);
@@ -1068,7 +1327,7 @@ export default function LandingPage() {
                   }}
                   style={{
                     flex: 1,
-                    padding: "14px 20px",
+                    padding: "13px 20px",
                     borderRadius: 12,
                     border: "none",
                     background: "linear-gradient(135deg, #219EBC 0%, #023047 100%)",
