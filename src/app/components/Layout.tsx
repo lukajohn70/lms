@@ -164,10 +164,15 @@ export function Layout({ children }: { children: ReactNode }) {
   const [showBackToTop, setShowBackToTop] = useState(false);
   useEffect(() => {
     const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 250);
+      const scrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      setShowBackToTop(scrollY > 120);
     };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true, capture: true });
+    document.addEventListener("scroll", handleScroll, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll, { capture: true } as any);
+      document.removeEventListener("scroll", handleScroll, { capture: true } as any);
+    };
   }, []);
 
   // Prevent body scroll when sidebar is open on mobile
@@ -527,26 +532,30 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* ===== BACK TO TOP BUTTON ===== */}
         {showBackToTop && (
           <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
+              document.body.scrollTo({ top: 0, behavior: "smooth" });
+            }}
             style={{
               position: "fixed",
-              bottom: 24,
-              right: 24,
-              zIndex: 90,
+              bottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
+              right: 20,
+              zIndex: 9999,
               width: 44,
               height: 44,
               borderRadius: "50%",
               background: "linear-gradient(135deg, #219EBC, #023047)",
-              border: "1.5px solid rgba(255,255,255,0.25)",
+              border: "1.5px solid rgba(255,255,255,0.35)",
               color: "#fff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              boxShadow: "0 6px 20px rgba(2,48,71,0.45)",
+              boxShadow: "0 8px 24px rgba(2,48,71,0.55), 0 2px 6px rgba(0,0,0,0.3)",
               transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px) scale(1.05)"; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px) scale(1.08)"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0) scale(1)"; }}
             title="Back to top"
             aria-label="Back to top"

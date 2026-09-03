@@ -39,9 +39,16 @@ class GradeController {
             $coursesStmt = $this->conn->query($coursesQuery);
             $courses = $coursesStmt->fetchAll();
         } else {
-            $coursesQuery = "SELECT id, name FROM courses WHERE teacher_id = :tid ORDER BY name";
+            // Teacher sees courses assigned directly (courses.teacher_id)
+            // OR via class subject allocation (class_subjects.teacher_id)
+            $coursesQuery = "
+                SELECT DISTINCT c.id, c.name FROM courses c
+                WHERE c.teacher_id = :tid
+                   OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)
+                ORDER BY c.name
+            ";
             $coursesStmt = $this->conn->prepare($coursesQuery);
-            $coursesStmt->execute([':tid' => $teacher['id']]);
+            $coursesStmt->execute([':tid' => $teacher['id'], ':tid2' => $teacher['id']]);
             $courses = $coursesStmt->fetchAll();
         }
         

@@ -46,6 +46,30 @@ export default function Attendance() {
     }));
   };
 
+  const markAllPresent = (targetDate?: string) => {
+    setStudents(prev => prev.map(s => {
+      const updated = { ...s.attendance };
+      if (targetDate) {
+        updated[targetDate] = true;
+      } else {
+        dates.forEach(d => { updated[d] = true; });
+      }
+      return { ...s, attendance: updated };
+    }));
+  };
+
+  const markAllAbsent = (targetDate?: string) => {
+    setStudents(prev => prev.map(s => {
+      const updated = { ...s.attendance };
+      if (targetDate) {
+        updated[targetDate] = false;
+      } else {
+        dates.forEach(d => { updated[d] = false; });
+      }
+      return { ...s, attendance: updated };
+    }));
+  };
+
   const handleSave = () => {
     if (!selectedCourseId) return;
     
@@ -112,6 +136,23 @@ export default function Attendance() {
             />
           </div>
 
+          {/* Mark All Present Button */}
+          <button
+            type="button"
+            onClick={() => markAllPresent(selectedDate)}
+            disabled={loading || students.length === 0}
+            title={`Mark all students present on ${formatDateLabel(selectedDate)}`}
+            style={{
+              display: "flex", alignItems: "center", gap: 5, padding: "7px 13px", borderRadius: 8,
+              background: "rgba(42,157,143,0.12)", border: "1px solid rgba(42,157,143,0.35)",
+              color: "#2a9d8f", fontSize: 12, fontWeight: 600,
+              cursor: (loading || students.length === 0) ? "not-allowed" : "pointer",
+              whiteSpace: "nowrap"
+            }}
+          >
+            <CheckCircle size={13} /> Mark All Present ({formatDateLabel(selectedDate)})
+          </button>
+
           <button onClick={handleSave} disabled={loading || students.length === 0}
             style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 16px", borderRadius: 9, background: saved ? "rgba(33,158,188,0.15)" : "linear-gradient(135deg,#219EBC,#1a8aaa)", border: saved ? "1px solid rgba(33,158,188,0.3)" : "none", cursor: (loading || students.length === 0) ? "not-allowed" : "pointer", fontSize: 12.5, fontWeight: 600, color: saved ? "#219EBC" : "#fff", opacity: (loading || students.length === 0) ? 0.6 : 1 }}>
             {saved ? <><CheckCircle size={13}/> Saved!</> : <><Save size={13}/> Save</>}
@@ -143,9 +184,23 @@ export default function Attendance() {
               <div style={{ display: "grid", gridTemplateColumns: `1fr repeat(${dates.length},85px) 80px`, padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
                 <span style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>Student</span>
                 {dates.map(d => (
-                  <span key={d} style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textAlign: "center", textTransform: "uppercase" }}>
-                    {formatDateLabel(d)}
-                  </span>
+                  <div key={d} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textAlign: "center", textTransform: "uppercase" }}>
+                      {formatDateLabel(d)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => markAllPresent(d)}
+                      title={`Mark all students present on ${formatDateLabel(d)}`}
+                      style={{
+                        background: "rgba(42,157,143,0.12)", border: "1px solid rgba(42,157,143,0.3)",
+                        color: "#2a9d8f", fontSize: 9, fontWeight: 700,
+                        cursor: "pointer", padding: "1px 5px", borderRadius: 4, display: "flex", alignItems: "center", gap: 2
+                      }}
+                    >
+                      <CheckCircle size={9} /> all
+                    </button>
+                  </div>
                 ))}
                 <span style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textAlign: "center", textTransform: "uppercase" }}>Rate</span>
               </div>

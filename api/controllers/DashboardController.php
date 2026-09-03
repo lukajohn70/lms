@@ -142,13 +142,18 @@ class DashboardController {
             FROM enrollments en
             JOIN courses c ON en.course_id = c.id
             WHERE c.teacher_id = :id
+               OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :id2)
         ");
-        $stmt->execute([':id' => $user['id']]);
+        $stmt->execute([':id' => $user['id'], ':id2' => $user['id']]);
         $totalStudents = $stmt->fetchColumn();
 
         // 2. Active Classes
-        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM courses WHERE teacher_id = :id");
-        $stmt->execute([':id' => $user['id']]);
+        $stmt = $this->conn->prepare("
+            SELECT COUNT(DISTINCT id) FROM courses 
+            WHERE teacher_id = :id 
+               OR id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :id2)
+        ");
+        $stmt->execute([':id' => $user['id'], ':id2' => $user['id']]);
         $activeClasses = $stmt->fetchColumn();
 
         // 3. CBTs Created
@@ -162,8 +167,13 @@ class DashboardController {
         $materialsUploaded = $stmt->fetchColumn();
 
         // 5. My Classes (List with actual averages)
-        $stmt = $this->conn->prepare("SELECT id, name FROM courses WHERE teacher_id = :id");
-        $stmt->execute([':id' => $user['id']]);
+        $stmt = $this->conn->prepare("
+            SELECT DISTINCT id, name FROM courses 
+            WHERE teacher_id = :id 
+               OR id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :id2)
+            ORDER BY name
+        ");
+        $stmt->execute([':id' => $user['id'], ':id2' => $user['id']]);
         $classes = $stmt->fetchAll();
         $classDetails = [];
         foreach ($classes as $c) {
@@ -327,8 +337,13 @@ class DashboardController {
     public function getTeacherClasses() {
         $user = Auth::requireRole(['teacher']);
 
-        $stmt = $this->conn->prepare("SELECT id, name, description FROM courses WHERE teacher_id = :tid ORDER BY name");
-        $stmt->execute([':tid' => $user['id']]);
+        $stmt = $this->conn->prepare("
+            SELECT DISTINCT c.id, c.name, c.description FROM courses c 
+            WHERE c.teacher_id = :tid 
+               OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)
+            ORDER BY c.name
+        ");
+        $stmt->execute([':tid' => $user['id'], ':tid2' => $user['id']]);
         $courses = $stmt->fetchAll();
 
         $result = [];
@@ -384,8 +399,13 @@ class DashboardController {
         }
 
         // Verify the course belongs to this teacher
-        $s = $this->conn->prepare("SELECT id, name FROM courses WHERE id = :cid AND teacher_id = :tid LIMIT 1");
-        $s->execute([':cid' => $courseId, ':tid' => $user['id']]);
+        $s = $this->conn->prepare("
+            SELECT id, name FROM courses 
+            WHERE id = :cid 
+              AND (teacher_id = :tid OR id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)) 
+            LIMIT 1
+        ");
+        $s->execute([':cid' => $courseId, ':tid' => $user['id'], ':tid2' => $user['id']]);
         $course = $s->fetch();
         if (!$course) {
             http_response_code(403);

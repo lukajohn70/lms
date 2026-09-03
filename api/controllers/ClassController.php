@@ -258,14 +258,23 @@ class ClassController {
                 VALUES (:cid, :coid, :t, :eg, :tid)
             ");
 
+            $stmtCourseTeacher = $this->conn->prepare("UPDATE courses SET teacher_id = :tid WHERE id = :coid");
+
             foreach ($data->subjects as $sub) {
+                $tid = !empty($sub->teacher_id) ? intval($sub->teacher_id) : null;
+                $coid = intval($sub->course_id);
+
                 $stmtInsert->execute([
                     ':cid' => $classId,
-                    ':coid' => intval($sub->course_id),
+                    ':coid' => $coid,
                     ':t' => $sub->type, // 'core' or 'elective'
                     ':eg' => ($sub->type === 'elective' && !empty($sub->elective_group)) ? $sub->elective_group : null,
-                    ':tid' => !empty($sub->teacher_id) ? intval($sub->teacher_id) : null
+                    ':tid' => $tid
                 ]);
+
+                if ($tid) {
+                    $stmtCourseTeacher->execute([':tid' => $tid, ':coid' => $coid]);
+                }
             }
 
             $this->conn->commit();

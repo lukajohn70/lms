@@ -17,10 +17,15 @@ class AttendanceController {
         $courseId = isset($_GET['course_id']) ? intval($_GET['course_id']) : null;
         $dateStr = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
         
-        // 1. Get teacher's courses
-        $coursesQuery = "SELECT id, name FROM courses WHERE teacher_id = :tid";
+        // Teacher sees courses assigned directly OR via class subject allocation
+        $coursesQuery = "
+            SELECT DISTINCT c.id, c.name FROM courses c
+            WHERE c.teacher_id = :tid
+               OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)
+            ORDER BY c.name
+        ";
         $coursesStmt = $this->conn->prepare($coursesQuery);
-        $coursesStmt->execute([':tid' => $teacher['id']]);
+        $coursesStmt->execute([':tid' => $teacher['id'], ':tid2' => $teacher['id']]);
         $courses = $coursesStmt->fetchAll();
         
         if (empty($courses)) {
@@ -79,8 +84,8 @@ class AttendanceController {
         foreach ($students as $s) {
             $sAtt = [];
             foreach ($dates as $d) {
-                // Default to true/present if no record, or false. Let's default to true for seed compatibility
-                $sAtt[$d] = isset($attMap[$s['id']][$d]) ? $attMap[$s['id']][$d] : true;
+                // Default to false (unchecked) until teacher marks present
+                $sAtt[$d] = isset($attMap[$s['id']][$d]) ? $attMap[$s['id']][$d] : false;
             }
             $studentAttendance[] = [
                 "id" => $s['id'],

@@ -37,10 +37,15 @@ class MaterialController {
             return;
         }
 
-        if ($user['role'] === 'teacher' && $course['teacher_id'] != $user['id']) {
-            http_response_code(403);
-            echo json_encode(["error" => "You don't have permission to upload to this course"]);
-            return;
+        if ($user['role'] === 'teacher') {
+            $s = $this->conn->prepare("SELECT 1 FROM class_subjects WHERE course_id = :cid AND teacher_id = :tid LIMIT 1");
+            $s->execute([':cid' => $course['id'], ':tid' => $user['id']]);
+            $inClass = $s->fetchColumn();
+            if ($course['teacher_id'] != $user['id'] && !$inClass) {
+                http_response_code(403);
+                echo json_encode(["error" => "You don't have permission to upload to this course"]);
+                return;
+            }
         }
 
         // File upload handling

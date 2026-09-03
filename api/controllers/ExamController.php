@@ -28,9 +28,14 @@ class ExamController {
         $questions      = $data['questions'] ?? [];
         $action         = $data['action'] ?? 'draft'; // 'draft' or 'submit'
 
-        // Verify teacher owns the course
-        $s = $this->conn->prepare("SELECT id FROM courses WHERE id = :cid AND teacher_id = :tid LIMIT 1");
-        $s->execute([':cid' => $courseId, ':tid' => $user['id']]);
+        // Verify teacher owns the course (directly or via class_subjects)
+        $s = $this->conn->prepare("
+            SELECT id FROM courses 
+            WHERE id = :cid 
+              AND (teacher_id = :tid OR id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)) 
+            LIMIT 1
+        ");
+        $s->execute([':cid' => $courseId, ':tid' => $user['id'], ':tid2' => $user['id']]);
         if (!$s->fetch()) {
             http_response_code(403);
             echo json_encode(['error' => 'Course not found or access denied']);
