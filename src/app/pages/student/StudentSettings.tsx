@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Lock, Shield, Eye, EyeOff, Check, AlertCircle, GraduationCap, UserCheck, KeyRound } from "lucide-react";
 import { useApp } from "../../contexts/AppContext";
 import { apiClient } from "../../lib/apiClient";
+import PasswordStrengthMeter from "../../components/PasswordStrengthMeter";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
   <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>
@@ -47,8 +48,8 @@ export default function StudentSettings() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setPasswordError("New password must be at least 6 characters long.");
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters long.");
       return;
     }
 
@@ -204,7 +205,7 @@ export default function StudentSettings() {
                   required
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
-                  placeholder="Minimum 6 characters"
+                  placeholder="Minimum 8 characters"
                   style={{ width: "100%", padding: "10px 40px 10px 14px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                 />
                 <button
@@ -215,6 +216,7 @@ export default function StudentSettings() {
                   {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              <PasswordStrengthMeter password={newPassword} confirmPassword={confirmPassword} minCharCount={8} />
             </div>
 
             <div>

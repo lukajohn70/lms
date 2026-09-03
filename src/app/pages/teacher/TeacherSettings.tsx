@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useApp } from "../../contexts/AppContext";
 import { apiClient, API_BASE_URL } from "../../lib/apiClient";
+import PasswordStrengthMeter from "../../components/PasswordStrengthMeter";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
   <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>
@@ -89,8 +90,8 @@ export default function TeacherSettings() {
       setPwError("New passwords do not match.");
       return;
     }
-    if (newPw.length < 6) {
-      setPwError("New password must be at least 6 characters.");
+    if (newPw.length < 8) {
+      setPwError("New password must be at least 8 characters.");
       return;
     }
 
@@ -271,8 +272,7 @@ export default function TeacherSettings() {
             }}>
               <Shield size={15} style={{ color: "#219EBC", flexShrink: 0, marginTop: 1 }} />
               <p style={{ fontSize: 12, color: "var(--subtext)", margin: 0, lineHeight: 1.55 }}>
-                Choose a strong password with at least <strong style={{ color: "var(--heading)" }}>6 characters</strong>. 
-                You will need your current password to make this change.
+                Choose a strong password with at least <strong style={{ color: "var(--heading)" }}>8 characters</strong>, including uppercase, lowercase, numbers, and symbols.
               </p>
             </div>
 
@@ -317,21 +317,8 @@ export default function TeacherSettings() {
                     {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                {/* Strength bar */}
-                {newPw.length > 0 && (
-                  <div style={{ marginTop: 6 }}>
-                    <div style={{ height: 4, borderRadius: 4, background: "var(--glass-border)", overflow: "hidden" }}>
-                      <div style={{
-                        height: "100%", borderRadius: 4, transition: "width 0.3s, background 0.3s",
-                        width: newPw.length >= 10 ? "100%" : newPw.length >= 6 ? "55%" : "25%",
-                        background: newPw.length >= 10 ? "#2a9d8f" : newPw.length >= 6 ? "#FFB703" : "#e76f51"
-                      }} />
-                    </div>
-                    <div style={{ fontSize: 10.5, color: newPw.length >= 10 ? "#2a9d8f" : newPw.length >= 6 ? "#FFB703" : "#e76f51", marginTop: 3 }}>
-                      {newPw.length >= 10 ? "Strong password" : newPw.length >= 6 ? "Acceptable — could be stronger" : "Too short"}
-                    </div>
-                  </div>
-                )}
+                {/* Password Strength Meter & Realtime Criteria Compliance */}
+                <PasswordStrengthMeter password={newPw} confirmPassword={confirmPw} minCharCount={8} />
               </div>
 
               {/* Confirm Password */}
@@ -352,11 +339,6 @@ export default function TeacherSettings() {
                     color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box"
                   }}
                 />
-                {confirmPw && (
-                  <div style={{ fontSize: 11, marginTop: 4, color: confirmPw === newPw ? "#2a9d8f" : "#e76f51" }}>
-                    {confirmPw === newPw ? "✓ Passwords match" : "✗ Passwords do not match"}
-                  </div>
-                )}
               </div>
 
               {/* Error */}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { User, Phone, Shield, Save, Check, Eye, EyeOff, UserCheck } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { useApp } from "../../contexts/AppContext";
+import PasswordStrengthMeter from "../../components/PasswordStrengthMeter";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
   <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>
@@ -270,22 +271,8 @@ export default function ParentSettings() {
                 </button>
               </div>
               
-              {/* Password Strength Criteria */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: "8px 12px", background: "rgba(0,0,0,0.02)", borderRadius: 8, border: "1px solid var(--glass-border)" }}>
-                {[
-                  { label: "At least 8 characters", valid: newPassword.length >= 8 },
-                  { label: "One uppercase letter", valid: /[A-Z]/.test(newPassword) },
-                  { label: "One number", valid: /[0-9]/.test(newPassword) },
-                  { label: "One special character", valid: /[^A-Za-z0-9]/.test(newPassword) }
-                ].map((criteria, idx) => (
-                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: criteria.valid ? "#2a9d8f" : "var(--subtext)" }}>
-                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: criteria.valid ? "rgba(42,157,143,0.15)" : "rgba(142,202,230,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {criteria.valid ? <Check size={8} style={{ color: "#2a9d8f", fontWeight: 900 }} /> : <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--subtext)" }} />}
-                    </div>
-                    <span style={{ fontWeight: criteria.valid ? 600 : 400, opacity: criteria.valid ? 1 : 0.7 }}>{criteria.label}</span>
-                  </div>
-                ))}
-              </div>
+              {/* Password Strength Meter & Realtime Criteria Compliance */}
+              <PasswordStrengthMeter password={newPassword} confirmPassword={confirmPassword} minCharCount={8} />
             </div>
 
             <div>

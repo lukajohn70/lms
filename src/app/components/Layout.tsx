@@ -1,4 +1,5 @@
 import { useState, ReactNode, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { NavLink, useNavigate, Navigate } from "react-router";
 import {
   LayoutDashboard, BookOpen, FileText, Receipt, MessageSquare, Library,
@@ -163,17 +164,41 @@ export function Layout({ children }: { children: ReactNode }) {
   // Back to Top button state & scroll listener
   const [showBackToTop, setShowBackToTop] = useState(false);
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-      setShowBackToTop(scrollY > 120);
+    const handleScroll = (e?: any) => {
+      const winY = window.pageYOffset || window.scrollY || 0;
+      const docY = document.documentElement?.scrollTop || 0;
+      const bodyY = document.body?.scrollTop || 0;
+      const rootY = document.getElementById("root")?.scrollTop || 0;
+      const targetY = (e?.target && e.target !== document) ? (e.target.scrollTop || 0) : 0;
+      const scrollY = Math.max(winY, docY, bodyY, rootY, targetY);
+      setShowBackToTop(scrollY > 60);
     };
+
     window.addEventListener("scroll", handleScroll, { passive: true, capture: true });
     document.addEventListener("scroll", handleScroll, { passive: true, capture: true });
+    document.body.addEventListener("scroll", handleScroll, { passive: true, capture: true });
+    const rootEl = document.getElementById("root");
+    if (rootEl) {
+      rootEl.addEventListener("scroll", handleScroll, { passive: true });
+    }
+
     return () => {
       window.removeEventListener("scroll", handleScroll, { capture: true } as any);
       document.removeEventListener("scroll", handleScroll, { capture: true } as any);
+      document.body.removeEventListener("scroll", handleScroll, { capture: true } as any);
+      if (rootEl) {
+        rootEl.removeEventListener("scroll", handleScroll);
+      }
     };
   }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
+    document.body.scrollTo({ top: 0, behavior: "smooth" });
+    const rootEl = document.getElementById("root");
+    if (rootEl) rootEl.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Prevent body scroll when sidebar is open on mobile
   useEffect(() => {
@@ -529,39 +554,40 @@ export function Layout({ children }: { children: ReactNode }) {
           {children}
         </main>
 
-        {/* ===== BACK TO TOP BUTTON ===== */}
-        {showBackToTop && (
+        {/* ===== BACK TO TOP BUTTON (Portaled directly to document.body) ===== */}
+        {typeof document !== "undefined" && createPortal(
           <button
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-              document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
-              document.body.scrollTo({ top: 0, behavior: "smooth" });
-            }}
+            type="button"
+            onClick={scrollToTop}
             style={{
               position: "fixed",
-              bottom: "calc(20px + env(safe-area-inset-bottom, 0px))",
-              right: 20,
-              zIndex: 9999,
-              width: 44,
-              height: 44,
+              bottom: "calc(22px + env(safe-area-inset-bottom, 0px))",
+              right: 22,
+              zIndex: 999999,
+              width: 46,
+              height: 46,
               borderRadius: "50%",
               background: "linear-gradient(135deg, #219EBC, #023047)",
-              border: "1.5px solid rgba(255,255,255,0.35)",
+              border: "1.5px solid rgba(255,255,255,0.4)",
               color: "#fff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              boxShadow: "0 8px 24px rgba(2,48,71,0.55), 0 2px 6px rgba(0,0,0,0.3)",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              boxShadow: "0 8px 28px rgba(2,48,71,0.65), 0 2px 8px rgba(0,0,0,0.4)",
+              transition: "opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+              opacity: showBackToTop ? 1 : 0,
+              pointerEvents: showBackToTop ? "auto" : "none",
+              transform: showBackToTop ? "scale(1)" : "scale(0.75)",
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px) scale(1.08)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0) scale(1)"; }}
+            onMouseEnter={e => { if (showBackToTop) (e.currentTarget as HTMLElement).style.transform = "translateY(-3px) scale(1.08)"; }}
+            onMouseLeave={e => { if (showBackToTop) (e.currentTarget as HTMLElement).style.transform = "translateY(0) scale(1)"; }}
             title="Back to top"
             aria-label="Back to top"
           >
-            <ArrowUp size={20} />
-          </button>
+            <ArrowUp size={22} strokeWidth={2.5} />
+          </button>,
+          document.body
         )}
 
         {/* ===== HELP & SUPPORT MODAL ===== */}
