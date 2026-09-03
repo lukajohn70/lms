@@ -318,15 +318,26 @@ class AssessmentController {
             if ($cRow) $className = strtoupper($cRow);
         }
 
-        // Attendance
-        $pa = $this->conn->prepare("SELECT COUNT(*) FROM attendance WHERE student_id=:sid AND status='present'");
-        $pa->execute([':sid'=>$studentId]);
-        $presentDays = intval($pa->fetchColumn()) ?: 80;
-        $ta = $this->conn->prepare("SELECT COUNT(*) FROM attendance WHERE student_id=:sid");
-        $ta->execute([':sid'=>$studentId]);
-        $totalDays = intval($ta->fetchColumn()) ?: 80;
-        if ($totalDays < $presentDays) $totalDays = $presentDays;
-        $absentDays = max(0, $totalDays - $presentDays);
+        // Fetch Assessment (Character / Psychomotor / Attendance / Comments)
+        $as = $this->conn->prepare("SELECT * FROM student_assessments WHERE student_id=:sid AND academic_term=:term AND academic_session=:session LIMIT 1");
+        $as->execute([':sid'=>$studentId, ':term'=>$term, ':session'=>$session]);
+        $assessment = $as->fetch() ?: [];
+
+        // Attendance (Use Form Teacher record if provided, otherwise daily attendance logs)
+        if (isset($assessment['days_present']) && $assessment['days_present'] !== null && $assessment['days_present'] !== '') {
+            $presentDays = intval($assessment['days_present']);
+            $totalDays = (isset($assessment['total_days']) && $assessment['total_days'] !== null && $assessment['total_days'] !== '') ? intval($assessment['total_days']) : 80;
+            $absentDays = (isset($assessment['days_absent']) && $assessment['days_absent'] !== null && $assessment['days_absent'] !== '') ? intval($assessment['days_absent']) : max(0, $totalDays - $presentDays);
+        } else {
+            $pa = $this->conn->prepare("SELECT COUNT(*) FROM attendance WHERE student_id=:sid AND status='present'");
+            $pa->execute([':sid'=>$studentId]);
+            $presentDays = intval($pa->fetchColumn()) ?: 80;
+            $ta = $this->conn->prepare("SELECT COUNT(*) FROM attendance WHERE student_id=:sid");
+            $ta->execute([':sid'=>$studentId]);
+            $totalDays = intval($ta->fetchColumn()) ?: 80;
+            if ($totalDays < $presentDays) $totalDays = $presentDays;
+            $absentDays = max(0, $totalDays - $presentDays);
+        }
         $attendanceRate = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 100.0;
 
         // Class Rank and Number in class
@@ -455,10 +466,7 @@ class AssessmentController {
         $studentOverallAvg = $courseCount > 0 ? round($sumStudAvg / $courseCount, 2) : 87.73;
         $classOverallAvg   = $courseCount > 0 ? round($sumClassAvg / $courseCount, 2) : 89.29;
 
-        // Fetch Assessment (Character / Psychomotor)
-        $as = $this->conn->prepare("SELECT * FROM student_assessments WHERE student_id=:sid AND academic_term=:term AND academic_session=:session LIMIT 1");
-        $as->execute([':sid'=>$studentId, ':term'=>$term, ':session'=>$session]);
-        $assessment = $as->fetch() ?: [];
+
 
         // Character development traits
         $characterTraits = [

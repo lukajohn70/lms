@@ -67,9 +67,37 @@ export default function Grades() {
     loadGrades();
   }, [selectedCourseId, selectedTerm]);
 
+  const SCORE_LIMITS: Record<string, { max: number; label: string }> = {
+    assignment_score: { max: 5, label: "Assignment (/5)" },
+    project_score: { max: 5, label: "Project (/5)" },
+    mid_term_test: { max: 10, label: "Mid-Term Test (/10)" },
+    ca1: { max: 20, label: "CA 1 (/20)" },
+    ca2: { max: 20, label: "CA 2 (/20)" },
+    exam: { max: 60, label: "Exam (/60)" }
+  };
+
   const updateField = (studentId: number, field: string, val: string) => {
     if (courseStatus === "published") return;
     const cleanVal = val.replace(/[^0-9.]/g, "");
+
+    // Avoid multiple dots
+    const parts = cleanVal.split(".");
+    if (parts.length > 2) return;
+    // Limit decimal precision to 2 decimal places while typing
+    if (parts[1] && parts[1].length > 2) return;
+
+    const num = parseFloat(cleanVal);
+    const limit = SCORE_LIMITS[field];
+    if (limit && cleanVal !== "" && !isNaN(num)) {
+      if (num < 0) {
+        alert("Invalid score: Score cannot be negative.");
+        return;
+      }
+      if (num > limit.max) {
+        alert(`Invalid score: Maximum allowed for ${limit.label} is ${limit.max}. You entered ${num}. Entry has been prevented.`);
+        return;
+      }
+    }
     
     setStudents(prev => prev.map(s => {
       if (s.id !== studentId) return s;
@@ -79,17 +107,17 @@ export default function Grades() {
       const asgn = parseFloat(updated.assignment_score) || 0;
       const proj = parseFloat(updated.project_score) || 0;
       const test = parseFloat(updated.mid_term_test) || 0;
-      const midTotal = asgn + proj + test;
+      const midTotal = Number((asgn + proj + test).toFixed(2));
       
-      updated.ca1 = String(midTotal);
+      updated.ca1 = String(midTotal.toFixed(2));
       
       const ca2 = parseFloat(updated.ca2) || 0;
       const exam = parseFloat(updated.exam) || 0;
       
       if (activeTab === "mid_term") {
-        updated.score = midTotal;
+        updated.score = Number(midTotal.toFixed(2));
       } else {
-        updated.score = midTotal + ca2 + exam;
+        updated.score = Number((midTotal + ca2 + exam).toFixed(2));
       }
       
       return updated;
@@ -105,7 +133,7 @@ export default function Grades() {
       const ca2 = parseFloat(s.ca2) || 0;
       const exam = parseFloat(s.exam) || 0;
 
-      if (asgn > 5 || proj > 5 || test > 10 || ca2 > 20 || exam > 60) {
+      if (asgn > 5 || proj > 5 || test > 10 || ca2 > 20 || exam > 60 || asgn < 0 || proj < 0 || test < 0 || ca2 < 0 || exam < 0) {
         hasError = true;
       }
     });
@@ -116,7 +144,7 @@ export default function Grades() {
     if (!selectedCourseId) return;
 
     if (!validateScores()) {
-      alert("Invalid Score Limits: Please verify that scores are within maximum bounds!");
+      alert("Invalid Score Limits: Please verify that all scores are within maximum bounds!");
       return;
     }
 
@@ -126,11 +154,11 @@ export default function Grades() {
       status: targetStatus,
       grades: students.map(s => ({
         student_id: s.id,
-        assignment_score: s.assignment_score,
-        project_score: s.project_score,
-        mid_term_test: s.mid_term_test,
-        ca2: s.ca2,
-        exam: s.exam,
+        assignment_score: s.assignment_score !== "" && s.assignment_score !== null ? Number(parseFloat(s.assignment_score).toFixed(2)) : "",
+        project_score: s.project_score !== "" && s.project_score !== null ? Number(parseFloat(s.project_score).toFixed(2)) : "",
+        mid_term_test: s.mid_term_test !== "" && s.mid_term_test !== null ? Number(parseFloat(s.mid_term_test).toFixed(2)) : "",
+        ca2: s.ca2 !== "" && s.ca2 !== null ? Number(parseFloat(s.ca2).toFixed(2)) : "",
+        exam: s.exam !== "" && s.exam !== null ? Number(parseFloat(s.exam).toFixed(2)) : "",
         remarks: s.remarks || ""
       }))
     })
@@ -223,7 +251,8 @@ export default function Grades() {
     }
     setShowTemplateMenu(false);
     const currentCourse = courses.find(c => c.id === selectedCourseId);
-    const subjectSlug = (currentCourse?.name || "Subject").replace(/[^a-zA-Z0-9]/g, "_");
+    const subjectName = currentCourse?.name || "Subject";
+    const subjectSlug = subjectName.replace(/[^a-zA-Z0-9]/g, "_");
     const termSlug = selectedTerm.replace(/\s+/g, "_");
 
     let headers: string[];
@@ -231,32 +260,35 @@ export default function Grades() {
     let fileSuffix: string;
 
     if (type === "midterm") {
-      headers = ["Student ID", "Student Number", "Student Name", "Assignment (/5)", "Project (/5)", "Mid-Term Test (/10)"];
+      headers = ["Student ID", "Student Number", "Student Name", "Subject", "Assignment (/5)", "Project (/5)", "Mid-Term Test (/10)"];
       rows = students.map(s => [
         s.id,
         `"${(s.student_number || "").replace(/"/g, '""')}"`,
         `"${(s.name || "").replace(/"/g, '""')}"`,
+        `"${subjectName.replace(/"/g, '""')}"`,
         s.assignment_score || "",
         s.project_score || "",
         s.mid_term_test || ""
       ]);
       fileSuffix = "MidTerm";
     } else if (type === "ca2only") {
-      headers = ["Student ID", "Student Number", "Student Name", "CA 2 (/20)"];
+      headers = ["Student ID", "Student Number", "Student Name", "Subject", "CA 2 (/20)"];
       rows = students.map(s => [
         s.id,
         `"${(s.student_number || "").replace(/"/g, '""')}"`,
         `"${(s.name || "").replace(/"/g, '""')}"`,
+        `"${subjectName.replace(/"/g, '""')}"`,
         s.ca2 || ""
       ]);
       fileSuffix = "CA2";
     } else {
       // endofterm
-      headers = ["Student ID", "Student Number", "Student Name", "CA 2 (/20)", "Exam (/60)"];
+      headers = ["Student ID", "Student Number", "Student Name", "Subject", "CA 2 (/20)", "Exam (/60)"];
       rows = students.map(s => [
         s.id,
         `"${(s.student_number || "").replace(/"/g, '""')}"`,
         `"${(s.name || "").replace(/"/g, '""')}"`,
+        `"${subjectName.replace(/"/g, '""')}"`,
         s.ca2 || "",
         s.exam || ""
       ]);
@@ -264,7 +296,14 @@ export default function Grades() {
     }
 
     const filename = `${subjectSlug}_${termSlug}_${fileSuffix}_Template.csv`;
-    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\r\n");
+    const csvContent = "\uFEFF" + [
+      `# Aroura Academy Grade Mark Sheet`,
+      `# Subject: ${subjectName} | Term: ${selectedTerm} | Session: 2026/2027`,
+      `# Scores precision: 2 decimal places. Limits: Asgn (5), Proj (5), Test (10), CA2 (20), Exam (60)`,
+      headers.join(","),
+      ...rows.map(r => r.join(","))
+    ].join("\r\n");
+
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -286,7 +325,9 @@ export default function Grades() {
         const text = ev.target?.result as string;
         if (!text) throw new Error("Empty CSV file");
 
-        const lines = text.split(/\r\n|\n/).map(l => l.trim()).filter(l => l.length > 0);
+        const rawLines = text.split(/\r\n|\n/).map(l => l.trim()).filter(l => l.length > 0);
+        // Skip comment lines starting with #
+        const lines = rawLines.filter(l => !l.startsWith("#"));
         if (lines.length < 2) throw new Error("CSV file contains no data rows");
 
         const parseLine = (line: string) => {
@@ -346,29 +387,29 @@ export default function Grades() {
 
               if (isMatch) {
                 matchCount++;
-                const newAsgn = asgnIdx !== -1 && row[asgnIdx] !== undefined ? row[asgnIdx].replace(/[^0-9.]/g, "") : s.assignment_score;
-                const newProj = projIdx !== -1 && row[projIdx] !== undefined ? row[projIdx].replace(/[^0-9.]/g, "") : s.project_score;
-                const newTest = testIdx !== -1 && row[testIdx] !== undefined ? row[testIdx].replace(/[^0-9.]/g, "") : s.mid_term_test;
-                const newCa2  = ca2Idx !== -1 && row[ca2Idx] !== undefined ? row[ca2Idx].replace(/[^0-9.]/g, "") : s.ca2;
-                const newExam = examIdx !== -1 && row[examIdx] !== undefined ? row[examIdx].replace(/[^0-9.]/g, "") : s.exam;
+                const rawAsgn = asgnIdx !== -1 && row[asgnIdx] !== undefined ? row[asgnIdx].replace(/[^0-9.]/g, "") : s.assignment_score;
+                const rawProj = projIdx !== -1 && row[projIdx] !== undefined ? row[projIdx].replace(/[^0-9.]/g, "") : s.project_score;
+                const rawTest = testIdx !== -1 && row[testIdx] !== undefined ? row[testIdx].replace(/[^0-9.]/g, "") : s.mid_term_test;
+                const rawCa2  = ca2Idx !== -1 && row[ca2Idx] !== undefined ? row[ca2Idx].replace(/[^0-9.]/g, "") : s.ca2;
+                const rawExam = examIdx !== -1 && row[examIdx] !== undefined ? row[examIdx].replace(/[^0-9.]/g, "") : s.exam;
 
-                const a = parseFloat(newAsgn) || 0;
-                const p = parseFloat(newProj) || 0;
-                const t = parseFloat(newTest) || 0;
-                const c2 = parseFloat(newCa2) || 0;
-                const ex = parseFloat(newExam) || 0;
+                const a = Math.min(5, Math.max(0, parseFloat(rawAsgn) || 0));
+                const p = Math.min(5, Math.max(0, parseFloat(rawProj) || 0));
+                const t = Math.min(10, Math.max(0, parseFloat(rawTest) || 0));
+                const c2 = Math.min(20, Math.max(0, parseFloat(rawCa2) || 0));
+                const ex = Math.min(60, Math.max(0, parseFloat(rawExam) || 0));
 
-                const midTotal = a + p + t;
-                const score = activeTab === "mid_term" ? midTotal : (midTotal + c2 + ex);
+                const midTotal = Number((a + p + t).toFixed(2));
+                const score = activeTab === "mid_term" ? midTotal : Number((midTotal + c2 + ex).toFixed(2));
 
                 return {
                   ...s,
-                  assignment_score: newAsgn,
-                  project_score: newProj,
-                  mid_term_test: newTest,
-                  ca1: String(midTotal),
-                  ca2: newCa2,
-                  exam: newExam,
+                  assignment_score: a.toFixed(2),
+                  project_score: p.toFixed(2),
+                  mid_term_test: t.toFixed(2),
+                  ca1: String(midTotal.toFixed(2)),
+                  ca2: c2.toFixed(2),
+                  exam: ex.toFixed(2),
                   score
                 };
               }
@@ -397,8 +438,8 @@ export default function Grades() {
     reader.readAsText(file);
   };
   const avg = students.length > 0 
-    ? Math.round(students.reduce((acc, s) => acc + s.score, 0) / students.length)
-    : 0;
+    ? (students.reduce((acc, s) => acc + s.score, 0) / students.length).toFixed(2)
+    : "0.00";
 
   const isLocked = courseStatus === "published" || courseStatus === "locked";
 
@@ -745,7 +786,7 @@ export default function Grades() {
                     <input type="text" value={s.mid_term_test} onChange={e => updateField(s.id, "mid_term_test", e.target.value)} disabled={isLocked}
                       style={{ width: 60, padding: "6px 8px", borderRadius: 7, border: `1px solid ${testErr ? "#ef4444" : "var(--glass-border)"}`, background: isLocked ? "transparent" : (testErr ? "rgba(239,68,68,0.05)" : "var(--muted)"), fontSize: 13, color: "var(--heading)", outline: "none", textAlign: "center", cursor: isLocked ? "not-allowed" : "text" }} />
                     
-                    <span style={{ fontSize: 14, fontWeight: 800, color: rmk.color }}>{s.score.toFixed(1)}</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: rmk.color }}>{s.score.toFixed(2)}</span>
                     <div style={{ height: 6, borderRadius: 3, background: "var(--muted)", overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${Math.min((s.score / 20) * 100, 100)}%`, background: rmk.color, borderRadius: 3 }} />
                     </div>
@@ -767,7 +808,7 @@ export default function Grades() {
                       <div style={{ fontSize: 10, color: "var(--subtext)" }}>{s.student_number}</div>
                     </div>
                     {/* CA1 (Mid-Term total, Read-Only) */}
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--subtext)", width: 60, textAlign: "center", display: "inline-block" }}>{midTotal.toFixed(1)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--subtext)", width: 60, textAlign: "center", display: "inline-block" }}>{midTotal.toFixed(2)}</span>
                     
                     {/* CA2 */}
                     <input type="text" value={s.ca2} onChange={e => updateField(s.id, "ca2", e.target.value)} disabled={isLocked}
@@ -777,7 +818,7 @@ export default function Grades() {
                     <input type="text" value={s.exam} onChange={e => updateField(s.id, "exam", e.target.value)} disabled={isLocked}
                       style={{ width: 60, padding: "6px 8px", borderRadius: 7, border: `1px solid ${examErr ? "#ef4444" : "var(--glass-border)"}`, background: isLocked ? "transparent" : (examErr ? "rgba(239,68,68,0.05)" : "var(--muted)"), fontSize: 13, color: "var(--heading)", outline: "none", textAlign: "center", cursor: isLocked ? "not-allowed" : "text" }} />
                     
-                    <span style={{ fontSize: 14, fontWeight: 800, color: gl.color }}>{s.score.toFixed(1)}</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: gl.color }}>{s.score.toFixed(2)}</span>
                     <div style={{ height: 6, borderRadius: 3, background: "var(--muted)", overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${Math.min(s.score, 100)}%`, background: gl.color, borderRadius: 3 }} />
                     </div>
@@ -813,7 +854,7 @@ export default function Grades() {
                             <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{s.student_number}</div>
                           </div>
                           <div style={{ textAlign: "right" }}>
-                            <span style={{ fontSize: 16, fontWeight: 800, color: rmk.color }}>{s.score.toFixed(1)} <span style={{ fontSize: 11, fontWeight: 500, color: "var(--subtext)" }}>/20</span></span>
+                            <span style={{ fontSize: 16, fontWeight: 800, color: rmk.color }}>{s.score.toFixed(2)} <span style={{ fontSize: 11, fontWeight: 500, color: "var(--subtext)" }}>/20</span></span>
                             <div style={{ marginTop: 2 }}>
                               <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: rmk.bg, color: rmk.color }}>
                                 {rmk.text}
@@ -891,7 +932,7 @@ export default function Grades() {
                             <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{s.student_number}</div>
                           </div>
                           <div style={{ textAlign: "right" }}>
-                            <span style={{ fontSize: 16, fontWeight: 800, color: gl.color }}>{s.score.toFixed(1)} <span style={{ fontSize: 11, fontWeight: 500, color: "var(--subtext)" }}>/100</span></span>
+                            <span style={{ fontSize: 16, fontWeight: 800, color: gl.color }}>{s.score.toFixed(2)} <span style={{ fontSize: 11, fontWeight: 500, color: "var(--subtext)" }}>/100</span></span>
                             <div style={{ marginTop: 2 }}>
                               <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: `${gl.color}18`, color: gl.color }}>
                                 {gl.grade} · {gl.text}
@@ -913,7 +954,7 @@ export default function Grades() {
                               width: "100%", padding: "8px 6px", borderRadius: 8, background: "rgba(33,158,188,0.08)",
                               border: "1px solid rgba(33,158,188,0.2)", fontSize: 13, fontWeight: 700, color: "#219EBC", textAlign: "center", boxSizing: "border-box"
                             }}>
-                              {midTotal.toFixed(1)}
+                              {midTotal.toFixed(2)}
                             </div>
                           </div>
                           <div>

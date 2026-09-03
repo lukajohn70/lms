@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, BookOpen, Save, Settings, Search, ChevronDown, Download, Upload, CheckCircle, AlertCircle } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Plus, Trash2, BookOpen, Save, Settings, Search, ChevronDown, Download, Upload, CheckCircle, AlertCircle, Award, UserCheck } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
@@ -8,8 +8,20 @@ const Glass = ({ children, style }: { children: React.ReactNode; style?: React.C
   </div>
 );
 
-// Searchable teacher dropdown component
-function SearchableTeacherSelect({ teachers, value, onChange }: { teachers: any[]; value: string; onChange: (v: string) => void }) {
+// Searchable teacher dropdown component with optional arm count indicator
+function SearchableTeacherSelect({ 
+  teachers, 
+  value, 
+  onChange,
+  armCounts,
+  currentTeacherId
+}: { 
+  teachers: any[]; 
+  value: string; 
+  onChange: (v: string) => void;
+  armCounts?: Record<number, number>;
+  currentTeacherId?: number | null;
+}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -36,9 +48,9 @@ function SearchableTeacherSelect({ teachers, value, onChange }: { teachers: any[
         onClick={() => { setOpen(o => !o); setQuery(""); }}
         style={{
           width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "5px 9px", borderRadius: 6, background: "var(--background)",
+          padding: "6px 10px", borderRadius: 7, background: "var(--background)",
           border: "1px solid var(--glass-border)", color: selected ? "var(--heading)" : "var(--subtext)",
-          cursor: "pointer", fontSize: 11, gap: 6, textAlign: "left"
+          cursor: "pointer", fontSize: 11.5, gap: 6, textAlign: "left"
         }}
       >
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
@@ -66,23 +78,58 @@ function SearchableTeacherSelect({ teachers, value, onChange }: { teachers: any[
           <div style={{ maxHeight: 200, overflowY: "auto" }}>
             <div
               onMouseDown={() => { onChange(""); setOpen(false); }}
-              style={{ padding: "6px 10px", cursor: "pointer", fontSize: 11, color: "var(--subtext)", background: value === "" ? "rgba(33,158,188,0.08)" : "transparent" }}
+              style={{ padding: "7px 10px", cursor: "pointer", fontSize: 11, color: "var(--subtext)", background: value === "" ? "rgba(33,158,188,0.08)" : "transparent" }}
               onMouseEnter={e => (e.currentTarget.style.background = "var(--muted)")}
               onMouseLeave={e => (e.currentTarget.style.background = value === "" ? "rgba(33,158,188,0.08)" : "transparent")}
             >
               No Teacher Assigned
             </div>
-            {filtered.map(t => (
-              <div
-                key={t.id}
-                onMouseDown={() => { onChange(String(t.id)); setOpen(false); }}
-                style={{ padding: "6px 10px", cursor: "pointer", fontSize: 11, color: "var(--heading)", background: String(t.id) === String(value) ? "rgba(33,158,188,0.08)" : "transparent" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "var(--muted)")}
-                onMouseLeave={e => (e.currentTarget.style.background = String(t.id) === String(value) ? "rgba(33,158,188,0.08)" : "transparent")}
-              >
-                {t.first_name} {t.last_name}
-              </div>
-            ))}
+            {filtered.map(t => {
+              const count = armCounts ? (armCounts[t.id] || 0) : 0;
+              const isCurrent = currentTeacherId === t.id;
+              const isAtMax = armCounts && count >= 2 && !isCurrent;
+
+              return (
+                <div
+                  key={t.id}
+                  onMouseDown={() => {
+                    if (isAtMax) {
+                      alert(`${t.first_name} ${t.last_name} is already Form Teacher to 2 class arms (maximum reached).`);
+                      return;
+                    }
+                    onChange(String(t.id));
+                    setOpen(false);
+                  }}
+                  style={{
+                    padding: "7px 10px",
+                    cursor: isAtMax ? "not-allowed" : "pointer",
+                    fontSize: 11,
+                    color: isAtMax ? "var(--subtext)" : "var(--heading)",
+                    opacity: isAtMax ? 0.6 : 1,
+                    background: String(t.id) === String(value) ? "rgba(33,158,188,0.08)" : "transparent",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center"
+                  }}
+                  onMouseEnter={e => { if (!isAtMax) e.currentTarget.style.background = "var(--muted)"; }}
+                  onMouseLeave={e => { if (!isAtMax) e.currentTarget.style.background = String(t.id) === String(value) ? "rgba(33,158,188,0.08)" : "transparent"; }}
+                >
+                  <span>{t.first_name} {t.last_name}</span>
+                  {armCounts && (
+                    <span style={{
+                      fontSize: 9.5,
+                      fontWeight: 700,
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      background: isAtMax ? "rgba(231,111,81,0.15)" : count > 0 ? "rgba(251,133,0,0.15)" : "rgba(33,158,188,0.15)",
+                      color: isAtMax ? "#e76f51" : count > 0 ? "#FB8500" : "#219EBC"
+                    }}>
+                      {isAtMax ? "2/2 (Max)" : `${count}/2 arms`}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
             {filtered.length === 0 && (
               <div style={{ padding: "8px 10px", fontSize: 11, color: "var(--subtext)", textAlign: "center" }}>No teachers found</div>
             )}
@@ -304,6 +351,40 @@ export default function AdminClasses() {
     }
   };
 
+  const teacherArmCounts = useMemo(() => {
+    const counts: Record<number, number> = {};
+    classes.forEach(c => {
+      if (c.form_teacher_id) {
+        counts[c.form_teacher_id] = (counts[c.form_teacher_id] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [classes]);
+
+  const handleAssignFormTeacher = async (classId: number, teacherId: string) => {
+    try {
+      const res: any = await apiClient.post("/admin/classes/assign-form-teacher", {
+        class_id: classId,
+        teacher_id: teacherId ? parseInt(teacherId) : null
+      });
+      if (res && res.success) {
+        fetchClasses();
+        if (activeClass && activeClass.id === classId) {
+          const tObj = teachers.find(t => String(t.id) === String(teacherId));
+          setActiveClass({
+            ...activeClass,
+            form_teacher_id: teacherId ? parseInt(teacherId) : null,
+            form_teacher_name: tObj ? `${tObj.first_name} ${tObj.last_name}` : null
+          });
+        }
+      } else {
+        alert(res.error || "Failed to assign form teacher");
+      }
+    } catch (e: any) {
+      alert(e.message || "Failed to assign form teacher");
+    }
+  };
+
   return (
     <div>
       <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
@@ -442,7 +523,18 @@ export default function AdminClasses() {
                     >
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: activeClass?.id === c.id ? "#FB8500" : "var(--heading)" }}>{c.name}</div>
-                        {c.department && <div style={{ fontSize: 11, color: "var(--subtext)" }}>{c.department}</div>}
+                        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 3 }}>
+                          {c.department && <span style={{ fontSize: 10.5, color: "var(--subtext)" }}>{c.department}</span>}
+                          {c.form_teacher_name ? (
+                            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(33,158,188,0.15)", color: "#219EBC", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+                              🎓 {c.form_teacher_name}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 9.5, padding: "1px 6px", borderRadius: 4, background: "rgba(231,111,81,0.1)", color: "#e76f51", fontWeight: 600 }}>
+                              No Form Teacher
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <button onClick={(e) => { e.stopPropagation(); handleDeleteClass(c.id); }} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer" }}>
                         <Trash2 size={14} />
@@ -453,16 +545,42 @@ export default function AdminClasses() {
               )}
             </Glass>
 
-            {/* Subjects Allocation */}
+            {/* Subjects Allocation & Form Teacher Allocation */}
             <div ref={subjectsRef}>
               <Glass style={{ padding: 20 }}>
                 {!activeClass ? (
                   <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtext)" }}>
                     <Settings size={40} style={{ opacity: 0.3, marginBottom: 12 }} />
-                    <div style={{ fontSize: 14 }}>Select a class to allocate subjects.</div>
+                    <div style={{ fontSize: 14 }}>Select a class to allocate subjects and assign a Form Teacher.</div>
                   </div>
                 ) : (
                   <div>
+                    {/* Form Teacher Assignment Panel */}
+                    <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(251,133,0,0.07)", border: "1px solid rgba(251,133,0,0.25)", marginBottom: 20 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10, marginBottom: 10 }}>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 800, color: "#FB8500" }}>
+                            <Award size={15} /> Form Teacher for {activeClass.name}
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: "rgba(251,133,0,0.18)", color: "#FB8500" }}>
+                              Max 2 arms / teacher
+                            </span>
+                          </div>
+                          <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 3 }}>
+                            The form teacher manages report comments, behavioral &amp; psychomotor domains, attendance, awards, and student names.
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ maxWidth: 360 }}>
+                        <SearchableTeacherSelect
+                          teachers={teachers}
+                          armCounts={teacherArmCounts}
+                          currentTeacherId={activeClass.form_teacher_id}
+                          value={activeClass.form_teacher_id ? String(activeClass.form_teacher_id) : ""}
+                          onChange={(tid) => handleAssignFormTeacher(activeClass.id, tid)}
+                        />
+                      </div>
+                    </div>
+
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                       <div>
                         <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--heading)" }}>

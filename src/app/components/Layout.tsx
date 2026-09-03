@@ -43,6 +43,7 @@ const NAV: Record<Role, NavItem[]> = {
     { icon: <CalendarDays size={17} />, label: "Attendance", to: "/teacher/attendance" },
     { icon: <CheckSquare size={17} />, label: "Grade Submissions", to: "/teacher/grades" },
     { icon: <UserCheck size={17} />, label: "Assessments", to: "/teacher/assessments" },
+    { icon: <Award size={17} />, label: "Form Class", to: "/teacher/form-class" },
     { icon: <Settings size={17} />, label: "Account Settings", to: "/teacher/settings" },
   ],
   admin: [

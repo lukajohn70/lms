@@ -15,17 +15,82 @@ class ClassController {
                 $this->conn->exec("ALTER TABLE class_subjects ADD COLUMN teacher_id int DEFAULT NULL");
                 $this->conn->exec("ALTER TABLE class_subjects ADD CONSTRAINT fk_class_subject_teacher FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL");
             }
+
+            $chkForm = $this->conn->query("SHOW COLUMNS FROM classes LIKE 'form_teacher_id'");
+            if ($chkForm->rowCount() == 0) {
+                $this->conn->exec("ALTER TABLE classes ADD COLUMN form_teacher_id int DEFAULT NULL");
+                $this->conn->exec("ALTER TABLE classes ADD CONSTRAINT fk_classes_form_teacher FOREIGN KEY (form_teacher_id) REFERENCES users(id) ON DELETE SET NULL");
+            }
         } catch (Exception $e) {}
     }
 
-    // Get all classes
+    // Get all classes with form teacher details
     public function getClasses() {
         Auth::requireRole(['admin', 'teacher']);
         
-        $stmt = $this->conn->query("SELECT * FROM classes ORDER BY name ASC");
+        $stmt = $this->conn->query("
+            SELECT c.*, CONCAT(u.first_name, ' ', u.last_name) AS form_teacher_name, u.email AS form_teacher_email
+            FROM classes c
+            LEFT JOIN users u ON c.form_teacher_id = u.id
+            ORDER BY c.name ASC
+        ");
         $classes = $stmt->fetchAll();
         
         echo json_encode(["classes" => $classes]);
+    }
+
+    // Assign / unassign Form Teacher to a class arm (Max 2 arms per teacher)
+    public function assignFormTeacher() {
+        Auth::requireRole(['admin']);
+        $data = json_decode(file_get_contents("php://input"));
+
+        if (empty($data->class_id)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Class ID is required."]);
+            return;
+        }
+
+        $classId = intval($data->class_id);
+        $teacherId = !empty($data->teacher_id) ? intval($data->teacher_id) : null;
+
+        try {
+            if ($teacherId !== null) {
+                // Verify teacher exists and is teacher role
+                $uStmt = $this->conn->prepare("SELECT id, first_name, last_name, role FROM users WHERE id = :tid");
+                $uStmt->execute([':tid' => $teacherId]);
+                $teacher = $uStmt->fetch();
+
+                if (!$teacher || $teacher['role'] !== 'teacher') {
+                    http_response_code(400);
+                    echo json_encode(["error" => "Selected user is not a registered teacher."]);
+                    return;
+                }
+
+                // Check maximum 2 arms per teacher constraint
+                $countStmt = $this->conn->prepare("SELECT COUNT(*) FROM classes WHERE form_teacher_id = :tid AND id != :cid");
+                $countStmt->execute([':tid' => $teacherId, ':cid' => $classId]);
+                $assignedCount = intval($countStmt->fetchColumn());
+
+                if ($assignedCount >= 2) {
+                    http_response_code(400);
+                    echo json_encode([
+                        "error" => "{$teacher['first_name']} {$teacher['last_name']} is already assigned as Form Teacher to 2 class arms (the maximum allowed)."
+                    ]);
+                    return;
+                }
+            }
+
+            $updateStmt = $this->conn->prepare("UPDATE classes SET form_teacher_id = :tid WHERE id = :cid");
+            $updateStmt->execute([':tid' => $teacherId, ':cid' => $classId]);
+
+            echo json_encode([
+                "success" => true,
+                "message" => $teacherId ? "Form teacher assigned successfully." : "Form teacher removed from class arm."
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to update form teacher: " . $e->getMessage()]);
+        }
     }
 
     // Create a new class

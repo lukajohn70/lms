@@ -202,18 +202,36 @@ class GradeController {
                 ]);
                 $existing = $findStmt->fetch();
                 
-                $asgn = isset($g->assignment_score) && $g->assignment_score !== "" ? floatval($g->assignment_score) : ($existing ? ($existing['assignment_score'] !== null ? floatval($existing['assignment_score']) : null) : null);
-                $proj = isset($g->project_score) && $g->project_score !== "" ? floatval($g->project_score) : ($existing ? ($existing['project_score'] !== null ? floatval($existing['project_score']) : null) : null);
-                $test = isset($g->mid_term_test) && $g->mid_term_test !== "" ? floatval($g->mid_term_test) : ($existing ? ($existing['mid_term_test'] !== null ? floatval($existing['mid_term_test']) : null) : null);
+                // Validate score boundaries
+                $inAsgn = isset($g->assignment_score) && $g->assignment_score !== "" ? floatval($g->assignment_score) : null;
+                $inProj = isset($g->project_score) && $g->project_score !== "" ? floatval($g->project_score) : null;
+                $inTest = isset($g->mid_term_test) && $g->mid_term_test !== "" ? floatval($g->mid_term_test) : null;
+                $inCa2  = isset($g->ca2) && $g->ca2 !== "" ? floatval($g->ca2) : null;
+                $inExam = isset($g->exam) && $g->exam !== "" ? floatval($g->exam) : null;
+
+                if (($inAsgn !== null && ($inAsgn < 0 || $inAsgn > 5)) ||
+                    ($inProj !== null && ($inProj < 0 || $inProj > 5)) ||
+                    ($inTest !== null && ($inTest < 0 || $inTest > 10)) ||
+                    ($inCa2 !== null && ($inCa2 < 0 || $inCa2 > 20)) ||
+                    ($inExam !== null && ($inExam < 0 || $inExam > 60))) {
+                    $this->conn->rollBack();
+                    http_response_code(400);
+                    echo json_encode(["error" => "Invalid score limits entered. Max limits: Asgn (5), Proj (5), Test (10), CA2 (20), Exam (60)."]);
+                    return;
+                }
+
+                $asgn = $inAsgn !== null ? round($inAsgn, 2) : ($existing ? ($existing['assignment_score'] !== null ? round(floatval($existing['assignment_score']), 2) : null) : null);
+                $proj = $inProj !== null ? round($inProj, 2) : ($existing ? ($existing['project_score'] !== null ? round(floatval($existing['project_score']), 2) : null) : null);
+                $test = $inTest !== null ? round($inTest, 2) : ($existing ? ($existing['mid_term_test'] !== null ? round(floatval($existing['mid_term_test']), 2) : null) : null);
                 
-                $ca1 = ($asgn !== null || $proj !== null || $test !== null) ? (($asgn ?? 0) + ($proj ?? 0) + ($test ?? 0)) : 0;
-                $ca2 = isset($g->ca2) && $g->ca2 !== "" ? floatval($g->ca2) : ($existing ? ($existing['ca2'] !== null ? floatval($existing['ca2']) : 0) : 0);
-                $exam = isset($g->exam) && $g->exam !== "" ? floatval($g->exam) : ($existing ? ($existing['exam'] !== null ? floatval($existing['exam']) : 0) : 0);
+                $ca1 = ($asgn !== null || $proj !== null || $test !== null) ? round(($asgn ?? 0) + ($proj ?? 0) + ($test ?? 0), 2) : 0.00;
+                $ca2 = $inCa2 !== null ? round($inCa2, 2) : ($existing ? ($existing['ca2'] !== null ? round(floatval($existing['ca2']), 2) : 0.00) : 0.00);
+                $exam = $inExam !== null ? round($inExam, 2) : ($existing ? ($existing['exam'] !== null ? round(floatval($existing['exam']), 2) : 0.00) : 0.00);
                 
                 if ($resultMode === 'mid_term') {
                     $total = $ca1;
                 } else {
-                    $total = $ca1 + $ca2 + $exam;
+                    $total = round($ca1 + $ca2 + $exam, 2);
                 }
                 
                 $remarks = isset($g->remarks) ? $g->remarks : "";

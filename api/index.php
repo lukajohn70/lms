@@ -17,6 +17,7 @@ require_once 'controllers/DashboardController.php';
 require_once 'controllers/ClassController.php';
 require_once 'controllers/MessageController.php';
 require_once 'controllers/LibraryController.php';
+require_once 'controllers/FormTeacherController.php';
 
 require_once 'config/Database.php';
 require_once 'lib/Router.php';
@@ -62,6 +63,14 @@ $router->post('/teacher/assessments/save', 'AssessmentController@saveAssessment'
 $router->get('/student/assessment', 'AssessmentController@getStudentAssessment');
 $router->get('/parent/assessment', 'AssessmentController@getStudentAssessment');
 $router->get('/reports/print', 'AssessmentController@printReportCard');
+
+// Form Teacher Portal & Class Arm Actions
+$router->get('/teacher/form-classes', 'FormTeacherController@getFormClasses');
+$router->get('/teacher/form-class/students', 'FormTeacherController@getFormClassStudents');
+$router->post('/teacher/form-class/save', 'FormTeacherController@saveAssessment');
+$router->post('/teacher/form-class/update-student-name', 'FormTeacherController@updateStudentName');
+$router->get('/teacher/form-class/csv-template', 'FormTeacherController@downloadCsvTemplate');
+$router->post('/teacher/form-class/import-csv', 'FormTeacherController@importCsv');
 
 // System Settings
 $router->get('/admin/settings', 'SettingController@getSettings');
@@ -124,6 +133,7 @@ $router->get('/dashboard/admin/reports', 'DashboardController@getAdminReports');
 $router->get('/classes', 'ClassController@getClasses');
 $router->post('/admin/classes/create', 'ClassController@createClass');
 $router->post('/admin/classes/delete', 'ClassController@deleteClass');
+$router->post('/admin/classes/assign-form-teacher', 'ClassController@assignFormTeacher');
 $router->get('/courses', 'ClassController@getCourses');
 $router->post('/admin/courses/create', 'ClassController@createCourse');
 $router->post('/admin/courses/bulk-import', 'ClassController@bulkImportCourses');
