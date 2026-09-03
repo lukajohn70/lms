@@ -5,7 +5,7 @@ import {
   LayoutDashboard, BookOpen, FileText, Receipt, MessageSquare, Library,
   GraduationCap, ClipboardList, FlaskConical, ChevronDown, ChevronRight,
   LogOut, HelpCircle, Users, Settings, BarChart2, CheckSquare, CalendarDays,
-  Bell, Search, Sun, Moon, UserCheck, Menu, X, ArrowUp,
+  Bell, Search, Sun, Moon, UserCheck, Menu, X, ArrowUp, Award,
 } from "lucide-react";
 import { useApp, Role } from "../contexts/AppContext";
 import { NotificationPanel } from "./NotificationPanel";
