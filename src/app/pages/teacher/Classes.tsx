@@ -3,8 +3,10 @@ import { useNavigate } from "react-router";
 import { Users, TrendingUp, ChevronRight, ArrowLeft, ClipboardList, CheckSquare, Star, AlertTriangle } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 
-const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
-  <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>{children}</div>
+const Glass = ({ children, style, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }} {...props}>
+    {children}
+  </div>
 );
 
 const gradeColor = (g: string) =>
@@ -255,7 +257,20 @@ export default function Classes() {
                     </div>
                     <div style={{ fontSize: 11.5, color: "var(--subtext)" }}>{c.student_count} students enrolled</div>
                   </div>
-                  <ChevronRight size={18} style={{ color: "var(--subtext)", flexShrink: 0 }} />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); openCourse(c); }}
+                    title={`View roster and details for ${c.name}`}
+                    style={{
+                      width: 32, height: 32, borderRadius: 8,
+                      background: `${color}15`, border: `1px solid ${color}30`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: color, cursor: "pointer", flexShrink: 0,
+                      transition: "all 0.18s"
+                    }}
+                  >
+                    <ChevronRight size={18} />
+                  </button>
                 </div>
 
                 {/* Stats strip */}
