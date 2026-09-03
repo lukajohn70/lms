@@ -1,9 +1,15 @@
-export const API_BASE_URL = 'http://localhost/lms/api/index.php';
+export const API_BASE_URL = `http://${window.location.hostname}/lms/api/index.php`;
+
+function buildUrl(endpoint: string, token: string | null) {
+  if (!token) return `${API_BASE_URL}${endpoint}`;
+  const sep = endpoint.includes('?') ? '&' : '?';
+  return `${API_BASE_URL}${endpoint}${sep}token=${token}`;
+}
 
 export const apiClient = {
   get: async (endpoint: string) => {
     const token = localStorage.getItem('token');
-    const url = `${API_BASE_URL}${endpoint}${token ? `?token=${token}` : ''}`;
+    const url = buildUrl(endpoint, token);
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -17,7 +23,7 @@ export const apiClient = {
   },
   post: async (endpoint: string, body: any) => {
     const token = localStorage.getItem('token');
-    const url = `${API_BASE_URL}${endpoint}${token ? `?token=${token}` : ''}`;
+    const url = buildUrl(endpoint, token);
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -33,7 +39,7 @@ export const apiClient = {
   // For multipart/form-data uploads (files, avatars, CSV imports)
   postForm: async (endpoint: string, formData: FormData) => {
     const token = localStorage.getItem('token');
-    const url = `${API_BASE_URL}${endpoint}${token ? `?token=${token}` : ''}`;
+    const url = buildUrl(endpoint, token);
     const response = await fetch(url, {
       method: 'POST',
       headers: {

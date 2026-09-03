@@ -1,10 +1,10 @@
-import { useState, ReactNode } from "react";
+import { useState, ReactNode, useEffect } from "react";
 import { NavLink, useNavigate, Navigate } from "react-router";
 import {
   LayoutDashboard, BookOpen, FileText, Receipt, MessageSquare, Library,
   GraduationCap, ClipboardList, FlaskConical, ChevronDown, ChevronRight,
   LogOut, HelpCircle, Users, Settings, BarChart2, CheckSquare, CalendarDays,
-  Bell, Search, Sun, Moon, UserCheck,
+  Bell, Search, Sun, Moon, UserCheck, Menu, X,
 } from "lucide-react";
 import { useApp, Role } from "../contexts/AppContext";
 import { NotificationPanel } from "./NotificationPanel";
@@ -71,7 +71,7 @@ const ROLE_COLOR: Record<Role, string> = {
   parent: "#FFB703",
 };
 
-function SidebarNavItem({ item, basePath }: { item: NavItem; basePath: string }) {
+function SidebarNavItem({ item, basePath, onNavClick }: { item: NavItem; basePath: string; onNavClick?: () => void }) {
   const [open, setOpen] = useState(true);
   const hasChildren = !!item.children?.length;
 
@@ -96,6 +96,7 @@ function SidebarNavItem({ item, basePath }: { item: NavItem; basePath: string })
                 key={c.to}
                 to={c.to}
                 end
+                onClick={onNavClick}
                 className={({ isActive }) =>
                   `flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 ${isActive ? "nav-active" : ""}`
                 }
@@ -120,6 +121,7 @@ function SidebarNavItem({ item, basePath }: { item: NavItem; basePath: string })
     <NavLink
       to={item.to!}
       end={item.to === `/${basePath}`}
+      onClick={onNavClick}
       className={({ isActive }) =>
         `flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-all duration-150 ${isActive ? "nav-active" : ""}`
       }
@@ -145,12 +147,26 @@ export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Support ticket form states
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sendingTicket, setSendingTicket] = useState(false);
   const [ticketSent, setTicketSent] = useState(false);
+
+  // Close sidebar on route change (mobile)
+  const closeSidebar = () => setSidebarOpen(false);
+
+  // Prevent body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [sidebarOpen]);
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -188,281 +204,371 @@ export function Layout({ children }: { children: ReactNode }) {
     }
   };
 
-  return (
-    <div style={{ minHeight: "100vh", display: "flex", fontFamily: "'Poppins',sans-serif" }}>
-      {/* ===== SIDEBAR ===== */}
-      <aside
-        style={{
-          position: "fixed",
-          left: 0, top: 0, bottom: 0,
-          width: 240,
-          display: "flex", flexDirection: "column",
-          background: "var(--sidebar)",
-          borderRight: "1px solid var(--sidebar-border)",
-          backdropFilter: "blur(20px)",
-          zIndex: 50,
-        }}
-      >
-        {/* Logo */}
-        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--sidebar-border)", display: "flex", alignItems: "center", gap: 12 }}>
-          <img
-            src="/logo.png"
-            alt="Aroura Academy"
-            style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, boxShadow: "0 4px 12px rgba(33,158,188,0.25)" }}
-          />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "#e8f4f8", letterSpacing: "0.01em" }}>{schoolFirst}</div>
-            <div style={{ fontSize: 10, color: "#8ECAE6", letterSpacing: "0.08em", textTransform: "uppercase" }}>{schoolRest}</div>
-          </div>
+  const sidebarContent = (
+    <>
+      {/* Logo */}
+      <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--sidebar-border)", display: "flex", alignItems: "center", gap: 12 }}>
+        <img
+          src="/logo.png"
+          alt="School Logo"
+          style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, boxShadow: "0 4px 12px rgba(33,158,188,0.25)" }}
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: "#e8f4f8", letterSpacing: "0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{schoolFirst}</div>
+          <div style={{ fontSize: 10, color: "#8ECAE6", letterSpacing: "0.08em", textTransform: "uppercase" }}>{schoolRest}</div>
         </div>
+        {/* Close button for mobile */}
+        <button
+          onClick={closeSidebar}
+          style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(142,202,230,0.6)", display: "flex", alignItems: "center", padding: 4 }}
+          className="md-hidden"
+          aria-label="Close menu"
+        >
+          <X size={18} />
+        </button>
+      </div>
 
-        {/* User chip */}
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--sidebar-border)", display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-              background: `linear-gradient(135deg, ${roleColor}, rgba(142,202,230,0.6))`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 12, fontWeight: 700, color: "#011d2f",
-              overflow: "hidden"
-            }}
-          >
-            {(user as any)?.avatar_path ? (
-              <img
-                src={API_BASE_URL.replace('/index.php', '') + '/' + (user as any).avatar_path}
-                alt="Profile"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
-              initials
-            )}
-          </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 600, color: "#e8f4f8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {name}
-            </div>
-            <div style={{ fontSize: 10.5, color: "rgba(142,202,230,0.7)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {subtitle}
-            </div>
-          </div>
-          {/* Role badge */}
-          <div
-            style={{
-              padding: "2px 7px", borderRadius: 6, flexShrink: 0,
-              background: `rgba(${roleColor === "#219EBC" ? "33,158,188" : roleColor === "#FFB703" ? "255,183,3" : roleColor === "#FB8500" ? "251,133,0" : "142,202,230"},0.15)`,
-              fontSize: 9, fontWeight: 700, color: roleColor, textTransform: "uppercase", letterSpacing: "0.05em",
-            }}
-          >
-            {user.role}
-          </div>
-        </div>
-
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
-          {(NAV[user.role] ?? []).map((item) => (
-            <SidebarNavItem key={item.label} item={item} basePath={user.role} />
-          ))}
-        </nav>
-
-        {/* Bottom actions */}
-        <div style={{ padding: "12px 10px", borderTop: "1px solid var(--sidebar-border)", display: "flex", flexDirection: "column", gap: 6 }}>
-          <button
-            onClick={() => setHelpOpen(true)}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-xl w-full transition-all duration-150"
-            style={{ background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
-          >
-            <HelpCircle size={15} style={{ color: "rgba(142,202,230,0.5)" }} />
-            <span style={{ fontSize: 12, color: "rgba(142,202,230,0.5)" }}>Help & Support</span>
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl w-full transition-all duration-150"
-            style={{
-              background: "linear-gradient(135deg, rgba(220,38,38,0.18) 0%, rgba(185,28,28,0.25) 100%)",
-              border: "1px solid rgba(220,38,38,0.3)",
-              cursor: "pointer",
-              marginTop: 2,
-            }}
-          >
-            <LogOut size={16} style={{ color: "#f87171" }} />
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: "#f87171", letterSpacing: "0.02em" }}>Log Out</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* ===== TOPBAR ===== */}
-      <header
-        style={{
-          position: "fixed", top: 0, right: 0, left: 240,
-          height: 60,
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 24px",
-          background: theme === "dark" ? "rgba(1,16,28,0.9)" : "rgba(238,246,250,0.92)",
-          backdropFilter: "blur(16px)",
-          borderBottom: "1px solid var(--border)",
-          zIndex: 40,
-        }}
-      >
-        {/* Search */}
+      {/* User chip */}
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--sidebar-border)", display: "flex", alignItems: "center", gap: 10 }}>
         <div
           style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "7px 14px", borderRadius: 10, width: 260,
-            background: "var(--muted)", border: "1px solid var(--border)",
+            width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+            background: `linear-gradient(135deg, ${roleColor}, rgba(142,202,230,0.6))`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, fontWeight: 700, color: "#011d2f",
+            overflow: "hidden"
           }}
         >
-          <Search size={14} style={{ color: "var(--subtext)", flexShrink: 0 }} />
-          <span style={{ fontSize: 12.5, color: "var(--subtext)" }}>Search Aroura Academy…</span>
+          {(user as any)?.avatar_path ? (
+            <img
+              src={API_BASE_URL.replace('/index.php', '') + '/' + (user as any).avatar_path}
+              alt="Profile"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            initials
+          )}
+        </div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: "#e8f4f8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {name}
+          </div>
+          <div style={{ fontSize: 10.5, color: "rgba(142,202,230,0.7)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {subtitle}
+          </div>
+        </div>
+        <div
+          style={{
+            padding: "2px 7px", borderRadius: 6, flexShrink: 0,
+            background: `rgba(${roleColor === "#219EBC" ? "33,158,188" : roleColor === "#FFB703" ? "255,183,3" : roleColor === "#FB8500" ? "251,133,0" : "142,202,230"},0.15)`,
+            fontSize: 9, fontWeight: 700, color: roleColor, textTransform: "uppercase", letterSpacing: "0.05em",
+          }}
+        >
+          {user.role}
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
+        {(NAV[user.role] ?? []).map((item) => (
+          <SidebarNavItem key={item.label} item={item} basePath={user.role} onNavClick={closeSidebar} />
+        ))}
+      </nav>
+
+      {/* Bottom actions */}
+      <div style={{ padding: "12px 10px", borderTop: "1px solid var(--sidebar-border)", display: "flex", flexDirection: "column", gap: 6 }}>
+        <button
+          onClick={() => { setHelpOpen(true); closeSidebar(); }}
+          className="flex items-center gap-2.5 px-3 py-2 rounded-xl w-full transition-all duration-150"
+          style={{ background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
+        >
+          <HelpCircle size={15} style={{ color: "rgba(142,202,230,0.5)" }} />
+          <span style={{ fontSize: 12, color: "rgba(142,202,230,0.5)" }}>Help & Support</span>
+        </button>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl w-full transition-all duration-150"
+          style={{
+            background: "linear-gradient(135deg, rgba(220,38,38,0.18) 0%, rgba(185,28,28,0.25) 100%)",
+            border: "1px solid rgba(220,38,38,0.3)",
+            cursor: "pointer",
+            marginTop: 2,
+          }}
+        >
+          <LogOut size={16} style={{ color: "#f87171" }} />
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: "#f87171", letterSpacing: "0.02em" }}>Log Out</span>
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile responsive CSS */}
+      <style>{`
+        :root { --sidebar-w: 240px; --topbar-h: 60px; }
+        @media (max-width: 768px) {
+          .desktop-sidebar { display: none !important; }
+          .mobile-topbar-left { left: 0 !important; }
+          .main-content { margin-left: 0 !important; padding: 16px !important; }
+          .topbar-search { display: none !important; }
+          .topbar-session { display: none !important; }
+        }
+        @media (min-width: 769px) {
+          .mobile-menu-btn { display: none !important; }
+          .mobile-overlay { display: none !important; }
+          .mobile-drawer { display: none !important; }
+        }
+        .mobile-drawer {
+          position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+          display: flex; flex-direction: column;
+          background: var(--sidebar);
+          border-right: 1px solid var(--sidebar-border);
+          backdrop-filter: blur(20px);
+          z-index: 200;
+          transform: translateX(-100%);
+          transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        .mobile-drawer.open { transform: translateX(0); }
+        .mobile-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+          backdrop-filter: blur(2px); z-index: 199;
+          opacity: 0; pointer-events: none;
+          transition: opacity 0.3s;
+        }
+        .mobile-overlay.open { opacity: 1; pointer-events: all; }
+        .md-hidden { display: none; }
+        @media (max-width: 768px) { .md-hidden { display: flex !important; } }
+      `}</style>
+
+      <div style={{ minHeight: "100vh", display: "flex", fontFamily: "'Poppins',sans-serif" }}>
+
+        {/* ===== DESKTOP SIDEBAR ===== */}
+        <aside
+          className="desktop-sidebar"
+          style={{
+            position: "fixed", left: 0, top: 0, bottom: 0,
+            width: "var(--sidebar-w)",
+            display: "flex", flexDirection: "column",
+            background: "var(--sidebar)",
+            borderRight: "1px solid var(--sidebar-border)",
+            backdropFilter: "blur(20px)",
+            zIndex: 50,
+          }}
+        >
+          {sidebarContent}
+        </aside>
+
+        {/* ===== MOBILE OVERLAY ===== */}
+        <div
+          className={`mobile-overlay${sidebarOpen ? " open" : ""}`}
+          onClick={closeSidebar}
+        />
+
+        {/* ===== MOBILE DRAWER ===== */}
+        <div className={`mobile-drawer${sidebarOpen ? " open" : ""}`}>
+          {sidebarContent}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {/* Session badge */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 8, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.2)" }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#219EBC", boxShadow: "0 0 5px #219EBC" }} />
-            <span style={{ fontSize: 11, color: "#219EBC" }}>
-              {settings?.academic_session || "2026/2027"} · {settings?.current_term || "2nd Term"}
-            </span>
-          </div>
-
-          {/* Theme toggle */}
-          <button
-            onClick={toggleTheme}
-            style={{
-              width: 36, height: 36, borderRadius: 10,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "var(--muted)", border: "1px solid var(--border)",
-              cursor: "pointer", transition: "all 0.2s",
-            }}
-            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-          >
-            {theme === "dark"
-              ? <Sun size={16} style={{ color: "#FFB703" }} />
-              : <Moon size={16} style={{ color: "#219EBC" }} />}
-          </button>
-
-          {/* Notification bell */}
-          <div style={{ position: "relative" }}>
+        {/* ===== TOPBAR ===== */}
+        <header
+          style={{
+            position: "fixed", top: 0, right: 0, left: 0,
+            marginLeft: 0,
+            height: "var(--topbar-h)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "0 16px",
+            background: theme === "dark" ? "rgba(1,16,28,0.9)" : "rgba(238,246,250,0.92)",
+            backdropFilter: "blur(16px)",
+            borderBottom: "1px solid var(--border)",
+            zIndex: 40,
+          }}
+        >
+          {/* Left: hamburger (mobile) + desktop spacer + search */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Hamburger — mobile only */}
             <button
-              onClick={() => setNotifOpen((p) => !p)}
+              className="mobile-menu-btn"
+              onClick={() => setSidebarOpen(true)}
               style={{
-                width: 36, height: 36, borderRadius: 10, position: "relative",
+                width: 36, height: 36, borderRadius: 10,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                background: notifOpen ? "rgba(33,158,188,0.2)" : "var(--muted)",
-                border: "1px solid var(--border)", cursor: "pointer",
+                background: "var(--muted)", border: "1px solid var(--border)",
+                cursor: "pointer", color: "var(--heading)", flexShrink: 0
               }}
+              aria-label="Open menu"
             >
-              <Bell size={16} style={{ color: "var(--subtext)" }} />
-              <span style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: "50%", background: "#FFB703", boxShadow: "0 0 5px #FFB703" }} />
+              <Menu size={18} />
             </button>
-            {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
+
+            {/* Desktop sidebar offset */}
+            <div className="topbar-search" style={{ marginLeft: "calc(var(--sidebar-w) - 16px)" }}>
+              <div
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "7px 14px", borderRadius: 10, width: 240,
+                  background: "var(--muted)", border: "1px solid var(--border)",
+                }}
+              >
+                <Search size={14} style={{ color: "var(--subtext)", flexShrink: 0 }} />
+                <span style={{ fontSize: 12.5, color: "var(--subtext)" }}>Search {schoolFirst}…</span>
+              </div>
+            </div>
           </div>
 
-          {/* Avatar */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-            <div
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Session badge — hidden on mobile to save space */}
+            <div className="topbar-session" style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 8, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.2)" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#219EBC", boxShadow: "0 0 5px #219EBC" }} />
+              <span style={{ fontSize: 11, color: "#219EBC" }}>
+                {settings?.academic_session || "2026/2027"} · {settings?.current_term || "2nd Term"}
+              </span>
+            </div>
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
               style={{
-                width: 32, height: 32, borderRadius: "50%",
-                background: `linear-gradient(135deg, ${roleColor}, rgba(142,202,230,0.6))`,
+                width: 36, height: 36, borderRadius: 10,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 11, fontWeight: 700, color: "#011d2f",
-                overflow: "hidden"
+                background: "var(--muted)", border: "1px solid var(--border)",
+                cursor: "pointer", transition: "all 0.2s",
               }}
+              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             >
-              {(user as any)?.avatar_path ? (
-                <img
-                  src={API_BASE_URL.replace('/index.php', '') + '/' + (user as any).avatar_path}
-                  alt="Avatar"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                initials
-              )}
+              {theme === "dark"
+                ? <Sun size={16} style={{ color: "#FFB703" }} />
+                : <Moon size={16} style={{ color: "#219EBC" }} />}
+            </button>
+
+            {/* Notification bell */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setNotifOpen((p) => !p)}
+                style={{
+                  width: 36, height: 36, borderRadius: 10, position: "relative",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: notifOpen ? "rgba(33,158,188,0.2)" : "var(--muted)",
+                  border: "1px solid var(--border)", cursor: "pointer",
+                }}
+              >
+                <Bell size={16} style={{ color: "var(--subtext)" }} />
+                <span style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: "50%", background: "#FFB703", boxShadow: "0 0 5px #FFB703" }} />
+              </button>
+              {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
             </div>
-          </div>
-        </div>
-      </header>
 
-      {/* ===== MAIN CONTENT ===== */}
-      <main
-        style={{
-          marginLeft: 240,
-          marginTop: 60,
-          flex: 1,
-          minHeight: "calc(100vh - 60px)",
-          background: "var(--background)",
-          transition: "background 0.3s",
-          padding: "24px",
-        }}
-      >
-        {children}
-      </main>
-
-      {/* ===== HELP & SUPPORT MODAL ===== */}
-      {helpOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(1, 18, 29, 0.6)", backdropFilter: "blur(8px)" }}>
-          <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: 16, width: "100%", maxWidth: "800px", boxShadow: "var(--glass-shadow)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            {/* Header */}
-            <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--glass-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}><HelpCircle size={18} style={{ color: "#FB8500" }} /> Help & Support Desk</h3>
-                <span style={{ fontSize: 11.5, color: "var(--subtext)" }}>Knowledge base and contact line for {user.role}s</span>
-              </div>
-              <button onClick={() => { setHelpOpen(false); setSubject(""); setMessage(""); setTicketSent(false); }} style={{ background: "none", border: "none", color: "var(--subtext)", cursor: "pointer", fontSize: 18, fontWeight: 700 }}>✕</button>
-            </div>
-            
-            {/* Body */}
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 24, padding: 24 }}>
-              {/* FAQs column */}
-              <div>
-                <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Frequently Asked Questions</h4>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, maxHeight: 320, overflowY: "auto", paddingRight: 8 }}>
-                  {getFaqsForRole(user.role).map((faq, idx) => (
-                    <div key={idx} style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(255,255,255,0.02)", border: "1px solid var(--glass-border)" }}>
-                      <strong style={{ fontSize: 12, color: "var(--heading)", display: "block", marginBottom: 4 }}>Q: {faq.q}</strong>
-                      <span style={{ fontSize: 11.5, color: "var(--subtext)", lineHeight: 1.45 }}>{faq.a}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Direct Support Ticket column */}
-              <div style={{ borderLeft: "1px solid var(--glass-border)", paddingLeft: 24 }}>
-                <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Contact Support</h4>
-                
-                {/* Contact details */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11.5, color: "var(--subtext)", marginBottom: 18, background: "rgba(33,158,188,0.06)", border: "1px solid rgba(33,158,188,0.15)", borderRadius: 10, padding: 12 }}>
-                  <div>📞 Phone: <strong>{settings?.school_phone || "+234 801 234 5678"}</strong></div>
-                  <div>✉ Email: <strong>{settings?.school_email || "support@aroura.edu.ng"}</strong></div>
-                  <div>📍 Address: <strong>{settings?.school_address || "Aroura Academy Campus"}</strong></div>
-                </div>
-
-                {ticketSent ? (
-                  <div style={{ padding: "24px 16px", textAlign: "center", background: "rgba(42,157,143,0.08)", border: "1px solid rgba(42,157,143,0.2)", borderRadius: 10 }}>
-                    <div style={{ fontSize: 24, marginBottom: 8, color: "#2a9d8f" }}>✓</div>
-                    <strong style={{ fontSize: 13, color: "#2a9d8f", display: "block", marginBottom: 4 }}>Ticket Sent!</strong>
-                    <span style={{ fontSize: 11.5, color: "var(--subtext)", lineHeight: 1.4 }}>Your message has been sent directly to the administrator. We will get back to you shortly.</span>
-                  </div>
+            {/* Avatar */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              <div
+                style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${roleColor}, rgba(142,202,230,0.6))`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 700, color: "#011d2f",
+                  overflow: "hidden"
+                }}
+              >
+                {(user as any)?.avatar_path ? (
+                  <img
+                    src={API_BASE_URL.replace('/index.php', '') + '/' + (user as any).avatar_path}
+                    alt="Avatar"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
                 ) : (
-                  <form onSubmit={handleSendSupport} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <div>
-                      <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", marginBottom: 4, textTransform: "uppercase" }}>Subject</label>
-                      <input type="text" required value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. CBT login error" style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
-                    </div>
-                    <div>
-                      <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", marginBottom: 4, textTransform: "uppercase" }}>Message Description</label>
-                      <textarea required value={message} onChange={e => setMessage(e.target.value)} placeholder="Provide detailed explanation..." rows={4} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
-                    </div>
-                    <button type="submit" disabled={sendingTicket} style={{ width: "100%", padding: "9px", borderRadius: 8, background: "linear-gradient(135deg, #219EBC, #1a8aaa)", border: "none", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(33,158,188,0.25)" }}>
-                      {sendingTicket ? "Sending..." : "Submit Ticket"}
-                    </button>
-                  </form>
+                  initials
                 )}
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        </header>
+
+        {/* ===== MAIN CONTENT ===== */}
+        <main
+          className="main-content"
+          style={{
+            marginLeft: "var(--sidebar-w)",
+            marginTop: "var(--topbar-h)",
+            flex: 1,
+            minHeight: "calc(100vh - var(--topbar-h))",
+            background: "var(--background)",
+            transition: "background 0.3s",
+            padding: "24px",
+          }}
+        >
+          {children}
+        </main>
+
+        {/* ===== HELP & SUPPORT MODAL ===== */}
+        {helpOpen && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(1, 18, 29, 0.6)", backdropFilter: "blur(8px)", padding: "16px" }}>
+            <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: 16, width: "100%", maxWidth: "800px", maxHeight: "90vh", boxShadow: "var(--glass-shadow)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+              {/* Header */}
+              <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--glass-border)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}><HelpCircle size={18} style={{ color: "#FB8500" }} /> Help & Support Desk</h3>
+                  <span style={{ fontSize: 11.5, color: "var(--subtext)" }}>Knowledge base and contact line for {user.role}s</span>
+                </div>
+                <button onClick={() => { setHelpOpen(false); setSubject(""); setMessage(""); setTicketSent(false); }} style={{ background: "none", border: "none", color: "var(--subtext)", cursor: "pointer", fontSize: 18, fontWeight: 700 }}>✕</button>
+              </div>
+              
+              {/* Body — responsive single column on mobile */}
+              <div style={{ overflowY: "auto", flex: 1 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1fr)", gap: 24, padding: 24 }}
+                  className="help-grid">
+                  <style>{`@media(max-width:640px){.help-grid{grid-template-columns:1fr!important;}}`}</style>
+                  {/* FAQs column */}
+                  <div>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Frequently Asked Questions</h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingRight: 8 }}>
+                      {getFaqsForRole(user.role).map((faq, idx) => (
+                        <div key={idx} style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(255,255,255,0.02)", border: "1px solid var(--glass-border)" }}>
+                          <strong style={{ fontSize: 12, color: "var(--heading)", display: "block", marginBottom: 4 }}>Q: {faq.q}</strong>
+                          <span style={{ fontSize: 11.5, color: "var(--subtext)", lineHeight: 1.45 }}>{faq.a}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Direct Support Ticket column */}
+                  <div style={{ borderLeft: "1px solid var(--glass-border)", paddingLeft: 24 }}>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Contact Support</h4>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11.5, color: "var(--subtext)", marginBottom: 18, background: "rgba(33,158,188,0.06)", border: "1px solid rgba(33,158,188,0.15)", borderRadius: 10, padding: 12 }}>
+                      <div>📞 Phone: <strong>{settings?.school_phone || "+234 801 234 5678"}</strong></div>
+                      <div>✉ Email: <strong>{settings?.school_email || "support@aroura.edu.ng"}</strong></div>
+                      <div>📍 Address: <strong>{settings?.school_address || "Aroura Academy Campus"}</strong></div>
+                    </div>
+
+                    {ticketSent ? (
+                      <div style={{ padding: "24px 16px", textAlign: "center", background: "rgba(42,157,143,0.08)", border: "1px solid rgba(42,157,143,0.2)", borderRadius: 10 }}>
+                        <div style={{ fontSize: 24, marginBottom: 8, color: "#2a9d8f" }}>✓</div>
+                        <strong style={{ fontSize: 13, color: "#2a9d8f", display: "block", marginBottom: 4 }}>Ticket Sent!</strong>
+                        <span style={{ fontSize: 11.5, color: "var(--subtext)", lineHeight: 1.4 }}>Your message has been sent directly to the administrator. We will get back to you shortly.</span>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleSendSupport} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div>
+                          <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", marginBottom: 4, textTransform: "uppercase" }}>Subject</label>
+                          <input type="text" required value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. CBT login error" style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                        </div>
+                        <div>
+                          <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", marginBottom: 4, textTransform: "uppercase" }}>Message Description</label>
+                          <textarea required value={message} onChange={e => setMessage(e.target.value)} placeholder="Provide detailed explanation..." rows={4} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                        </div>
+                        <button type="submit" disabled={sendingTicket} style={{ width: "100%", padding: "9px", borderRadius: 8, background: "linear-gradient(135deg, #219EBC, #1a8aaa)", border: "none", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(33,158,188,0.25)" }}>
+                          {sendingTicket ? "Sending..." : "Submit Ticket"}
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
