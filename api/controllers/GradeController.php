@@ -314,6 +314,66 @@ class GradeController {
         }
     }
 
+    // Admin: Preview grade sheet for a specific course
+    public function getAdminGradePreview() {
+        Auth::requireRole(['admin']);
+
+        $courseId = isset($_GET['course_id']) ? intval($_GET['course_id']) : null;
+        $term     = $this->normalizeTerm($_GET['term'] ?? null);
+        $session  = isset($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
+
+        if (!$courseId) {
+            http_response_code(400);
+            echo json_encode(["error" => "course_id is required"]);
+            return;
+        }
+
+        try {
+            // Course info
+            $course = $this->conn->prepare("SELECT c.id, c.name, CONCAT(t.first_name,' ',t.last_name) as teacher_name FROM courses c LEFT JOIN users t ON c.teacher_id=t.id WHERE c.id=:id");
+            $course->execute([':id' => $courseId]);
+            $courseInfo = $course->fetch();
+
+            // Enrolled students with their grades
+            $stmt = $this->conn->prepare("
+                SELECT 
+                    u.id, 
+                    CONCAT(u.first_name,' ',u.last_name) as student_name,
+                    u.admission_number,
+                    cls.name as class_name,
+                    g.ca1, g.ca2, g.exam,
+                    g.score as total,
+                    g.status,
+                    g.remarks
+                FROM enrollments e
+                JOIN users u ON e.student_id = u.id
+                LEFT JOIN classes cls ON u.class_id = cls.id
+                LEFT JOIN grades g ON (
+                    g.student_id = u.id 
+                    AND g.course_id = :cid 
+                    AND g.academic_term = :term 
+                    AND g.academic_session = :session
+                )
+                WHERE e.course_id = :cid
+                ORDER BY u.last_name, u.first_name
+            ");
+            $stmt->execute([':cid' => $courseId, ':term' => $term, ':session' => $session]);
+            $students = $stmt->fetchAll();
+
+            echo json_encode([
+                "success"    => true,
+                "course"     => $courseInfo,
+                "term"       => $term,
+                "session"    => $session,
+                "students"   => $students,
+                "count"      => count($students)
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to load preview: " . $e->getMessage()]);
+        }
+    }
+
     // Admin: Batch update grade status (approve, publish, reopen/draft)
     public function updateGradeStatus() {
         Auth::requireRole(['admin']);

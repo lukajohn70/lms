@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, Trash2, BookOpen, Save, Settings } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Trash2, BookOpen, Save, Settings, Search, ChevronDown } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
@@ -7,6 +7,91 @@ const Glass = ({ children, style }: { children: React.ReactNode; style?: React.C
     {children}
   </div>
 );
+
+// Searchable teacher dropdown component
+function SearchableTeacherSelect({ teachers, value, onChange }: { teachers: any[]; value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const filtered = teachers.filter(t =>
+    (`${t.first_name} ${t.last_name}`).toLowerCase().includes(query.toLowerCase())
+  );
+
+  const selected = teachers.find(t => String(t.id) === String(value));
+  const label = selected ? `${selected.first_name} ${selected.last_name}` : "No Teacher Assigned";
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: "relative", fontSize: 11 }}>
+      <button
+        type="button"
+        onClick={() => { setOpen(o => !o); setQuery(""); }}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "5px 9px", borderRadius: 6, background: "var(--background)",
+          border: "1px solid var(--glass-border)", color: selected ? "var(--heading)" : "var(--subtext)",
+          cursor: "pointer", fontSize: 11, gap: 6, textAlign: "left"
+        }}
+      >
+        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+        <ChevronDown size={12} style={{ flexShrink: 0, transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "none" }} />
+      </button>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 999,
+          background: "var(--background)", border: "1px solid var(--glass-border)",
+          borderRadius: 8, boxShadow: "0 8px 24px rgba(0,0,0,0.25)", overflow: "hidden"
+        }}>
+          {/* Search input */}
+          <div style={{ padding: "6px 8px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 6 }}>
+            <Search size={12} style={{ color: "var(--subtext)", flexShrink: 0 }} />
+            <input
+              autoFocus
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search teacher..."
+              style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 11, color: "var(--heading)", fontFamily: "inherit" }}
+            />
+          </div>
+          {/* Options list */}
+          <div style={{ maxHeight: 200, overflowY: "auto" }}>
+            <div
+              onMouseDown={() => { onChange(""); setOpen(false); }}
+              style={{ padding: "6px 10px", cursor: "pointer", fontSize: 11, color: "var(--subtext)", background: value === "" ? "rgba(33,158,188,0.08)" : "transparent" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "var(--muted)")}
+              onMouseLeave={e => (e.currentTarget.style.background = value === "" ? "rgba(33,158,188,0.08)" : "transparent")}
+            >
+              No Teacher Assigned
+            </div>
+            {filtered.map(t => (
+              <div
+                key={t.id}
+                onMouseDown={() => { onChange(String(t.id)); setOpen(false); }}
+                style={{ padding: "6px 10px", cursor: "pointer", fontSize: 11, color: "var(--heading)", background: String(t.id) === String(value) ? "rgba(33,158,188,0.08)" : "transparent" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--muted)")}
+                onMouseLeave={e => (e.currentTarget.style.background = String(t.id) === String(value) ? "rgba(33,158,188,0.08)" : "transparent")}
+              >
+                {t.first_name} {t.last_name}
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div style={{ padding: "8px 10px", fontSize: 11, color: "var(--subtext)", textAlign: "center" }}>No teachers found</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminClasses() {
   const [classes, setClasses] = useState<any[]>([]);
@@ -278,16 +363,11 @@ export default function AdminClasses() {
                                   style={{ padding: "4px 8px", fontSize: 11, borderRadius: 6, background: "var(--background)", border: "1px solid var(--glass-border)", color: "var(--heading)" }}
                                 />
                               )}
-                              <select
+                              <SearchableTeacherSelect
+                                teachers={teachers}
                                 value={sub.teacher_id || ""}
-                                onChange={e => updateSubjectField(course.id, 'teacher_id', e.target.value)}
-                                style={{ padding: "4px 8px", fontSize: 11, borderRadius: 6, background: "var(--background)", border: "1px solid var(--glass-border)", color: "var(--heading)" }}
-                              >
-                                <option value="">No Teacher Assigned</option>
-                                {teachers.map(t => (
-                                  <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
-                                ))}
-                              </select>
+                                onChange={v => updateSubjectField(course.id, 'teacher_id', v)}
+                              />
                             </div>
                           )}
                         </div>
