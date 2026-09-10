@@ -79,6 +79,13 @@ export default function Results() {
     window.open(url, "_blank");
   };
 
+  const handlePrintMidterm = () => {
+    const token = localStorage.getItem("token");
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
+    const url = `${apiBase}/index.php?path=/reports/midterm&token=${encodeURIComponent(token || "")}&term=${encodeURIComponent(termStr)}`;
+    window.open(url, "_blank");
+  };
+
   const ViewBtn = ({ type, label, icon }: { type: ViewType; label: string; icon: React.ReactNode }) => (
     <button
       onClick={() => setViewType(type)}
@@ -123,6 +130,9 @@ export default function Results() {
           <ViewBtn type="cumulative" label="Cumulative" icon={<Layers size={12} />} />
 
           {/* Print */}
+          <button onClick={handlePrintMidterm} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, background: "linear-gradient(135deg,#FFB703,#FB8500)", color: "#011d2f", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, boxShadow: "0 4px 14px rgba(255,183,3,0.3)" }}>
+            <Printer size={13} /> Mid-Term Result
+          </button>
           <button onClick={handlePrint} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, background: "linear-gradient(135deg,#219EBC,#023047)", color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, boxShadow: "0 4px 14px rgba(33,158,188,0.3)" }}>
             <Printer size={13} /> Print Report Card
           </button>

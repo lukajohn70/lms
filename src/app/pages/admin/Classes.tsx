@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Plus, Trash2, BookOpen, Save, Settings, Search, ChevronDown, Download, Upload, CheckCircle, AlertCircle, Award, UserCheck } from "lucide-react";
+import { Plus, Trash2, BookOpen, Save, Settings, Search, ChevronDown, Download, Upload, CheckCircle, AlertCircle, Award, UserCheck, Edit2, Filter } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
@@ -169,6 +169,19 @@ export default function AdminClasses() {
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState("");
   const [newSubjectDesc, setNewSubjectDesc] = useState("");
+  const [newSubjectDept, setNewSubjectDept] = useState("Science");
+  const [newSubjectTopics, setNewSubjectTopics] = useState("");
+
+  const [editingSubject, setEditingSubject] = useState<any>(null);
+  const [editSubjectName, setEditSubjectName] = useState("");
+  const [editSubjectDesc, setEditSubjectDesc] = useState("");
+  const [editSubjectDept, setEditSubjectDept] = useState("Science");
+  const [editSubjectTopics, setEditSubjectTopics] = useState("");
+
+  const [subjectSearchQuery, setSubjectSearchQuery] = useState("");
+  const [subjectDeptFilter, setSubjectDeptFilter] = useState("all");
+
+  const departmentOptions = ["Science", "Arts & Humanities", "Vocational & Commercial", "General / Core"];
 
   // CSV Template & Bulk Import for Subjects
   const subjectFileInputRef = useRef<HTMLInputElement>(null);
@@ -177,14 +190,14 @@ export default function AdminClasses() {
   const [csvImporting, setCsvImporting] = useState(false);
 
   const handleDownloadSubjectsTemplate = () => {
-    const headers = ["name", "description", "topics"];
+    const headers = ["name", "description", "department", "topics"];
     const rows = [
-      ["Mathematics", "Core general mathematics and quantitative reasoning", "Algebra, Geometry, Trigonometry"],
-      ["English Language", "Grammar, composition, literature and oral English", "Grammar, Essay Writing, Comprehension"],
-      ["Physics", "Classical and modern physics with laboratory practicals", "Mechanics, Optics, Electricity"],
-      ["Chemistry", "Inorganic, organic and physical chemistry", "Periodic Table, Chemical Reactions"],
-      ["Biology", "Living systems, ecology and human physiology", "Cell Biology, Genetics, Ecology"],
-      ["Economics", "Principles of micro and macro economics", "Demand & Supply, Fiscal Policy"]
+      ["Mathematics", "Core general mathematics and quantitative reasoning", "Science", "Algebra, Geometry, Trigonometry"],
+      ["English Language", "Grammar, composition, literature and oral English", "Arts & Humanities", "Grammar, Essay Writing, Comprehension"],
+      ["Physics", "Classical and modern physics with laboratory practicals", "Science", "Mechanics, Optics, Electricity"],
+      ["Chemistry", "Inorganic, organic and physical chemistry", "Science", "Periodic Table, Chemical Reactions"],
+      ["Biology", "Living systems, ecology and human physiology", "Science", "Cell Biology, Genetics, Ecology"],
+      ["Economics", "Principles of micro and macro economics", "Vocational & Commercial", "Demand & Supply, Fiscal Policy"]
     ];
 
     const csvContent = "\uFEFF" + [
@@ -301,15 +314,70 @@ export default function AdminClasses() {
     e.preventDefault();
     if (!newSubjectName.trim()) return;
     try {
-      await apiClient.post("/admin/courses/create", { name: newSubjectName, description: newSubjectDesc });
+      await apiClient.post("/admin/courses/create", { 
+        name: newSubjectName.trim(), 
+        description: newSubjectDesc.trim(),
+        department: newSubjectDept,
+        topics: newSubjectTopics.trim()
+      });
       setNewSubjectName("");
       setNewSubjectDesc("");
+      setNewSubjectDept("Science");
+      setNewSubjectTopics("");
       setShowAddSubject(false);
       fetchCourses();
     } catch (e) {
       alert("Failed to create subject.");
     }
   };
+
+  const handleOpenEditSubject = (course: any) => {
+    setEditingSubject(course);
+    setEditSubjectName(course.name || "");
+    setEditSubjectDesc(course.description || "");
+    setEditSubjectDept(course.department || "Science");
+    setEditSubjectTopics(course.topics || "");
+  };
+
+  const handleUpdateSubject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSubject || !editSubjectName.trim()) return;
+    try {
+      await apiClient.post("/admin/courses/update", {
+        id: editingSubject.id,
+        name: editSubjectName.trim(),
+        description: editSubjectDesc.trim(),
+        department: editSubjectDept,
+        topics: editSubjectTopics.trim()
+      });
+      setEditingSubject(null);
+      fetchCourses();
+    } catch (e: any) {
+      alert(e.message || "Failed to update subject.");
+    }
+  };
+
+  const handleDeleteSubject = async (id: number, name: string) => {
+    if (!confirm(`Are you sure you want to delete the subject "${name}"? This action cannot be undone.`)) return;
+    try {
+      await apiClient.post(`/admin/courses/delete?id=${id}`, { id });
+      fetchCourses();
+    } catch (e: any) {
+      alert(e.message || "Failed to delete subject.");
+    }
+  };
+
+  const filteredCourses = useMemo(() => {
+    return courses.filter(c => {
+      const q = subjectSearchQuery.toLowerCase();
+      const matchesSearch = !q || (c.name || "").toLowerCase().includes(q) ||
+        (c.description || "").toLowerCase().includes(q) ||
+        (c.department || "").toLowerCase().includes(q) ||
+        (c.topics || "").toLowerCase().includes(q);
+      const matchesDept = subjectDeptFilter === 'all' || (c.department || 'Science') === subjectDeptFilter;
+      return matchesSearch && matchesDept;
+    });
+  }, [courses, subjectSearchQuery, subjectDeptFilter]);
 
   const handleDeleteClass = async (id: number) => {
     if (!confirm("Are you sure you want to delete this class? This will also delete subject allocations.")) return;
@@ -656,16 +724,125 @@ export default function AdminClasses() {
 )}
 
       {activeTab === 'subjects' && (
-        <Glass style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 16px", color: "var(--heading)" }}>All Subjects</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 16 }}>
-            {courses.map(course => (
-              <div key={course.id} style={{ padding: 16, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>{course.name}</div>
-                {course.description && <div style={{ fontSize: 12, color: "var(--subtext)", marginTop: 4 }}>{course.description}</div>}
+        <Glass style={{ padding: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 14 }}>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "var(--heading)" }}>Subject Catalogue ({filteredCourses.length})</h3>
+              <div style={{ fontSize: 12, color: "var(--subtext)", marginTop: 4 }}>
+                Manage school subjects, departments, curriculum topics, and syllabi.
               </div>
-            ))}
+            </div>
+
+            {/* Department filter pills */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              <button
+                onClick={() => setSubjectDeptFilter("all")}
+                style={{
+                  padding: "6px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 600, cursor: "pointer",
+                  background: subjectDeptFilter === "all" ? "var(--heading)" : "var(--muted)",
+                  color: subjectDeptFilter === "all" ? "var(--background)" : "var(--subtext)",
+                  border: "1px solid var(--glass-border)"
+                }}
+              >
+                All
+              </button>
+              {departmentOptions.map(dept => (
+                <button
+                  key={dept}
+                  onClick={() => setSubjectDeptFilter(dept)}
+                  style={{
+                    padding: "6px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 600, cursor: "pointer",
+                    background: subjectDeptFilter === dept ? "#219EBC" : "var(--muted)",
+                    color: subjectDeptFilter === dept ? "#fff" : "var(--subtext)",
+                    border: "1px solid var(--glass-border)"
+                  }}
+                >
+                  {dept}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Search bar */}
+          <div style={{ position: "relative", marginBottom: 20 }}>
+            <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--subtext)" }} />
+            <input
+              type="text"
+              placeholder="Search subjects by name, description, department, or topics..."
+              value={subjectSearchQuery}
+              onChange={e => setSubjectSearchQuery(e.target.value)}
+              style={{
+                width: "100%", padding: "10px 14px 10px 36px", borderRadius: 10,
+                background: "var(--muted)", border: "1px solid var(--glass-border)",
+                color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box"
+              }}
+            />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+            {filteredCourses.map(course => {
+              const dept = course.department || "Science";
+              const isScience = dept === "Science";
+              const isArts = dept.includes("Arts");
+              const isVoc = dept.includes("Vocational") || dept.includes("Commercial");
+              const deptColor = isScience ? "#219EBC" : isArts ? "#FB8500" : isVoc ? "#8338EC" : "#023047";
+
+              return (
+                <div key={course.id} style={{ padding: 18, borderRadius: 12, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--heading)" }}>{course.name}</div>
+                      <span style={{
+                        fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 6,
+                        background: `${deptColor}18`, color: deptColor, border: `1px solid ${deptColor}30`,
+                        whiteSpace: "nowrap"
+                      }}>
+                        {dept}
+                      </span>
+                    </div>
+                    {course.description && (
+                      <div style={{ fontSize: 12, color: "var(--subtext)", marginBottom: 8, lineHeight: 1.4 }}>
+                        {course.description}
+                      </div>
+                    )}
+                    {course.topics && (
+                      <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 8, padding: "6px 8px", borderRadius: 6, background: "rgba(0,0,0,0.03)", border: "1px dashed var(--glass-border)" }}>
+                        <strong style={{ color: "var(--heading)" }}>Topics:</strong> {course.topics}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--glass-border)" }}>
+                    <button
+                      onClick={() => handleOpenEditSubject(course)}
+                      style={{
+                        padding: "6px 10px", borderRadius: 7, background: "rgba(33,158,188,0.1)",
+                        border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 11.5,
+                        fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer"
+                      }}
+                    >
+                      <Edit2 size={12} /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSubject(course.id, course.name)}
+                      style={{
+                        padding: "6px 10px", borderRadius: 7, background: "rgba(231,111,81,0.1)",
+                        border: "1px solid rgba(231,111,81,0.3)", color: "#e76f51", fontSize: 11.5,
+                        fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer"
+                      }}
+                    >
+                      <Trash2 size={12} /> Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {filteredCourses.length === 0 && (
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--subtext)", fontSize: 13 }}>
+              No subjects found matching your criteria.
+            </div>
+          )}
         </Glass>
       )}
 
@@ -695,20 +872,75 @@ export default function AdminClasses() {
       {/* Add Subject Modal */}
       {showAddSubject && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(5px)" }}>
-          <Glass style={{ width: 400, padding: 24 }}>
+          <Glass style={{ width: 440, padding: 24 }}>
             <h3 style={{ fontSize: 18, margin: "0 0 16px", color: "var(--heading)" }}>Create New Subject</h3>
-            <form onSubmit={handleCreateSubject} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <form onSubmit={handleCreateSubject} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Subject Name</label>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Subject Name *</label>
                 <input required type="text" value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} placeholder="e.g. Further Mathematics" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Department</label>
+                <select
+                  value={newSubjectDept}
+                  onChange={e => setNewSubjectDept(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }}
+                >
+                  {departmentOptions.map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Description (Optional)</label>
                 <input type="text" value={newSubjectDesc} onChange={e => setNewSubjectDesc(e.target.value)} placeholder="Brief description" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
               </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Topics (Comma-separated, optional)</label>
+                <textarea rows={2} value={newSubjectTopics} onChange={e => setNewSubjectTopics(e.target.value)} placeholder="e.g. Algebra, Calculus, Trigonometry" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box", resize: "none" }} />
+              </div>
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
                 <button type="button" onClick={() => setShowAddSubject(false)} style={{ flex: 1, padding: 10, borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer" }}>Cancel</button>
                 <button type="submit" style={{ flex: 1, padding: 10, borderRadius: 8, background: "#219EBC", border: "none", color: "#fff", cursor: "pointer", fontWeight: 600 }}>Create Subject</button>
+              </div>
+            </form>
+          </Glass>
+        </div>
+      )}
+
+      {/* Edit Subject Modal */}
+      {editingSubject && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(5px)" }}>
+          <Glass style={{ width: 440, padding: 24 }}>
+            <h3 style={{ fontSize: 18, margin: "0 0 16px", color: "var(--heading)" }}>Edit Subject</h3>
+            <form onSubmit={handleUpdateSubject} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Subject Name *</label>
+                <input required type="text" value={editSubjectName} onChange={e => setEditSubjectName(e.target.value)} style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Department</label>
+                <select
+                  value={editSubjectDept}
+                  onChange={e => setEditSubjectDept(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }}
+                >
+                  {departmentOptions.map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Description</label>
+                <input type="text" value={editSubjectDesc} onChange={e => setEditSubjectDesc(e.target.value)} placeholder="Brief description" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Topics (Comma-separated)</label>
+                <textarea rows={2} value={editSubjectTopics} onChange={e => setEditSubjectTopics(e.target.value)} placeholder="e.g. Algebra, Calculus, Trigonometry" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box", resize: "none" }} />
+              </div>
+              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                <button type="button" onClick={() => setEditingSubject(null)} style={{ flex: 1, padding: 10, borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer" }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: 10, borderRadius: 8, background: "#219EBC", border: "none", color: "#fff", cursor: "pointer", fontWeight: 600 }}>Save Changes</button>
               </div>
             </form>
           </Glass>

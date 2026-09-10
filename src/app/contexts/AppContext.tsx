@@ -9,6 +9,10 @@ export interface AppUser {
   role: Role;
   first_name: string;
   last_name: string;
+  is_form_teacher?: boolean;
+  form_classes?: any[];
+  is_hod?: boolean;
+  hod_department?: string | null;
 }
 
 interface AppContextType {

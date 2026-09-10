@@ -10,8 +10,34 @@ class UserController {
         $this->conn = $db->getConnection();
     }
 
+    private function getSetting($key, $default = "") {
+        $stmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = :k LIMIT 1");
+        $stmt->execute([':k' => $key]);
+        $val = $stmt->fetchColumn();
+        return $val !== false ? $val : $default;
+    }
+
     public function me() {
         $user = Auth::authenticate();
+
+        // If teacher, enrich with Form Teacher and HOD details
+        if ($user['role'] === 'teacher') {
+            $tStmt = $this->conn->prepare("SELECT is_hod, hod_department FROM users WHERE id = :id");
+            $tStmt->execute([':id' => $user['id']]);
+            $tRow = $tStmt->fetch();
+
+            $user['is_hod'] = !empty($tRow['is_hod']) && intval($tRow['is_hod']) === 1;
+            $user['hod_department'] = $tRow['hod_department'] ?? null;
+
+            // Form classes
+            $fcStmt = $this->conn->prepare("SELECT id, name FROM classes WHERE form_teacher_id = :id ORDER BY name ASC");
+            $fcStmt->execute([':id' => $user['id']]);
+            $formClasses = $fcStmt->fetchAll();
+
+            $user['is_form_teacher'] = count($formClasses) > 0;
+            $user['form_classes'] = $formClasses;
+        }
+
         http_response_code(200);
         echo json_encode(["user" => $user]);
     }
@@ -19,10 +45,15 @@ class UserController {
     public function index() {
         $admin = Auth::requireRole(['admin']);
         
-        $query = "SELECT id, email, role, first_name, last_name, class_id, created_at FROM users";
+        $query = "
+            SELECT u.id, u.email, u.role, u.first_name, u.last_name, u.phone, u.class_id, u.created_at,
+                   u.is_hod, u.hod_department,
+                   (SELECT GROUP_CONCAT(c.name SEPARATOR ', ') FROM classes c WHERE c.form_teacher_id = u.id) as form_classes_names
+            FROM users u
+            ORDER BY u.id DESC
+        ";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
-        
         $users = $stmt->fetchAll();
         
         http_response_code(200);
@@ -208,14 +239,246 @@ class UserController {
 
         $studentId = intval($data->student_id);
         $classId = !empty($data->class_id) ? intval($data->class_id) : null;
+        $session = $this->getSetting('academic_session', '2023/2024');
+        $term = $this->getSetting('current_term', '3rd Term');
 
         try {
             $stmt = $this->conn->prepare("UPDATE users SET class_id = :class_id WHERE id = :id AND role = 'student'");
             $stmt->execute([':class_id' => $classId, ':id' => $studentId]);
+
+            // If a class was assigned, stamp into student_class_history for current term & session
+            if ($classId !== null) {
+                $histStmt = $this->conn->prepare("
+                    INSERT INTO student_class_history (student_id, class_id, academic_session, academic_term)
+                    VALUES (:sid, :cid, :sess, :term)
+                    ON DUPLICATE KEY UPDATE class_id = :cid2, assigned_at = CURRENT_TIMESTAMP
+                ");
+                $histStmt->execute([
+                    ':sid' => $studentId,
+                    ':cid' => $classId,
+                    ':sess' => $session,
+                    ':term' => $term,
+                    ':cid2' => $classId
+                ]);
+            }
+
             echo json_encode(["success" => true, "message" => "Student class assigned successfully"]);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(["error" => "Failed to assign class: " . $e->getMessage()]);
+        }
+    }
+
+    // Admin: Create a new user (admin, teacher, parent, student)
+    public function createUser() {
+        Auth::requireRole(['admin']);
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!$data || empty($data['email']) || empty($data['first_name']) || empty($data['last_name'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "First name, last name, and email are required."]);
+            return;
+        }
+
+        $email = strtolower(trim($data['email']));
+        $firstName = trim($data['first_name']);
+        $lastName = trim($data['last_name']);
+        $role = in_array($data['role'] ?? '', ['admin', 'teacher', 'student', 'parent']) ? $data['role'] : 'admin';
+        $phone = !empty($data['phone']) ? trim($data['phone']) : null;
+        $password = !empty($data['password']) ? trim($data['password']) : '12345678';
+        $isHod = !empty($data['is_hod']) ? 1 : 0;
+        $hodDept = !empty($data['hod_department']) ? trim($data['hod_department']) : null;
+
+        // Check duplicate email
+        $chk = $this->conn->prepare("SELECT id FROM users WHERE email = :email");
+        $chk->execute([':email' => $email]);
+        if ($chk->fetchColumn()) {
+            http_response_code(400);
+            echo json_encode(["error" => "A user with this email address already exists."]);
+            return;
+        }
+
+        try {
+            $pwdHash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $this->conn->prepare("
+                INSERT INTO users (email, password_hash, role, first_name, last_name, phone, is_hod, hod_department)
+                VALUES (:email, :pwd, :role, :fn, :ln, :phone, :is_hod, :hod_dept)
+            ");
+            $stmt->execute([
+                ':email' => $email,
+                ':pwd' => $pwdHash,
+                ':role' => $role,
+                ':fn' => $firstName,
+                ':ln' => $lastName,
+                ':phone' => $phone,
+                ':is_hod' => $isHod,
+                ':hod_dept' => $hodDept
+            ]);
+            $newId = $this->conn->lastInsertId();
+
+            echo json_encode([
+                "success" => true,
+                "message" => "Account created successfully.",
+                "user" => [
+                    "id" => $newId,
+                    "email" => $email,
+                    "role" => $role,
+                    "first_name" => $firstName,
+                    "last_name" => $lastName
+                ]
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to create account: " . $e->getMessage()]);
+        }
+    }
+
+    // Admin: Update user details (name, email, phone, role, is_hod, hod_department)
+    public function updateUser() {
+        Auth::requireRole(['admin']);
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!$data || empty($data['id']) || empty($data['first_name']) || empty($data['last_name']) || empty($data['email'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "ID, first name, last name, and email are required."]);
+            return;
+        }
+
+        $id = intval($data['id']);
+        $email = strtolower(trim($data['email']));
+        $firstName = trim($data['first_name']);
+        $lastName = trim($data['last_name']);
+        $phone = !empty($data['phone']) ? trim($data['phone']) : null;
+        $role = in_array($data['role'] ?? '', ['admin', 'teacher', 'student', 'parent']) ? $data['role'] : null;
+        $isHod = isset($data['is_hod']) ? (intval($data['is_hod']) === 1 ? 1 : 0) : null;
+        $hodDept = isset($data['hod_department']) ? trim($data['hod_department']) : null;
+
+        // Check email uniqueness if changed
+        $chk = $this->conn->prepare("SELECT id FROM users WHERE email = :email AND id != :id");
+        $chk->execute([':email' => $email, ':id' => $id]);
+        if ($chk->fetchColumn()) {
+            http_response_code(400);
+            echo json_encode(["error" => "Another user with this email already exists."]);
+            return;
+        }
+
+        try {
+            $query = "UPDATE users SET first_name = :fn, last_name = :ln, email = :email, phone = :phone";
+            $params = [
+                ':fn' => $firstName,
+                ':ln' => $lastName,
+                ':email' => $email,
+                ':phone' => $phone,
+                ':id' => $id
+            ];
+
+            if ($role !== null) {
+                $query .= ", role = :role";
+                $params[':role'] = $role;
+            }
+            if ($isHod !== null) {
+                $query .= ", is_hod = :is_hod, hod_department = :hod_dept";
+                $params[':is_hod'] = $isHod;
+                $params[':hod_dept'] = $hodDept;
+            }
+
+            $query .= " WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute($params);
+
+            echo json_encode(["success" => true, "message" => "User updated successfully."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to update user: " . $e->getMessage()]);
+        }
+    }
+
+    // Admin: Delete user (guard against self-deletion)
+    public function deleteUser() {
+        $admin = Auth::requireRole(['admin']);
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!$data || empty($data['id'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "User ID is required."]);
+            return;
+        }
+
+        $id = intval($data['id']);
+        if ($id === intval($admin['id'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Security Protection: You cannot delete your own active administrator account."]);
+            return;
+        }
+
+        try {
+            $stmt = $this->conn->prepare("DELETE FROM users WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+
+            echo json_encode(["success" => true, "message" => "Account deleted successfully."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to delete account: " . $e->getMessage()]);
+        }
+    }
+
+    // Admin: Reset password for any account
+    public function resetPassword() {
+        Auth::requireRole(['admin']);
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!$data || empty($data['user_id']) || empty($data['new_password'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "User ID and new password are required."]);
+            return;
+        }
+
+        $userId = intval($data['user_id']);
+        $newPassword = trim($data['new_password']);
+        if (strlen($newPassword) < 6) {
+            http_response_code(400);
+            echo json_encode(["error" => "New password must be at least 6 characters."]);
+            return;
+        }
+
+        try {
+            $pwdHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            $stmt = $this->conn->prepare("UPDATE users SET password_hash = :pwd WHERE id = :id");
+            $stmt->execute([':pwd' => $pwdHash, ':id' => $userId]);
+
+            echo json_encode(["success" => true, "message" => "Password reset successfully."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to reset password: " . $e->getMessage()]);
+        }
+    }
+
+    // Admin: Appoint/unappoint teacher as HOD
+    public function appointHod() {
+        Auth::requireRole(['admin']);
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!$data || empty($data['teacher_id'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Teacher ID is required."]);
+            return;
+        }
+
+        $teacherId = intval($data['teacher_id']);
+        $isHod = !empty($data['is_hod']) ? 1 : 0;
+        $department = !empty($data['department']) ? trim($data['department']) : null;
+
+        try {
+            $stmt = $this->conn->prepare("UPDATE users SET is_hod = :is_hod, hod_department = :dept WHERE id = :id AND role = 'teacher'");
+            $stmt->execute([':is_hod' => $isHod, ':dept' => $department, ':id' => $teacherId]);
+
+            echo json_encode([
+                "success" => true,
+                "message" => $isHod ? "Teacher appointed as HOD of $department." : "HOD appointment revoked."
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to update HOD appointment: " . $e->getMessage()]);
         }
     }
 

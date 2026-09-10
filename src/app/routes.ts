@@ -30,6 +30,7 @@ const TeacherAttendance = lazy(() => import("./pages/teacher/Attendance"));
 const TeacherGrades = lazy(() => import("./pages/teacher/Grades"));
 const TeacherAssessments = lazy(() => import("./pages/teacher/Assessments"));
 const TeacherFormClass = lazy(() => import("./pages/teacher/FormClass"));
+const TeacherHodAllocations = lazy(() => import("./pages/teacher/HodAllocations"));
 const TeacherSettings = lazy(() => import("./pages/teacher/TeacherSettings"));
 
 // Admin
@@ -93,6 +94,7 @@ export const router = createBrowserRouter([
           { path: "grades", Component: TeacherGrades },
           { path: "assessments", Component: TeacherAssessments },
           { path: "form-class", Component: TeacherFormClass },
+          { path: "hod-allocations", Component: TeacherHodAllocations },
           { path: "settings", Component: TeacherSettings },
           { path: "*", Component: NotFound },
         ],

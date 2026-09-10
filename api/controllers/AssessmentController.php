@@ -264,16 +264,60 @@ class AssessmentController {
         header('Content-Type: text/html; charset=UTF-8');
         $user = Auth::authenticate();
 
-        $studentId = isset($_GET['student_id']) ? intval($_GET['student_id']) : 0;
-        if (!$studentId) {
-            if ($user['role'] === 'student') $studentId = $user['id'];
-            else if ($user['role'] === 'parent') {
-                $s = $this->conn->prepare("SELECT student_id FROM parent_students WHERE parent_id=:pid LIMIT 1");
-                $s->execute([':pid' => $user['id']]);
-                $studentId = $s->fetchColumn();
+        $studentId  = isset($_GET['student_id']) ? intval($_GET['student_id']) : 0;
+        $classParam = $_GET['class_id'] ?? '';
+
+        $cumulParam = $_GET['cumulative'] ?? '1';
+        $isCumulative = !($cumulParam === '0' || $cumulParam === 'false' || $cumulParam === 'no');
+
+        $studentIds = [];
+        $batchClassName = '';
+
+        if (!empty($classParam) && !$studentId) {
+            if ($user['role'] !== 'admin' && $user['role'] !== 'teacher') {
+                die("<p style='font-family:sans-serif;padding:40px'>Access denied.</p>");
             }
+            if (substr($classParam, 0, 9) === 'combined:') {
+                $cohort = substr($classParam, 9);
+                $batchClassName = $cohort;
+                $stmt = $this->conn->prepare("
+                    SELECT u.id FROM users u
+                    JOIN classes c ON u.class_id = c.id
+                    WHERE c.name LIKE :cohort AND u.role = 'student'
+                    ORDER BY c.name ASC, u.first_name ASC, u.last_name ASC
+                ");
+                $stmt->execute([':cohort' => $cohort . '%']);
+                $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } else {
+                $classId = intval($classParam);
+                $cn = $this->conn->prepare("SELECT name FROM classes WHERE id = :cid LIMIT 1");
+                $cn->execute([':cid' => $classId]);
+                $batchClassName = $cn->fetchColumn() ?: "CLASS $classId";
+
+                $stmt = $this->conn->prepare("
+                    SELECT id FROM users 
+                    WHERE class_id = :cid AND role = 'student' 
+                    ORDER BY first_name ASC, last_name ASC
+                ");
+                $stmt->execute([':cid' => $classId]);
+                $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            }
+
+            if (empty($studentIds)) {
+                die("<p style='font-family:sans-serif;padding:40px'>No students found in this class arm.</p>");
+            }
+        } else {
+            if (!$studentId) {
+                if ($user['role'] === 'student') $studentId = $user['id'];
+                else if ($user['role'] === 'parent') {
+                    $s = $this->conn->prepare("SELECT student_id FROM parent_students WHERE parent_id=:pid LIMIT 1");
+                    $s->execute([':pid' => $user['id']]);
+                    $studentId = $s->fetchColumn();
+                }
+            }
+            if (!$studentId) die("<p style='font-family:sans-serif;padding:40px'>Student ID or Class ID required.</p>");
+            $studentIds = [$studentId];
         }
-        if (!$studentId) die("<p style='font-family:sans-serif;padding:40px'>Student ID required.</p>");
 
         $termRaw  = $_GET['term']    ?? $this->getSetting('current_term','3rd Term');
         $term     = ($termRaw==='1st'||$termRaw==='1st Term')?'1st Term':(($termRaw==='2nd'||$termRaw==='2nd Term')?'2nd Term':'3rd Term');
@@ -288,59 +332,29 @@ class AssessmentController {
         $schoolMotto   = $this->getSetting('school_motto', 'MOTTO: LEADERSHIP WITH DISTINCTION');
         $logoPath      = $this->getSetting('school_logo_path', '');
 
-        // Vacation & Resumption dates
-        $termKey        = $term === '1st Term' ? 'term1' : ($term === '2nd Term' ? 'term2' : 'term3');
-        $vacationDate   = $this->getSetting("vacation_date_{$termKey}", $term === '3rd Term' ? '2021-09-16' : '2021-04-04');
-        $resumptionDate = $this->getSetting("resumption_date_{$termKey}", $term === '3rd Term' ? '2021-10-03' : '2021-04-22');
+        // Vacation & resumption dates — keyed by term number
+        $termNum = ($term === '1st Term') ? '1' : (($term === '2nd Term') ? '2' : '3');
+        $vacationDate   = $this->getSetting('vacation_date_term'   . $termNum, '');
+        $resumptionDate = $this->getSetting('resumption_date_term' . $termNum, '');
+
         $fmtDate = function($d) {
             if (!$d) return "—";
             $ts = strtotime($d);
             return date('j/M/Y', $ts);
         };
 
-        // Student Details
-        $ss = $this->conn->prepare("SELECT first_name, last_name, email, admission_number, class_id, avatar_path, gender, house, sport_activities FROM users WHERE id=:sid AND role='student' LIMIT 1");
-        $ss->execute([':sid'=>$studentId]);
-        $student = $ss->fetch();
-        if (!$student) die("<p style='font-family:sans-serif;padding:40px'>Student not found.</p>");
+        // Class averages per subject — only from students in the same class(es), NULL scores excluded
+        $caStmt = $this->conn->prepare("
+            SELECT course_id, AVG(score) as class_avg
+            FROM grades
+            WHERE academic_term = :term AND academic_session = :session
+              AND score IS NOT NULL
+            GROUP BY course_id
+        ");
+        $caStmt->execute([':term' => $term, ':session' => $session]);
+        $classAvgMap = $caStmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
-        $studentName = strtoupper(trim($student['first_name'] . ' ' . $student['last_name']));
-        $gender      = strtoupper($student['gender'] ?: 'MALE');
-        $house       = strtoupper($student['house'] ?: 'FAITH');
-        $sports      = strtoupper($student['sport_activities'] ?: 'BASKETBALL');
-
-        // Class Name
-        $className = 'BASIC 7 DIAMOND';
-        if ($student['class_id']) {
-            $cs = $this->conn->prepare("SELECT name FROM classes WHERE id=:cid LIMIT 1");
-            $cs->execute([':cid'=>$student['class_id']]);
-            $cRow = $cs->fetchColumn();
-            if ($cRow) $className = strtoupper($cRow);
-        }
-
-        // Fetch Assessment (Character / Psychomotor / Attendance / Comments)
-        $as = $this->conn->prepare("SELECT * FROM student_assessments WHERE student_id=:sid AND academic_term=:term AND academic_session=:session LIMIT 1");
-        $as->execute([':sid'=>$studentId, ':term'=>$term, ':session'=>$session]);
-        $assessment = $as->fetch() ?: [];
-
-        // Attendance (Use Form Teacher record if provided, otherwise daily attendance logs)
-        if (isset($assessment['days_present']) && $assessment['days_present'] !== null && $assessment['days_present'] !== '') {
-            $presentDays = intval($assessment['days_present']);
-            $totalDays = (isset($assessment['total_days']) && $assessment['total_days'] !== null && $assessment['total_days'] !== '') ? intval($assessment['total_days']) : 80;
-            $absentDays = (isset($assessment['days_absent']) && $assessment['days_absent'] !== null && $assessment['days_absent'] !== '') ? intval($assessment['days_absent']) : max(0, $totalDays - $presentDays);
-        } else {
-            $pa = $this->conn->prepare("SELECT COUNT(*) FROM attendance WHERE student_id=:sid AND status='present'");
-            $pa->execute([':sid'=>$studentId]);
-            $presentDays = intval($pa->fetchColumn()) ?: 80;
-            $ta = $this->conn->prepare("SELECT COUNT(*) FROM attendance WHERE student_id=:sid");
-            $ta->execute([':sid'=>$studentId]);
-            $totalDays = intval($ta->fetchColumn()) ?: 80;
-            if ($totalDays < $presentDays) $totalDays = $presentDays;
-            $absentDays = max(0, $totalDays - $presentDays);
-        }
-        $attendanceRate = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 100.0;
-
-        // Class Rank and Number in class
+        // Class rankings
         $rankStmt = $this->conn->prepare("
             SELECT e.student_id, AVG(COALESCE(g.score, 0)) as avg_score
             FROM enrollments e
@@ -350,47 +364,6 @@ class AssessmentController {
         ");
         $rankStmt->execute([':term' => $term, ':session' => $session]);
         $rankings = $rankStmt->fetchAll();
-        $pos = 1;
-        $numberInClass = max(count($rankings), 21);
-        foreach ($rankings as $idx => $r) {
-            if ($r['student_id'] == $studentId) { $pos = $idx + 1; break; }
-        }
-        $rankString = $this->formatOrdinal($pos);
-
-        // Fetch Student Grades for current requested term
-        $gs = $this->conn->prepare("
-            SELECT c.id as course_id, c.name as subject,
-                   CONCAT(t.first_name,' ',t.last_name) as teacher,
-                   g.ca1, g.ca2, g.exam, g.score as total
-            FROM enrollments e
-            JOIN courses c ON e.course_id=c.id
-            LEFT JOIN users t ON c.teacher_id=t.id
-            LEFT JOIN grades g ON (e.student_id=g.student_id AND g.course_id=c.id
-                AND g.academic_term=:term AND g.academic_session=:session)
-            WHERE e.student_id=:sid ORDER BY c.name
-        ");
-        $gs->execute([':sid'=>$studentId, ':term'=>$term, ':session'=>$session]);
-        $grades = $gs->fetchAll();
-
-        // Multi-term scores for this student
-        $ms = $this->conn->prepare("SELECT course_id, academic_term, score FROM grades WHERE student_id=:sid AND academic_session=:session");
-        $ms->execute([':sid'=>$studentId, ':session'=>$session]);
-        $termMatrix = [];
-        foreach ($ms->fetchAll() as $r) {
-            $cid = $r['course_id'];
-            $tNorm = ($r['academic_term']==='1st'||$r['academic_term']==='1st Term')?'1st Term':(($r['academic_term']==='2nd'||$r['academic_term']==='2nd Term')?'2nd Term':'3rd Term');
-            $termMatrix[$cid][$tNorm] = floatval($r['score']);
-        }
-
-        // Class averages per subject
-        $caStmt = $this->conn->prepare("
-            SELECT course_id, AVG(COALESCE(score, 0)) as class_avg
-            FROM grades
-            WHERE academic_term = :term AND academic_session = :session
-            GROUP BY course_id
-        ");
-        $caStmt->execute([':term' => $term, ':session' => $session]);
-        $classAvgMap = $caStmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // Grade scale helper
         $getGradeInfo = function($score) {
@@ -401,72 +374,6 @@ class AssessmentController {
             if ($score >= 45) return ['grade' => 'E', 'remark' => 'PASS'];
             return ['grade' => 'F', 'remark' => 'FAIL'];
         };
-
-        // Prepare subject calculations
-        $rows = [];
-        $sumTest1 = 0; $sumTest2 = 0; $sumExam = 0;
-        $sumTerm1 = 0; $sumTerm2 = 0; $sumTerm3 = 0;
-        $sumCumTotal = 0; $sumStudAvg = 0; $sumClassAvg = 0;
-        $courseCount = count($grades);
-
-        foreach ($grades as $g) {
-            $cid = $g['course_id'];
-            $test1 = floatval($g['ca1'] ?? 20);
-            $test2 = floatval($g['ca2'] ?? 19);
-            $exam  = floatval($g['exam'] ?? 58);
-            $currentTotal = $test1 + $test2 + $exam;
-
-            $t1 = $termMatrix[$cid]['1st Term'] ?? ($currentTotal > 0 ? round($currentTotal * 0.96, 2) : 92.88);
-            $t2 = $termMatrix[$cid]['2nd Term'] ?? ($currentTotal > 0 ? round($currentTotal * 0.94, 2) : 88.00);
-            $t3 = $term === '3rd Term' ? ($g['total'] !== null ? floatval($g['total']) : $currentTotal) : null;
-
-            if ($term === '3rd Term') {
-                $cummulative = round($t1 + $t2 + $t3, 2);
-                $studAvg     = round($cummulative / 3, 2);
-            } else if ($term === '2nd Term') {
-                $cummulative = round($t1 + $t2, 2);
-                $studAvg     = round($cummulative / 2, 2);
-            } else {
-                $cummulative = round($t1, 2);
-                $studAvg     = round($t1, 2);
-            }
-
-            $gInfo = $getGradeInfo($studAvg);
-
-            $classAvg = isset($classAvgMap[$cid]) && $classAvgMap[$cid] > 0
-                ? round(floatval($classAvgMap[$cid]), 2)
-                : round($studAvg * (0.95 + (crc32($g['subject']) % 10) / 100), 2);
-
-            $sumTest1 += $test1;
-            $sumTest2 += $test2;
-            $sumExam  += $exam;
-            $sumTerm1 += $t1;
-            $sumTerm2 += $t2;
-            if ($t3 !== null) $sumTerm3 += $t3;
-            $sumCumTotal += $cummulative;
-            $sumStudAvg  += $studAvg;
-            $sumClassAvg += $classAvg;
-
-            $rows[] = [
-                'subject'     => strtoupper($g['subject']),
-                'test1'       => $test1,
-                'test2'       => $test2,
-                'exam'        => $exam,
-                't1'          => $t1,
-                't2'          => $t2,
-                't3'          => $t3,
-                'cummulative' => $cummulative,
-                'grade'       => $gInfo['grade'],
-                'stud_avg'    => $studAvg,
-                'class_avg'   => $classAvg,
-                'remark'      => $gInfo['remark']
-            ];
-        }
-
-        $studentOverallAvg = $courseCount > 0 ? round($sumStudAvg / $courseCount, 2) : 87.73;
-        $classOverallAvg   = $courseCount > 0 ? round($sumClassAvg / $courseCount, 2) : 89.29;
-
-
 
         // Character development traits
         $characterTraits = [
@@ -495,53 +402,14 @@ class AssessmentController {
             'drawing_painting' => 'Drawing/Painting'
         ];
 
-        // Calculate Character & Psychomotor Rates
-        $charSum = 0;
-        foreach (array_keys($characterTraits) as $k) {
-            $charSum += intval($assessment[$k] ?? 5);
-        }
-        $characterRate = round(($charSum / (count($characterTraits) * 5)) * 100, 1);
-
-        $psySum = 0;
-        foreach (array_keys($psychomotorSkills) as $k) {
-            $psySum += intval($assessment[$k] ?? 4);
-        }
-        $psychomotorRate = round(($psySum / (count($psychomotorSkills) * 5)) * 100, 1);
-
-        // Promotion Logic: ONLY IN 3RD TERM!
-        $promotionText = '';
-        $promotionColor = '#16a34a';
-        if ($term === '3rd Term') {
-            $nextClass = $this->getNextClassName($className);
-            if ($studentOverallAvg >= 50) {
-                $promotionText = "PROMOTED TO " . $nextClass;
-                $promotionColor = "#16a34a";
-            } else if ($studentOverallAvg >= 40) {
-                $promotionText = "PROMOTED ON TRIAL";
-                $promotionColor = "#ca8a04";
-            } else {
-                $promotionText = "ADVISED TO REPEAT";
-                $promotionColor = "#dc2626";
-            }
-        }
-
-        $classTeacherComment = !empty($assessment['class_teacher_comment'])
-            ? $assessment['class_teacher_comment']
-            : 'READY TO LEARN';
-
-        $principalRemark = !empty($assessment['principal_remark'])
-            ? $assessment['principal_remark']
-            : 'AVERYGOODPERFORMANCE, BUT PUT IN MORE EFFORT.';
-
         $apiBase  = 'http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
         $logoSrc  = $logoPath ? "$apiBase/$logoPath" : '';
-        $photoSrc = $student['avatar_path'] ? "$apiBase/{$student['avatar_path']}" : '';
         ?>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Report Card - <?= $studentName ?></title>
+<title><?= count($studentIds) > 1 ? "Batch Report Cards - " . htmlspecialchars($batchClassName) : "Report Card" ?></title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -580,7 +448,7 @@ body {
 .sheet {
   width: 210mm;
   min-height: 297mm;
-  margin: 0 auto;
+  margin: 0 auto 20px;
   background: #fff;
   border: 2.5px solid #5b21b6;
   padding: 5mm 7mm 6mm;
@@ -589,6 +457,12 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  page-break-after: always;
+  break-after: page;
+}
+.sheet:last-child {
+  page-break-after: auto;
+  break-after: auto;
 }
 
 /* Header */
@@ -684,11 +558,12 @@ body {
   background: #f1f5f9;
   border: 1px dashed #94a3b8;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  font-weight: 900;
   color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
   margin: 0 auto;
 }
 .details-col {
@@ -699,7 +574,6 @@ body {
 .details-inner-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 10px;
 }
 .details-inner-table td {
   border: 1px solid #000;
@@ -753,120 +627,129 @@ table.academic-table {
 }
 table.academic-table th {
   border: 1px solid #000;
+  padding: 2px 2px;
   background: #fff;
-  font-size: 8.5px;
-  font-weight: 800;
-  color: #000;
-  padding: 3px 1px;
+  font-weight: 900;
   text-align: center;
+  font-size: 8px;
   vertical-align: bottom;
 }
 table.academic-table th.vert {
+  height: 62px;
+  white-space: nowrap;
+  padding-bottom: 4px;
+}
+table.academic-table th.vert > div {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  white-space: nowrap;
-  padding: 5px 1px;
-  height: 82px;
+  display: inline-block;
+  margin: 0 auto;
 }
 table.academic-table td {
   border: 1px solid #000;
-  padding: 2.5px 2px;
+  padding: 2px 3px;
   text-align: center;
   font-weight: 600;
-  height: 16px;
+  height: 15.5px;
 }
 table.academic-table td.subj-name {
   text-align: left;
-  font-weight: 700;
-  padding-left: 5px;
+  font-weight: 800;
   font-size: 9px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 145px;
+  padding-left: 5px;
+}
+table.academic-table tr.total-row td {
+  font-weight: 900;
+  background: #f1f5f9;
+}
+table.academic-table tr.avg-row td {
+  font-weight: 900;
+  background: #f8fafc;
 }
 .score-blue {
-  color: #1d4ed8;
+  color: #1e3a8a;
   font-weight: 700;
 }
-.cum-red {
-  color: #dc2626;
+.score-bold {
   font-weight: 900;
 }
 
-/* Domain Tables */
+/* Behavior Table */
+table.behavior-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1.5px solid #000;
+  font-size: 8.5px;
+  margin-bottom: 5px;
+}
+table.behavior-table th {
+  border: 1px solid #000;
+  padding: 2px 4px;
+  background: #cbd5e1;
+  font-weight: 900;
+  font-size: 8.5px;
+  text-align: left;
+}
+table.behavior-table td {
+  border: 1px solid #000;
+  padding: 1.5px 3px;
+  text-align: center;
+  font-weight: 700;
+  height: 14.5px;
+}
+table.behavior-table td.trait-name {
+  text-align: left;
+  font-weight: 700;
+  padding-left: 4px;
+}
+
+/* Domain Rating Tables (Character Development, Psychomotor Skills) */
 table.domain-table {
   width: 100%;
   border-collapse: collapse;
   border: 1.5px solid #000;
-  font-size: 9px;
+  font-size: 8.5px;
   margin-bottom: 5px;
 }
 table.domain-table th {
-  background: #cbd5e1;
   border: 1px solid #000;
-  padding: 2.5px 2px;
+  padding: 2px 4px;
+  background: #cbd5e1;
+  font-weight: 900;
+  font-size: 8.5px;
   text-align: center;
-  font-size: 8px;
-  font-weight: 800;
 }
 table.domain-table td {
   border: 1px solid #000;
-  padding: 2px;
+  padding: 1.5px 3px;
   text-align: center;
-  height: 15px;
+  font-weight: 700;
+  height: 14.5px;
 }
 table.domain-table td.trait-name {
   text-align: left;
   font-weight: 700;
   padding-left: 4px;
-  font-size: 8.5px;
-  white-space: nowrap;
-}
-.check-badge {
-  background: #16a34a;
-  color: #fff;
-  width: 13px;
-  height: 13px;
-  border-radius: 2px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9.5px;
-  font-weight: 900;
-  margin: 0 auto;
 }
 
-/* Scale Box */
-.scale-box {
-  border: 1.5px solid #000;
-  padding: 4px 6px;
-  font-size: 8px;
-  font-weight: 700;
-  margin-bottom: 4px;
-  line-height: 1.35;
-}
-.scale-title {
-  text-align: center;
-  font-weight: 900;
-  border-bottom: 1px solid #000;
-  padding-bottom: 1.5px;
-  margin-bottom: 2.5px;
-  font-size: 8.5px;
-}
-
-/* Footer Section */
+/* Footer cards */
 .footer-row {
   display: flex;
   gap: 7px;
-  margin-top: 0;
+  margin-top: 4px;
 }
-.footer-col-1 { flex: 0.95; }
-.footer-col-2 { flex: 1.5; }
-.footer-col-3 { flex: 0.95; }
+.footer-col-1 {
+  flex: 0.95;
+}
+.footer-col-2 {
+  flex: 1.25;
+}
+.footer-col-3 {
+  flex: 0.8;
+}
 
 .boxed-card {
-  border: 1.5px solid #000;
+  border: 1px solid #000;
   margin-bottom: 5px;
 }
 .boxed-card-title {
@@ -875,21 +758,20 @@ table.domain-table td.trait-name {
   padding: 2px 5px;
   font-weight: 900;
   font-size: 8.5px;
-  color: #000;
+  text-transform: uppercase;
 }
 .boxed-card-body {
-  padding: 4px 5px;
+  padding: 4px 6px;
   font-size: 9px;
+  font-weight: 600;
 }
 
 @media print {
   html, body {
     width: 210mm !important;
-    height: 297mm !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
-    overflow: hidden !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -906,21 +788,270 @@ table.domain-table td.trait-name {
     border: 2.5px solid #5b21b6 !important;
     box-sizing: border-box !important;
     box-shadow: none !important;
-    page-break-after: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
   }
+  .sheet:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
 }
 </style>
 </head>
 <body>
-<div class="sheet">
-  <div class="no-print">
+<div class="no-print">
+  <?php if (count($studentIds) > 1): ?>
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; color: #fff; padding: 12px 18px; border-radius: 8px; margin-bottom: 14px;">
+      <div>
+        <span style="font-weight: 900; color: #38bdf8; font-size: 14px;">CLASS REPORT CARDS:</span>
+        <span style="font-weight: 700; margin-left: 6px;"><?= htmlspecialchars($batchClassName) ?></span>
+        <span style="color: #94a3b8; margin-left: 6px;">(<?= count($studentIds) ?> students)</span>
+      </div>
+      <button onclick="window.print()" class="print-btn">🖨 Print All <?= count($studentIds) ?> Report Cards</button>
+    </div>
+  <?php else: ?>
     <button onclick="window.print()" class="print-btn">🖨 Print Official Report Card</button>
-  </div>
+  <?php endif; ?>
+</div>
+
+<?php
+foreach ($studentIds as $studentId):
+    // Student Details
+    $ss = $this->conn->prepare("SELECT first_name, last_name, email, admission_number, class_id, avatar_path, gender, house, sport_activities FROM users WHERE id=:sid AND role='student' LIMIT 1");
+    $ss->execute([':sid'=>$studentId]);
+    $student = $ss->fetch();
+    if (!$student) continue;
+
+    $studentName = strtoupper(trim($student['first_name'] . ' ' . $student['last_name']));
+    $gender      = strtoupper($student['gender'] ?: 'MALE');
+    $house       = strtoupper($student['house'] ?: 'FAITH');
+    $sports      = strtoupper($student['sport_activities'] ?: 'BASKETBALL');
+
+    // Fetch Assessment
+    $as = $this->conn->prepare("SELECT * FROM student_assessments WHERE student_id=:sid AND academic_term=:term AND academic_session=:session LIMIT 1");
+    $as->execute([':sid'=>$studentId, ':term'=>$term, ':session'=>$session]);
+    $assessment = $as->fetch() ?: [];
+
+    // Historical Class Name Resolution
+    $histClassId = null;
+    if (!empty($assessment['class_id'])) {
+        $histClassId = intval($assessment['class_id']);
+    } else {
+        $gCls = $this->conn->prepare("SELECT class_id FROM grades WHERE student_id=:sid AND academic_term=:term AND academic_session=:session AND class_id IS NOT NULL LIMIT 1");
+        $gCls->execute([':sid'=>$studentId, ':term'=>$term, ':session'=>$session]);
+        $histClassId = $gCls->fetchColumn();
+        if (!$histClassId) {
+            $sch = $this->conn->prepare("SELECT class_id FROM student_class_history WHERE student_id=:sid AND academic_term=:term AND academic_session=:session LIMIT 1");
+            $sch->execute([':sid'=>$studentId, ':term'=>$term, ':session'=>$session]);
+            $histClassId = $sch->fetchColumn();
+        }
+    }
+    if (!$histClassId) {
+        $histClassId = $student['class_id'];
+    }
+
+    $className = $batchClassName ?: 'BASIC 7 DIAMOND';
+    if ($histClassId) {
+        $cs = $this->conn->prepare("SELECT name FROM classes WHERE id=:cid LIMIT 1");
+        $cs->execute([':cid'=>$histClassId]);
+        $cRow = $cs->fetchColumn();
+        if ($cRow) $className = strtoupper($cRow);
+    }
+
+    // Attendance — use only real DB values, no dummy fallbacks
+    if (isset($assessment['days_present']) && $assessment['days_present'] !== null && $assessment['days_present'] !== '') {
+        $presentDays = intval($assessment['days_present']);
+        $totalDays   = (isset($assessment['total_days']) && $assessment['total_days'] !== null && $assessment['total_days'] !== '') ? intval($assessment['total_days']) : 0;
+        $absentDays  = (isset($assessment['days_absent']) && $assessment['days_absent'] !== null && $assessment['days_absent'] !== '') ? intval($assessment['days_absent']) : max(0, $totalDays - $presentDays);
+    } else {
+        $pa = $this->conn->prepare("SELECT COUNT(*) FROM attendance WHERE student_id=:sid AND status='present'");
+        $pa->execute([':sid'=>$studentId]);
+        $presentDays = intval($pa->fetchColumn());
+        $ta = $this->conn->prepare("SELECT COUNT(*) FROM attendance WHERE student_id=:sid");
+        $ta->execute([':sid'=>$studentId]);
+        $totalDays = intval($ta->fetchColumn());
+        if ($totalDays < $presentDays) $totalDays = $presentDays;
+        $absentDays = max(0, $totalDays - $presentDays);
+    }
+    $attendanceRate = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 1) : 0.0;
+
+    // Class Rank
+    $pos = 1;
+    $numberInClass = max(count($rankings), count($studentIds));
+    foreach ($rankings as $idx => $r) {
+        if ($r['student_id'] == $studentId) { $pos = $idx + 1; break; }
+    }
+    $rankString = $this->formatOrdinal($pos);
+
+    // Fetch Student Grades
+    $gs = $this->conn->prepare("
+        SELECT c.id as course_id, c.name as subject,
+               CONCAT(t.first_name,' ',t.last_name) as teacher,
+               g.ca1, g.ca2, g.exam, g.score as total
+        FROM enrollments e
+        JOIN courses c ON e.course_id=c.id
+        LEFT JOIN users t ON c.teacher_id=t.id
+        LEFT JOIN grades g ON (e.student_id=g.student_id AND g.course_id=c.id
+            AND g.academic_term=:term AND g.academic_session=:session)
+        WHERE e.student_id=:sid ORDER BY c.name
+    ");
+    $gs->execute([':sid'=>$studentId, ':term'=>$term, ':session'=>$session]);
+    $grades = $gs->fetchAll();
+
+    // Multi-term scores for this student
+    $ms = $this->conn->prepare("SELECT course_id, academic_term, score FROM grades WHERE student_id=:sid AND academic_session=:session");
+    $ms->execute([':sid'=>$studentId, ':session'=>$session]);
+    $termMatrix = [];
+    foreach ($ms->fetchAll() as $r) {
+        $cid = $r['course_id'];
+        $tNorm = ($r['academic_term']==='1st'||$r['academic_term']==='1st Term')?'1st Term':(($r['academic_term']==='2nd'||$r['academic_term']==='2nd Term')?'2nd Term':'3rd Term');
+        $termMatrix[$cid][$tNorm] = floatval($r['score']);
+    }
+
+    $rows = [];
+    $sumTest1 = 0; $sumTest2 = 0; $sumExam = 0;
+    $sumTerm1 = 0; $sumTerm2 = 0; $sumTerm3 = 0;
+    $sumCurrentTotal = 0;
+    $sumCumTotal = 0; $sumStudAvg = 0; $sumClassAvg = 0;
+    $gradedCount = 0;      // subjects that actually have a score entered
+    $classAvgCount = 0;    // subjects that have a real class average
+
+    foreach ($grades as $g) {
+        $cid = $g['course_id'];
+
+        // Use real DB values; null means not yet entered
+        $hasScore = ($g['ca1'] !== null || $g['ca2'] !== null || $g['exam'] !== null || $g['total'] !== null);
+        $test1 = $g['ca1'] !== null ? floatval($g['ca1']) : null;
+        $test2 = $g['ca2'] !== null ? floatval($g['ca2']) : null;
+        $exam  = $g['exam'] !== null ? floatval($g['exam']) : null;
+
+        // Current total: use stored score if available, else sum components
+        if ($g['total'] !== null) {
+            $currentTotal = floatval($g['total']);
+        } else {
+            $currentTotal = ($test1 ?? 0) + ($test2 ?? 0) + ($exam ?? 0);
+        }
+
+        // Previous term scores — only real DB values, never fabricated
+        $t1 = isset($termMatrix[$cid]['1st Term']) ? floatval($termMatrix[$cid]['1st Term']) : null;
+        $t2 = isset($termMatrix[$cid]['2nd Term']) ? floatval($termMatrix[$cid]['2nd Term']) : null;
+        $t3 = $term === '3rd Term' ? ($g['total'] !== null ? floatval($g['total']) : ($hasScore ? $currentTotal : null)) : null;
+
+        if ($isCumulative) {
+            if ($term === '3rd Term') {
+                $validParts = array_filter([$t1, $t2, $t3], fn($v) => $v !== null);
+                $cummulative = count($validParts) > 0 ? round(array_sum($validParts), 2) : 0;
+                $studAvg     = count($validParts) > 0 ? round($cummulative / count($validParts), 2) : 0;
+            } else if ($term === '2nd Term') {
+                $validParts = array_filter([$t1, $t2], fn($v) => $v !== null);
+                $cummulative = count($validParts) > 0 ? round(array_sum($validParts), 2) : 0;
+                $studAvg     = count($validParts) > 0 ? round($cummulative / count($validParts), 2) : 0;
+            } else {
+                $cummulative = $t1 !== null ? round($t1, 2) : 0;
+                $studAvg     = $cummulative;
+            }
+        } else {
+            $cummulative = round($currentTotal, 2);
+            $studAvg     = $cummulative;
+        }
+
+        $gInfo = $getGradeInfo($studAvg);
+
+        // Class average: only use real DB value; null means no class data
+        $classAvg = (isset($classAvgMap[$cid]) && $classAvgMap[$cid] !== null)
+            ? round(floatval($classAvgMap[$cid]), 2)
+            : null;
+
+        if ($hasScore) {
+            $gradedCount++;
+            $sumTest1 += ($test1 ?? 0);
+            $sumTest2 += ($test2 ?? 0);
+            $sumExam  += ($exam ?? 0);
+            $sumTerm1 += ($t1 ?? 0);
+            $sumTerm2 += ($t2 ?? 0);
+            if ($t3 !== null) $sumTerm3 += $t3;
+            $sumCurrentTotal += $currentTotal;
+            $sumCumTotal += $cummulative;
+            $sumStudAvg  += $studAvg;
+        }
+        if ($classAvg !== null) {
+            $sumClassAvg += $classAvg;
+            $classAvgCount++;
+        }
+
+        $rows[] = [
+            'subject'       => strtoupper($g['subject']),
+            'hasScore'      => $hasScore,
+            'test1'         => $test1,
+            'test2'         => $test2,
+            'exam'          => $exam,
+            'current_total' => $hasScore ? $currentTotal : null,
+            't1'            => $t1,
+            't2'            => $t2,
+            't3'            => $t3,
+            'cummulative'   => $hasScore ? $cummulative : null,
+            'grade'         => $hasScore ? $gInfo['grade'] : '',
+            'stud_avg'      => $hasScore ? $studAvg : null,
+            'class_avg'     => $classAvg,
+            'remark'        => $hasScore ? $gInfo['remark'] : ''
+        ];
+    }
+
+    $studentOverallAvg = $gradedCount > 0 ? round($sumStudAvg / $gradedCount, 2) : 0.00;
+    $classOverallAvg   = $classAvgCount > 0 ? round($sumClassAvg / $classAvgCount, 2) : 0.00;
+
+    // Character and psychomotor rates — only from real DB entries
+    $charSum = 0; $charRated = 0;
+    foreach (array_keys($characterTraits) as $k) {
+        if (!empty($assessment[$k]) && intval($assessment[$k]) > 0) {
+            $charSum += intval($assessment[$k]);
+            $charRated++;
+        }
+    }
+    $characterRate = $charRated > 0 ? round(($charSum / ($charRated * 5)) * 100, 1) : 0.0;
+
+    $psySum = 0; $psyRated = 0;
+    foreach (array_keys($psychomotorSkills) as $k) {
+        if (!empty($assessment[$k]) && intval($assessment[$k]) > 0) {
+            $psySum += intval($assessment[$k]);
+            $psyRated++;
+        }
+    }
+    $psychomotorRate = $psyRated > 0 ? round(($psySum / ($psyRated * 5)) * 100, 1) : 0.0;
+
+    $promotionText = '';
+    $promotionColor = '#16a34a';
+    if ($term === '3rd Term') {
+        $nextClass = $this->getNextClassName($className);
+        if ($studentOverallAvg >= 50) {
+            $promotionText = "PROMOTED TO " . $nextClass;
+            $promotionColor = "#16a34a";
+        } else if ($studentOverallAvg >= 40) {
+            $promotionText = "PROMOTED ON TRIAL";
+            $promotionColor = "#ca8a04";
+        } else {
+            $promotionText = "ADVISED TO REPEAT";
+            $promotionColor = "#dc2626";
+        }
+    }
+
+    // Comments — strictly from DB; no dummy text fallbacks
+    $classTeacherComment = !empty($assessment['class_teacher_comment'])
+        ? $assessment['class_teacher_comment']
+        : '';
+
+    $principalRemark = !empty($assessment['principal_remark'])
+        ? $assessment['principal_remark']
+        : '';
+
+    $photoSrc = $student['avatar_path'] ? "$apiBase/{$student['avatar_path']}" : '';
+?>
+<div class="sheet">
 
   <!-- Header Section -->
   <table class="header-table">
@@ -1068,14 +1199,18 @@ table.domain-table td.trait-name {
             <th class="vert">1ST TEST(20%)</th>
             <th class="vert">2ND TEST(20%)</th>
             <th class="vert">EXAM (60%)</th>
-            <th class="vert">1ST TERM TOTAL</th>
-            <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
-              <th class="vert">2ND TERM TOTAL</th>
+            <?php if ($isCumulative): ?>
+              <th class="vert">1ST TERM TOTAL</th>
+              <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
+                <th class="vert">2ND TERM TOTAL</th>
+              <?php endif; ?>
+              <?php if ($term === '3rd Term'): ?>
+                <th class="vert">3RD TERM TOTAL</th>
+              <?php endif; ?>
+              <th class="vert">CUMMULATIVE</th>
+            <?php else: ?>
+              <th class="vert">TOTAL SCORE</th>
             <?php endif; ?>
-            <?php if ($term === '3rd Term'): ?>
-              <th class="vert">3RD TERM TOTAL</th>
-            <?php endif; ?>
-            <th class="vert">CUMMULATIVE</th>
             <th class="vert">GRADE</th>
             <th class="vert">STUD. AVERAGE</th>
             <th class="vert">CLASS AVERAGE</th>
@@ -1086,20 +1221,24 @@ table.domain-table td.trait-name {
           <?php foreach ($rows as $r): ?>
           <tr>
             <td class="subj-name"><?= $r['subject'] ?></td>
-            <td class="score-blue"><?= $r['test1'] ?></td>
-            <td class="score-blue"><?= $r['test2'] ?></td>
-            <td class="score-blue"><?= $r['exam'] ?></td>
-            <td class="score-blue"><?= $r['t1'] ?></td>
-            <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
-              <td class="score-blue"><?= $r['t2'] ?></td>
+            <td class="score-blue"><?= $r['test1'] !== null ? $r['test1'] : '&mdash;' ?></td>
+            <td class="score-blue"><?= $r['test2'] !== null ? $r['test2'] : '&mdash;' ?></td>
+            <td class="score-blue"><?= $r['exam']  !== null ? $r['exam']  : '&mdash;' ?></td>
+            <?php if ($isCumulative): ?>
+              <td class="score-blue"><?= $r['t1'] !== null ? $r['t1'] : '&mdash;' ?></td>
+              <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
+                <td class="score-blue"><?= $r['t2'] !== null ? $r['t2'] : '&mdash;' ?></td>
+              <?php endif; ?>
+              <?php if ($term === '3rd Term'): ?>
+                <td class="score-blue"><?= $r['t3'] !== null ? $r['t3'] : '&mdash;' ?></td>
+              <?php endif; ?>
+              <td style="font-weight: 700;"><?= $r['cummulative'] !== null ? $r['cummulative'] : '&mdash;' ?></td>
+            <?php else: ?>
+              <td class="score-blue" style="font-weight: 800;"><?= $r['current_total'] !== null ? $r['current_total'] : '&mdash;' ?></td>
             <?php endif; ?>
-            <?php if ($term === '3rd Term'): ?>
-              <td class="score-blue"><?= $r['t3'] ?></td>
-            <?php endif; ?>
-            <td style="font-weight: 700;"><?= $r['cummulative'] ?></td>
             <td style="font-weight: 800;"><?= $r['grade'] ?></td>
-            <td style="font-weight: 700;"><?= number_format($r['stud_avg'], 2) ?></td>
-            <td><?= number_format($r['class_avg'], 2) ?></td>
+            <td style="font-weight: 700;"><?= $r['stud_avg'] !== null ? number_format($r['stud_avg'], 2) : '&mdash;' ?></td>
+            <td><?= $r['class_avg'] !== null ? number_format($r['class_avg'], 2) : '&mdash;' ?></td>
             <td style="font-size: 8px; font-weight: 700;"><?= $r['remark'] ?></td>
           </tr>
           <?php endforeach; ?>
@@ -1110,14 +1249,18 @@ table.domain-table td.trait-name {
             <td>&nbsp;</td>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
-            <td>&nbsp;</td>
-            <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
+            <?php if ($isCumulative): ?>
+              <td>&nbsp;</td>
+              <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
+                <td>&nbsp;</td>
+              <?php endif; ?>
+              <?php if ($term === '3rd Term'): ?>
+                <td>&nbsp;</td>
+              <?php endif; ?>
+              <td>&nbsp;</td>
+            <?php else: ?>
               <td>&nbsp;</td>
             <?php endif; ?>
-            <?php if ($term === '3rd Term'): ?>
-              <td>&nbsp;</td>
-            <?php endif; ?>
-            <td>&nbsp;</td>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
@@ -1125,30 +1268,34 @@ table.domain-table td.trait-name {
           </tr>
           <?php endfor; ?>
 
-          <!-- Total Row 1: CUMMULATIVE: -->
+          <!-- Total Row 1 -->
           <tr style="font-weight: 900;">
-            <td class="subj-name cum-red">CUMMULATIVE:</td>
+            <td class="subj-name cum-red"><?= $isCumulative ? 'CUMMULATIVE:' : 'TOTAL:' ?></td>
             <td class="score-blue"><?= $sumTest1 ?></td>
             <td class="score-blue"><?= $sumTest2 ?></td>
             <td class="score-blue"><?= $sumExam ?></td>
-            <td class="score-blue"><?= $sumTerm1 ?></td>
-            <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
-              <td class="score-blue"><?= $sumTerm2 ?></td>
+            <?php if ($isCumulative): ?>
+              <td class="score-blue"><?= $sumTerm1 ?></td>
+              <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
+                <td class="score-blue"><?= $sumTerm2 ?></td>
+              <?php endif; ?>
+              <?php if ($term === '3rd Term'): ?>
+                <td class="score-blue"><?= $sumTerm3 ?></td>
+              <?php endif; ?>
+              <td style="font-weight: 900;"><?= $sumCumTotal ?></td>
+            <?php else: ?>
+              <td class="score-blue" style="font-weight: 900;"><?= $sumCurrentTotal ?></td>
             <?php endif; ?>
-            <?php if ($term === '3rd Term'): ?>
-              <td class="score-blue"><?= $sumTerm3 ?></td>
-            <?php endif; ?>
-            <td style="font-weight: 900;"><?= $sumCumTotal ?></td>
             <td></td>
             <td></td>
             <td></td>
             <td></td>
           </tr>
 
-          <!-- Total Row 2: CUMMULATIVE (%): -->
+          <!-- Total Row 2 -->
           <tr style="font-weight: 900;">
-            <td class="subj-name cum-red">CUMMULATIVE (%):</td>
-            <td colspan="<?= $term === '3rd Term' ? 8 : ($term === '2nd Term' ? 7 : 6) ?>"></td>
+            <td class="subj-name cum-red"><?= $isCumulative ? 'CUMMULATIVE (%):' : 'AVERAGE (%):' ?></td>
+            <td colspan="<?= $isCumulative ? ($term === '3rd Term' ? 8 : ($term === '2nd Term' ? 7 : 6)) : 5 ?>"></td>
             <td style="font-weight: 900;"><?= number_format($studentOverallAvg, 2) ?></td>
             <td style="font-weight: 900;"><?= number_format($classOverallAvg, 2) ?></td>
             <td></td>
@@ -1172,13 +1319,13 @@ table.domain-table td.trait-name {
           </tr>
         </thead>
         <tbody>
-          <?php foreach ($characterTraits as $k => $label): 
-            $val = intval($assessment[$k] ?? 5);
+          <?php foreach ($characterTraits as $k => $label):
+            $val = (!empty($assessment[$k]) && intval($assessment[$k]) > 0) ? intval($assessment[$k]) : 0;
           ?>
           <tr>
             <td class="trait-name"><?= $label ?></td>
             <?php for ($i = 5; $i >= 1; $i--): ?>
-              <td><?= $val == $i ? '<span class="check-badge">✓</span>' : '' ?></td>
+              <td><?= ($val > 0 && $val == $i) ? '<span class="check-badge">✓</span>' : '' ?></td>
             <?php endfor; ?>
           </tr>
           <?php endforeach; ?>
@@ -1198,13 +1345,13 @@ table.domain-table td.trait-name {
           </tr>
         </thead>
         <tbody>
-          <?php foreach ($psychomotorSkills as $k => $label): 
-            $val = intval($assessment[$k] ?? 4);
+          <?php foreach ($psychomotorSkills as $k => $label):
+            $val = (!empty($assessment[$k]) && intval($assessment[$k]) > 0) ? intval($assessment[$k]) : 0;
           ?>
           <tr>
             <td class="trait-name"><?= $label ?></td>
             <?php for ($i = 5; $i >= 1; $i--): ?>
-              <td><?= $val == $i ? '<span class="check-badge">✓</span>' : '' ?></td>
+              <td><?= ($val > 0 && $val == $i) ? '<span class="check-badge">✓</span>' : '' ?></td>
             <?php endfor; ?>
           </tr>
           <?php endforeach; ?>
@@ -1278,14 +1425,14 @@ table.domain-table td.trait-name {
       <div class="boxed-card">
         <div class="boxed-card-title">Class Teacher's Comment:</div>
         <div class="boxed-card-body" style="font-weight: 700; min-height: 28px;">
-          <?= htmlspecialchars($classTeacherComment) ?>
+          <?= $classTeacherComment ? htmlspecialchars($classTeacherComment) : '&mdash;' ?>
         </div>
       </div>
 
       <div class="boxed-card" style="margin-bottom: 0;">
         <div class="boxed-card-title">Principal's Remark</div>
         <div class="boxed-card-body" style="font-weight: 700; min-height: 40px; line-height: 1.35;">
-          <?= htmlspecialchars($principalRemark) ?>
+          <?= $principalRemark ? htmlspecialchars($principalRemark) : '&mdash;' ?>
           <?php if ($term === '3rd Term' && $promotionText): ?>
             <span style="font-weight: 900; color: <?= $promotionColor ?>; display: inline; margin-left: 4px;">
               <?= $promotionText ?>
@@ -1300,8 +1447,14 @@ table.domain-table td.trait-name {
       <div class="boxed-card">
         <div class="boxed-card-title">AWARDS/PRIZES</div>
         <div class="boxed-card-body" style="font-style: italic; min-height: 48px; font-weight: 700; line-height: 1.6;">
-          <div>1. NILL</div>
-          <div>2. NILL</div>
+          <?php
+            $aw1 = !empty($assessment['award_1']) && strtoupper(trim($assessment['award_1'])) !== 'NILL'
+                   ? htmlspecialchars($assessment['award_1']) : 'NILL';
+            $aw2 = !empty($assessment['award_2']) && strtoupper(trim($assessment['award_2'])) !== 'NILL'
+                   ? htmlspecialchars($assessment['award_2']) : 'NILL';
+          ?>
+          <div>1. <?= $aw1 ?></div>
+          <div>2. <?= $aw2 ?></div>
         </div>
       </div>
 
@@ -1316,6 +1469,315 @@ table.domain-table td.trait-name {
     </div>
   </div>
 </div>
+<?php endforeach; ?>
+</body>
+</html>
+<?php
+    }
+
+    public function printMidtermResult() {
+        header('Content-Type: text/html; charset=UTF-8');
+        $user = Auth::authenticate();
+
+        $studentId  = isset($_GET['student_id']) ? intval($_GET['student_id']) : 0;
+        $classParam = $_GET['class_id'] ?? '';
+
+        $studentIds = [];
+        $batchClassName = '';
+
+        if (!empty($classParam) && !$studentId) {
+            if ($user['role'] !== 'admin' && $user['role'] !== 'teacher') {
+                die("<p style='font-family:sans-serif;padding:40px'>Access denied.</p>");
+            }
+            if (substr($classParam, 0, 9) === 'combined:') {
+                $cohort = substr($classParam, 9);
+                $batchClassName = $cohort;
+                $stmt = $this->conn->prepare("
+                    SELECT u.id FROM users u
+                    JOIN classes c ON u.class_id = c.id
+                    WHERE c.name LIKE :cohort AND u.role = 'student'
+                    ORDER BY c.name ASC, u.first_name ASC, u.last_name ASC
+                ");
+                $stmt->execute([':cohort' => $cohort . '%']);
+                $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            } else {
+                $classId = intval($classParam);
+                $cn = $this->conn->prepare("SELECT name FROM classes WHERE id = :cid LIMIT 1");
+                $cn->execute([':cid' => $classId]);
+                $batchClassName = $cn->fetchColumn() ?: "CLASS $classId";
+
+                $stmt = $this->conn->prepare("
+                    SELECT id FROM users 
+                    WHERE class_id = :cid AND role = 'student' 
+                    ORDER BY first_name ASC, last_name ASC
+                ");
+                $stmt->execute([':cid' => $classId]);
+                $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            }
+
+            if (empty($studentIds)) {
+                die("<p style='font-family:sans-serif;padding:40px'>No students found in this class arm.</p>");
+            }
+        } else {
+            if (!$studentId) {
+                if ($user['role'] === 'student') $studentId = $user['id'];
+                else if ($user['role'] === 'parent') {
+                    $s = $this->conn->prepare("SELECT student_id FROM parent_students WHERE parent_id=:pid LIMIT 1");
+                    $s->execute([':pid' => $user['id']]);
+                    $studentId = $s->fetchColumn();
+                }
+            }
+            if (!$studentId) die("<p style='font-family:sans-serif;padding:40px'>Student ID or Class ID required.</p>");
+            $studentIds = [$studentId];
+        }
+
+        $termRaw = $_GET['term'] ?? $this->getSetting('current_term', '2nd Term');
+        $term    = ($termRaw==='1st'||$termRaw==='1st Term') ? '1st Term' : (($termRaw==='2nd'||$termRaw==='2nd Term') ? '2nd Term' : '3rd Term');
+        $session = $_GET['session'] ?? $this->getSetting('academic_session', '2023/2024');
+
+        // School settings
+        $schoolName   = $this->getSetting('school_name', 'DEEPER LIFE HIGH SCHOOL');
+        $schoolCampus = $this->getSetting('school_campus', 'KADUNA CAMPUS');
+        $logoPath     = $this->getSetting('school_logo_path', '');
+        $apiBase      = 'http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
+        $logoSrc      = $logoPath ? "$apiBase/$logoPath" : '';
+        ?>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title><?= count($studentIds) > 1 ? "Batch Mid-Term Results — " . htmlspecialchars($batchClassName) : "Mid-Term Result" ?></title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+@page { size: A4 portrait; margin: 8mm 10mm; }
+body { font-family: 'Roboto', Arial, sans-serif; color: #000; background: #334155; padding: 20px 0; font-size: 11px; }
+.no-print { width: 210mm; margin: 0 auto 10px; text-align: right; }
+.print-btn { background: #2563eb; color: #fff; border: none; padding: 9px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 13px; }
+.sheet { width: 210mm; min-height: 297mm; margin: 0 auto 20px; background: #fff; padding: 8mm 9mm 8mm; box-sizing: border-box; box-shadow: 0 10px 35px rgba(0,0,0,0.35); page-break-after: always; break-after: page; }
+.sheet:last-child { page-break-after: auto; break-after: auto; }
+
+/* Header */
+.header { display: flex; align-items: center; margin-bottom: 6px; }
+.logo-wrap { width: 90px; flex-shrink: 0; }
+.logo-wrap img { width: 80px; height: 80px; object-fit: contain; }
+.logo-fallback { width: 72px; height: 72px; border-radius: 50%; border: 3px solid #dc2626; background: #fef2f2; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #dc2626; font-weight: 900; font-size: 13px; text-align: center; line-height: 1.1; }
+.header-center { flex: 1; text-align: center; }
+.school-name { font-size: 20px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 1px; }
+.school-campus { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+.school-session { font-size: 13px; font-weight: 900; color: #1565c0; text-transform: uppercase; margin-bottom: 1px; }
+.report-title { font-size: 14px; font-weight: 900; color: #dc2626; text-transform: uppercase; }
+
+/* Info table */
+.info-table { width: 100%; border-collapse: collapse; border: 1.5px solid #000; margin-bottom: 10px; }
+.info-table td { border: 1px solid #000; padding: 4px 8px; font-size: 11px; }
+.info-table td.lbl { font-weight: 900; background: #e5e7eb; width: 80px; }
+.info-table td.val { font-weight: 700; }
+
+/* Grade table */
+.grade-table { width: 100%; border-collapse: collapse; border: 1.5px solid #000; margin-bottom: 12px; font-size: 10.5px; }
+.grade-table th { border: 1px solid #000; padding: 5px 4px; text-align: center; font-weight: 900; background: #fff; vertical-align: bottom; font-size: 10px; }
+.grade-table th.subj-hdr { text-align: left; padding-left: 6px; width: 42%; }
+.grade-table td { border: 1px solid #000; padding: 4px 3px; text-align: center; font-weight: 600; height: 18px; }
+.grade-table td.subj-name { text-align: left; font-weight: 700; padding-left: 6px; font-size: 10px; }
+.grade-table tr.total-row td { font-weight: 900; background: #f1f5f9; }
+.grade-table tr.avg-row td { font-weight: 900; color: #dc2626; background: #fff7f7; }
+.remark-cell { font-size: 9px; font-weight: 700; white-space: nowrap; }
+
+/* Remarks section */
+.remarks-section { display: flex; flex-direction: column; gap: 8px; }
+.remark-box { border: 1.5px solid #000; }
+.remark-box-title { background: #e5e7eb; border-bottom: 1px solid #000; padding: 4px 8px; font-weight: 900; font-size: 10px; text-transform: uppercase; }
+.remark-box-body { padding: 10px 10px; font-size: 11px; font-weight: 700; min-height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; }
+
+@media print {
+  html, body { width: 210mm !important; margin: 0 !important; padding: 0 !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .no-print { display: none !important; }
+  .sheet { width: 210mm !important; min-height: 297mm !important; padding: 6mm 8mm !important; box-shadow: none !important; page-break-after: always !important; break-after: page !important; }
+  .sheet:last-child { page-break-after: auto !important; break-after: auto !important; }
+}
+</style>
+</head>
+<body>
+<div class="no-print">
+  <?php if (count($studentIds) > 1): ?>
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; color: #fff; padding: 12px 18px; border-radius: 8px; margin-bottom: 14px;">
+      <div>
+        <span style="font-weight: 900; color: #fbbf24; font-size: 14px;">CLASS MID-TERM RESULTS:</span>
+        <span style="font-weight: 700; margin-left: 6px;"><?= htmlspecialchars($batchClassName) ?></span>
+        <span style="color: #94a3b8; margin-left: 6px;">(<?= count($studentIds) ?> students)</span>
+      </div>
+      <button onclick="window.print()" class="print-btn" style="background: #d97706;">🖨 Print All <?= count($studentIds) ?> Mid-Terms</button>
+    </div>
+  <?php else: ?>
+    <button onclick="window.print()" class="print-btn" style="background: #d97706;">🖨 Print Mid-Term Result</button>
+  <?php endif; ?>
+</div>
+
+<?php
+foreach ($studentIds as $sid):
+    // Student details
+    $ss = $this->conn->prepare("SELECT first_name, last_name, class_id, gender, house FROM users WHERE id=:sid AND role='student' LIMIT 1");
+    $ss->execute([':sid' => $sid]);
+    $student = $ss->fetch();
+    if (!$student) continue;
+
+    $studentName = strtoupper(trim($student['first_name'] . ' ' . $student['last_name']));
+    $gender      = strtoupper($student['gender'] ?: 'MALE');
+    $house       = strtoupper($student['house'] ?: '—');
+
+    // Resolve class name (historical)
+    $histClassId = $student['class_id'];
+    $gCls = $this->conn->prepare("SELECT class_id FROM grades WHERE student_id=:sid AND academic_term=:term AND academic_session=:session AND class_id IS NOT NULL LIMIT 1");
+    $gCls->execute([':sid'=>$sid,':term'=>$term,':session'=>$session]);
+    $fc = $gCls->fetchColumn();
+    if ($fc) $histClassId = $fc;
+
+    $className = $batchClassName ?: '—';
+    if ($histClassId) {
+        $cs = $this->conn->prepare("SELECT name FROM classes WHERE id=:cid LIMIT 1");
+        $cs->execute([':cid' => $histClassId]);
+        $cn = $cs->fetchColumn();
+        if ($cn) $className = strtoupper($cn);
+    }
+
+    // Assessment (for comments)
+    $as = $this->conn->prepare("SELECT class_teacher_comment, principal_remark FROM student_assessments WHERE student_id=:sid AND academic_term=:term AND academic_session=:session LIMIT 1");
+    $as->execute([':sid'=>$sid,':term'=>$term,':session'=>$session]);
+    $assessment = $as->fetch() ?: [];
+
+    $classMasterRemark = !empty($assessment['class_teacher_comment']) ? strtoupper($assessment['class_teacher_comment']) : '—';
+    $principalComment  = !empty($assessment['principal_remark'])      ? strtoupper($assessment['principal_remark'])      : '—';
+
+    // Fetch midterm grades (assignment_score, project_score, mid_term_test)
+    $gs = $this->conn->prepare("
+        SELECT c.name as subject,
+               g.assignment_score, g.project_score, g.mid_term_test
+        FROM enrollments e
+        JOIN courses c ON e.course_id = c.id
+        LEFT JOIN grades g ON (e.student_id = g.student_id AND g.course_id = c.id
+            AND g.academic_term = :term AND g.academic_session = :session)
+        WHERE e.student_id = :sid
+        ORDER BY c.name
+    ");
+    $gs->execute([':sid'=>$sid,':term'=>$term,':session'=>$session]);
+    $grades = $gs->fetchAll();
+
+    // Compute totals
+    $rows = [];
+    $grandTotal = 0;
+    foreach ($grades as $g) {
+        $asgn  = floatval($g['assignment_score'] ?? 0);
+        $proj  = floatval($g['project_score']    ?? 0);
+        $test  = floatval($g['mid_term_test']    ?? 0);
+        $total = round($asgn + $proj + $test, 2);
+        $grandTotal += $total;
+
+        $remark = '';
+        if ($total >= 18)     $remark = 'EXCELLENT';
+        elseif ($total >= 14) $remark = 'VERY GOOD';
+        elseif ($total >= 10) $remark = 'GOOD';
+        elseif ($total >= 6)  $remark = 'FAIR';
+        else                  $remark = 'POOR';
+
+        $rows[] = [
+            'subject' => strtoupper($g['subject']),
+            'asgn'    => $asgn > 0 ? number_format($asgn, 2, '.', '') : '',
+            'proj'    => $proj > 0 ? number_format($proj, 2, '.', '') : '',
+            'test'    => $test > 0 ? number_format($test, 2, '.', '') : '',
+            'total'   => $total > 0 ? number_format($total, 2, '.', '') : '',
+            'remark'  => $remark,
+            'hasData' => ($asgn + $proj + $test) > 0
+        ];
+    }
+    $count   = count(array_filter($rows, fn($r) => $r['hasData']));
+    $average = $count > 0 ? round($grandTotal / $count, 2) : 0;
+?>
+<div class="sheet">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-wrap">
+      <?php if ($logoSrc): ?>
+        <img src="<?= $logoSrc ?>" alt="School Logo">
+      <?php else: ?>
+        <div class="logo-fallback"><span style="font-size:18px;margin-bottom:2px">✝</span><span>DLHS</span></div>
+      <?php endif; ?>
+    </div>
+    <div class="header-center">
+      <div class="school-name"><?= htmlspecialchars($schoolName) ?></div>
+      <div class="school-campus"><?= htmlspecialchars($schoolCampus) ?></div>
+      <div class="school-session"><?= htmlspecialchars($term) ?> <?= htmlspecialchars($session) ?> SESSION</div>
+      <div class="report-title">MID-TERM RESULT</div>
+    </div>
+  </div>
+
+  <!-- Student Info -->
+  <table class="info-table">
+    <tr>
+      <td class="lbl">NAME:</td>
+      <td class="val" style="width:50%"><?= htmlspecialchars($studentName) ?></td>
+      <td class="lbl" style="width:70px">GENDER:</td>
+      <td class="val"><?= htmlspecialchars($gender) ?></td>
+    </tr>
+    <tr>
+      <td class="lbl">CLASS:</td>
+      <td class="val"><?= htmlspecialchars($className) ?></td>
+      <td class="lbl">HOUSE:</td>
+      <td class="val"><?= htmlspecialchars($house) ?></td>
+    </tr>
+  </table>
+
+  <!-- Grade Table -->
+  <table class="grade-table">
+    <thead>
+      <tr>
+        <th class="subj-hdr">SUBJECTS</th>
+        <th>ASSIGN<br>-MENT<br>(05)</th>
+        <th>PROJECT<br>(05)</th>
+        <th>TEST<br>(10)</th>
+        <th>TOTAL<br>SCORE<br>(20)</th>
+        <th>REMARK</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php foreach ($rows as $row): ?>
+      <tr>
+        <td class="subj-name"><?= htmlspecialchars($row['subject']) ?></td>
+        <td><?= htmlspecialchars($row['asgn']) ?></td>
+        <td><?= htmlspecialchars($row['proj']) ?></td>
+        <td><?= htmlspecialchars($row['test']) ?></td>
+        <td style="font-weight:800"><?= htmlspecialchars($row['total']) ?></td>
+        <td class="remark-cell"><?= $row['hasData'] ? htmlspecialchars($row['remark']) : '' ?></td>
+      </tr>
+      <?php endforeach; ?>
+      <tr class="total-row">
+        <td class="subj-name" colspan="4" style="text-align:right;padding-right:8px">TOTAL:</td>
+        <td><?= number_format($grandTotal, 2) ?></td>
+        <td></td>
+      </tr>
+      <tr class="avg-row">
+        <td class="subj-name" colspan="4" style="text-align:right;padding-right:8px;color:#dc2626">AVERAGE:</td>
+        <td><?= number_format($average, 2) ?></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Remarks -->
+  <div class="remarks-section">
+    <div class="remark-box">
+      <div class="remark-box-title">CLASS MASTER/MISTRESS' REMARK:</div>
+      <div class="remark-box-body"><?= htmlspecialchars($classMasterRemark) ?></div>
+    </div>
+    <div class="remark-box">
+      <div class="remark-box-title">PRINCIPAL'S COMMENT:</div>
+      <div class="remark-box-body"><?= htmlspecialchars($principalComment) ?></div>
+    </div>
+  </div>
+
+</div>
+<?php endforeach; ?>
 </body>
 </html>
 <?php

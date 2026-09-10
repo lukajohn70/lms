@@ -1,11 +1,12 @@
 import { useState, ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { NavLink, useNavigate, Navigate } from "react-router";
+import { NavLink, useNavigate, Navigate, useLocation } from "react-router";
 import {
   LayoutDashboard, BookOpen, FileText, Receipt, MessageSquare, Library,
   GraduationCap, ClipboardList, FlaskConical, ChevronDown, ChevronRight,
   LogOut, HelpCircle, Users, Settings, BarChart2, CheckSquare, CalendarDays,
-  Bell, Search, Sun, Moon, UserCheck, Menu, X, ArrowUp, Award,
+  Bell, Search, Sun, Moon, UserCheck, Menu, X, ArrowUp, Award, Shield,
+  Printer, ShieldCheck,
 } from "lucide-react";
 import { useApp, Role } from "../contexts/AppContext";
 import { NotificationPanel } from "./NotificationPanel";
@@ -54,7 +55,16 @@ const NAV: Record<Role, NavItem[]> = {
     { icon: <GraduationCap size={17} />, label: "Admissions", to: "/admin/admissions" },
     { icon: <ClipboardList size={17} />, label: "CBT Approvals", to: "/admin/cbt" },
     { icon: <Receipt size={17} />, label: "Fee Management", to: "/admin/fees" },
-    { icon: <BarChart2 size={17} />, label: "Reports & Analytics", to: "/admin/reports" },
+    {
+      icon: <BarChart2 size={17} />, label: "Reports & Printing",
+      children: [
+        { icon: <FileText size={15} />, label: "End-of-Term Reports", to: "/admin/reports?tab=end_of_term" },
+        { icon: <FileText size={15} />, label: "Mid-Term Results", to: "/admin/reports?tab=midterm" },
+        { icon: <Printer size={15} />, label: "Broadsheet", to: "/admin/reports?tab=broadsheet" },
+        { icon: <ShieldCheck size={15} />, label: "Result Approvals", to: "/admin/reports?tab=approvals" },
+        { icon: <BarChart2 size={15} />, label: "Analytics Overview", to: "/admin/reports?tab=analytics" },
+      ],
+    },
     { icon: <Settings size={17} />, label: "System Settings", to: "/admin/settings" },
   ],
   parent: [
@@ -77,7 +87,15 @@ const ROLE_COLOR: Record<Role, string> = {
 
 function SidebarNavItem({ item, basePath, onNavClick }: { item: NavItem; basePath: string; onNavClick?: () => void }) {
   const [open, setOpen] = useState(true);
+  const location = useLocation();
   const hasChildren = !!item.children?.length;
+
+  const isChildActive = (to: string, routerIsActive: boolean) => {
+    if (to.includes("?")) {
+      return location.pathname + location.search === to;
+    }
+    return routerIsActive;
+  };
 
   if (hasChildren) {
     return (
@@ -101,18 +119,29 @@ function SidebarNavItem({ item, basePath, onNavClick }: { item: NavItem; basePat
                 to={c.to}
                 end
                 onClick={onNavClick}
-                className={({ isActive }) =>
-                  `flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 ${isActive ? "nav-active" : ""}`
-                }
-                style={({ isActive }) => ({
-                  background: isActive ? "rgba(33,158,188,0.18)" : "transparent",
-                  borderLeft: isActive ? "2px solid #219EBC" : "2px solid transparent",
-                })}
+                className={({ isActive }) => {
+                  const active = isChildActive(c.to, isActive);
+                  return `flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 ${active ? "nav-active" : ""}`;
+                }}
+                style={({ isActive }) => {
+                  const active = isChildActive(c.to, isActive);
+                  return {
+                    background: active ? "rgba(33,158,188,0.18)" : "transparent",
+                    borderLeft: active ? "2px solid #219EBC" : "2px solid transparent",
+                  };
+                }}
               >
-                <span style={{ color: "rgba(142,202,230,0.7)" }}>{c.icon}</span>
-                <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "12px", color: "rgba(232,244,248,0.75)" }}>
-                  {c.label}
-                </span>
+                {({ isActive }) => {
+                  const active = isChildActive(c.to, isActive);
+                  return (
+                    <>
+                      <span style={{ color: active ? "#219EBC" : "rgba(142,202,230,0.7)" }}>{c.icon}</span>
+                      <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "12px", color: active ? "#e8f4f8" : "rgba(232,244,248,0.75)", fontWeight: active ? 600 : 400 }}>
+                        {c.label}
+                      </span>
+                    </>
+                  );
+                }}
               </NavLink>
             ))}
           </div>
@@ -316,6 +345,31 @@ export function Layout({ children }: { children: ReactNode }) {
         {(NAV[user.role] ?? []).map((item) => (
           <SidebarNavItem key={item.label} item={item} basePath={user.role} onNavClick={closeSidebar} />
         ))}
+        {/* HOD Portal — only visible to appointed Heads of Department */}
+        {user.role === "teacher" && user.is_hod && (
+          <NavLink
+            to="/teacher/hod-allocations"
+            onClick={closeSidebar}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-all duration-150 ${isActive ? "nav-active" : ""}`
+            }
+            style={({ isActive }) => ({
+              background: isActive ? "rgba(131,56,236,0.2)" : "transparent",
+              borderLeft: isActive ? "2px solid #8338EC" : "2px solid transparent",
+              marginTop: 4,
+            })}
+          >
+            {({ isActive }) => (
+              <>
+                <span style={{ color: isActive ? "#8338EC" : "rgba(131,56,236,0.75)" }}><Shield size={17} /></span>
+                <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "12.5px", fontWeight: isActive ? 600 : 400, color: isActive ? "#e8f4f8" : "rgba(131,56,236,0.85)" }}>
+                  HOD Portal
+                </span>
+                <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: "rgba(131,56,236,0.15)", color: "#8338EC", marginLeft: "auto" }}>HOD</span>
+              </>
+            )}
+          </NavLink>
+        )}
       </nav>
 
       {/* Bottom actions */}

@@ -165,14 +165,16 @@ class GradeController {
             
             $query = "
                 INSERT INTO grades (
-                    student_id, course_id, academic_term, academic_session, 
+                    student_id, course_id, academic_term, academic_session, class_id,
                     ca1, ca2, exam, assignment_score, project_score, mid_term_test, 
                     score, max_score, remarks, graded_by, status
                 ) VALUES (
-                    :s, :c, :term, :session, 
+                    :s, :c, :term, :session,
+                    (SELECT class_id FROM users WHERE id = :s2 LIMIT 1),
                     :ca1, :ca2, :exam, :asgn, :proj, :test, 
                     :score, 100, :remarks, :g, :status
                 ) ON DUPLICATE KEY UPDATE 
+                    class_id = COALESCE(class_id, (SELECT class_id FROM users WHERE id = :s3 LIMIT 1)),
                     ca1 = :ca1, 
                     ca2 = :ca2, 
                     exam = :exam, 
@@ -186,14 +188,10 @@ class GradeController {
             ";
             
             $stmt = $this->conn->prepare($query);
+            $findStmt = $this->conn->prepare("SELECT ca1, ca2, exam, assignment_score, project_score, mid_term_test FROM grades WHERE student_id = :s AND course_id = :c AND academic_term = :term AND academic_session = :session LIMIT 1");
             
             foreach ($data->grades as $g) {
                 // Fetch existing grade record if it exists
-                $findStmt = $this->conn->prepare("
-                    SELECT assignment_score, project_score, mid_term_test, ca1, ca2, exam, status 
-                    FROM grades 
-                    WHERE student_id = :s AND course_id = :c AND academic_term = :term AND academic_session = :session
-                ");
                 $findStmt->execute([
                     ':s' => intval($g->student_id),
                     ':c' => $courseId,
@@ -238,6 +236,8 @@ class GradeController {
                 
                 $stmt->execute([
                     ':s' => intval($g->student_id),
+                    ':s2' => intval($g->student_id),
+                    ':s3' => intval($g->student_id),
                     ':c' => $courseId,
                     ':term' => $term,
                     ':session' => $session,

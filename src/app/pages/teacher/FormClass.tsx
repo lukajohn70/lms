@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { 
   Award, Heart, CalendarDays, FileText, Download, Upload, CheckCircle2, 
   AlertCircle, Edit2, Search, Sparkles, CheckSquare, X, RefreshCw, Star,
-  ChevronLeft, ChevronRight, ArrowLeft
+  ChevronLeft, ChevronRight, ArrowLeft, Printer
 } from "lucide-react";
 import { apiClient, API_BASE_URL } from "../../lib/apiClient";
 
@@ -60,6 +60,10 @@ export default function FormClass() {
   const [saveStatus, setSaveStatus] = useState("");
   const autoSaveTimer = useRef<any>(null);
 
+  // Term & Session
+  const [currentTerm, setCurrentTerm] = useState("2nd Term");
+  const [currentSession, setCurrentSession] = useState("2023/2024");
+
   // Filter query
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -103,6 +107,8 @@ export default function FormClass() {
       .then((res: any) => {
         const studList = res.students || [];
         setStudents(studList);
+        if (res.term) setCurrentTerm(res.term);
+        if (res.session) setCurrentSession(res.session);
         if (studList.length > 0) {
           // Keep current student if still in roster, otherwise select first
           setSelectedStudent((prev: any) => {
@@ -124,7 +130,21 @@ export default function FormClass() {
   const updateMetric = (field: string, val: any) => {
     if (!selectedStudent || !selectedClassId) return;
 
-    const updated = { ...selectedStudent, [field]: val };
+    let updated = { ...selectedStudent, [field]: val };
+
+    // Auto-calculate days_present if total_days or days_absent is updated
+    if (field === "total_days") {
+      const tot = val === "" || val === null ? null : parseInt(val);
+      const abs = updated.days_absent !== null && updated.days_absent !== undefined ? parseInt(updated.days_absent) : 0;
+      updated.days_absent = abs;
+      updated.days_present = tot !== null ? Math.max(0, tot - abs) : null;
+    } else if (field === "days_absent") {
+      const abs = val === "" || val === null ? 0 : parseInt(val);
+      const tot = updated.total_days !== null && updated.total_days !== undefined ? parseInt(updated.total_days) : null;
+      updated.days_absent = abs;
+      updated.days_present = tot !== null ? Math.max(0, tot - abs) : null;
+    }
+
     setSelectedStudent(updated);
 
     // Update students roster cache
@@ -149,6 +169,31 @@ export default function FormClass() {
           setSaveStatus("Error saving");
         });
     }, 700);
+  };
+
+  const handleSetBulkTermDays = async () => {
+    if (!selectedClassId) return;
+    const input = prompt("Enter total number of days school opened for this class arm this term:", "110");
+    if (!input || isNaN(parseInt(input))) return;
+    const totalDays = parseInt(input);
+    try {
+      setSaveStatus("Updating all students' term days...");
+      await apiClient.post("/teacher/form-class/set-term-days", {
+        class_id: selectedClassId,
+        total_days: totalDays
+      });
+      // Refresh students
+      const res: any = await apiClient.get(`/teacher/form-class/students?class_id=${selectedClassId}`);
+      setStudents(res.students || []);
+      if (selectedStudent) {
+        const updated = (res.students || []).find((s: any) => s.id === selectedStudent.id);
+        if (updated) setSelectedStudent(updated);
+      }
+      setSaveStatus(`Set ${totalDays} days school opened for all students!`);
+      setTimeout(() => setSaveStatus(""), 3000);
+    } catch (e: any) {
+      alert(e.message || "Failed to set term days for class.");
+    }
   };
 
   // Open Name Edit Modal
@@ -208,6 +253,42 @@ export default function FormClass() {
     if (!selectedClassId) return;
     const token = localStorage.getItem("token") || "";
     const url = `${API_BASE_URL.replace(/\/index\.php$/, "")}/index.php?path=/teacher/form-class/csv-template&class_id=${selectedClassId}&token=${encodeURIComponent(token)}`;
+    window.open(url, "_blank");
+  };
+
+  // Print Report Card for Selected Student
+  const handlePrintReportCard = () => {
+    if (!selectedStudent) return;
+    const token = localStorage.getItem("token") || "";
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
+    const url = `${apiBase}/index.php?path=/reports/print&student_id=${selectedStudent.id}&term=${encodeURIComponent(currentTerm)}&session=${encodeURIComponent(currentSession)}&token=${encodeURIComponent(token)}`;
+    window.open(url, "_blank");
+  };
+
+  // Print Mid-Term Result for Selected Student
+  const handlePrintMidterm = () => {
+    if (!selectedStudent) return;
+    const token = localStorage.getItem("token") || "";
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
+    const url = `${apiBase}/index.php?path=/reports/midterm&student_id=${selectedStudent.id}&term=${encodeURIComponent(currentTerm)}&session=${encodeURIComponent(currentSession)}&token=${encodeURIComponent(token)}`;
+    window.open(url, "_blank");
+  };
+
+  // Batch print all report cards for this class arm
+  const handlePrintBatchReportCards = () => {
+    if (!selectedClassId) return;
+    const token = localStorage.getItem("token") || "";
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
+    const url = `${apiBase}/index.php?path=/reports/print&class_id=${selectedClassId}&term=${encodeURIComponent(currentTerm)}&session=${encodeURIComponent(currentSession)}&token=${encodeURIComponent(token)}`;
+    window.open(url, "_blank");
+  };
+
+  // Batch print all mid-terms for this class arm
+  const handlePrintBatchMidterm = () => {
+    if (!selectedClassId) return;
+    const token = localStorage.getItem("token") || "";
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
+    const url = `${apiBase}/index.php?path=/reports/midterm&class_id=${selectedClassId}&term=${encodeURIComponent(currentTerm)}&session=${encodeURIComponent(currentSession)}&token=${encodeURIComponent(token)}`;
     window.open(url, "_blank");
   };
 
@@ -424,6 +505,30 @@ export default function FormClass() {
 
         {/* Action Buttons: Template Download & Upload */}
         <div className="form-class-header-actions" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={handlePrintBatchMidterm}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9,
+              background: "rgba(217, 119, 6, 0.12)", border: "1px solid #d97706", color: "#d97706",
+              fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s"
+            }}
+            title="Print Mid-Term results for all students in this class arm at once"
+          >
+            <Printer size={14} /> Batch Mid-Terms
+          </button>
+
+          <button
+            onClick={handlePrintBatchReportCards}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9,
+              background: "linear-gradient(135deg, #6366f1, #4f46e5)", border: "none", color: "#fff",
+              fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(99,102,241,0.25)"
+            }}
+            title="Print Official Report Cards for all students in this class arm at once"
+          >
+            <Printer size={14} /> Batch Report Cards
+          </button>
+
           <button
             onClick={handleDownloadCsv}
             style={{
@@ -677,11 +782,39 @@ export default function FormClass() {
                   </div>
                 </div>
 
-                {saveStatus && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#2a9d8f", background: "rgba(42,157,143,0.1)", padding: "4px 9px", borderRadius: 8 }}>
-                    <CheckCircle2 size={13} /> {saveStatus}
-                  </div>
-                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  {saveStatus && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#2a9d8f", background: "rgba(42,157,143,0.1)", padding: "4px 9px", borderRadius: 8 }}>
+                      <CheckCircle2 size={13} /> {saveStatus}
+                    </div>
+                  )}
+                  <button
+                    onClick={handlePrintMidterm}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "6px 12px", borderRadius: 8,
+                      border: "1px solid #d97706", background: "rgba(217, 119, 6, 0.12)",
+                      color: "#d97706", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                    title="Print Mid-Term Result for this student"
+                  >
+                    <Printer size={13} /> Mid-Term
+                  </button>
+                  <button
+                    onClick={handlePrintReportCard}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "6px 12px", borderRadius: 8,
+                      border: "none", background: "var(--primary)",
+                      color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                    title="Print Term Report Card for this student"
+                  >
+                    <Printer size={13} /> Report Card
+                  </button>
+                </div>
               </div>
 
               {/* Workspace Navigation Tabs (Horizontal swipe on mobile) */}
@@ -809,51 +942,73 @@ export default function FormClass() {
                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                       <CalendarDays size={14} style={{ color: "#2a9d8f" }} /> Term Attendance for Report Card
                     </div>
-                    <div style={{ fontSize: 11.5, color: "var(--subtext)", marginBottom: 14 }}>
-                      Enter official cumulative attendance days that appear on the student's term report card.
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+                      <div style={{ fontSize: 11.5, color: "var(--subtext)" }}>
+                        Enter official attendance. Set <strong>Days School Opened</strong> first, enter <strong>Days Absent</strong>, and the system automatically calculates <strong>Days Present</strong>.
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSetBulkTermDays}
+                        style={{
+                          padding: "6px 12px", borderRadius: 8, background: "rgba(33,158,188,0.1)",
+                          border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 11.5,
+                          fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
+                        }}
+                      >
+                        <CalendarDays size={13} /> Set Term Days for All Students
+                      </button>
                     </div>
 
-                    <div className="responsive-grid-3" style={{ gap: 12 }}>
-                      <div>
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", marginBottom: 4 }}>
-                          Days Present
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={selectedStudent.days_present ?? ""}
-                          onChange={e => updateMetric("days_present", e.target.value === "" ? null : parseInt(e.target.value))}
-                          placeholder="e.g. 78"
-                          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--background)", color: "var(--heading)", fontSize: 13, fontWeight: 700, outline: "none", boxSizing: "border-box" }}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", marginBottom: 4 }}>
-                          Days Absent
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={selectedStudent.days_absent ?? ""}
-                          onChange={e => updateMetric("days_absent", e.target.value === "" ? null : parseInt(e.target.value))}
-                          placeholder="e.g. 2"
-                          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--background)", color: "var(--heading)", fontSize: 13, fontWeight: 700, outline: "none", boxSizing: "border-box" }}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", marginBottom: 4 }}>
-                          Total Days (School Opened)
+                    <div className="responsive-grid-3" style={{ gap: 14 }}>
+                      {/* 1. Total Days (School Opened) FIRST */}
+                      <div style={{ padding: 12, borderRadius: 8, background: "var(--background)", border: "1px solid var(--glass-border)" }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--heading)", textTransform: "uppercase", marginBottom: 4 }}>
+                          1. Days School Opened *
                         </label>
                         <input
                           type="number"
                           min="0"
                           value={selectedStudent.total_days ?? ""}
                           onChange={e => updateMetric("total_days", e.target.value === "" ? null : parseInt(e.target.value))}
-                          placeholder="e.g. 80"
-                          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--background)", color: "var(--heading)", fontSize: 13, fontWeight: 700, outline: "none", boxSizing: "border-box" }}
+                          placeholder="e.g. 110"
+                          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1.5px solid rgba(33,158,188,0.4)", background: "var(--muted)", color: "var(--heading)", fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box" }}
                         />
+                        <span style={{ fontSize: 10, color: "var(--subtext)", marginTop: 4, display: "block" }}>Total days class held in term</span>
+                      </div>
+
+                      {/* 2. Days Absent SECOND (defaults to 0) */}
+                      <div style={{ padding: 12, borderRadius: 8, background: "var(--background)", border: "1px solid var(--glass-border)" }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--heading)", textTransform: "uppercase", marginBottom: 4 }}>
+                          2. Days Absent (Default: 0)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={selectedStudent.days_absent ?? 0}
+                          onChange={e => updateMetric("days_absent", e.target.value === "" ? 0 : parseInt(e.target.value))}
+                          placeholder="0"
+                          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1.5px solid rgba(231,111,81,0.4)", background: "var(--muted)", color: "var(--heading)", fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box" }}
+                        />
+                        <span style={{ fontSize: 10, color: "var(--subtext)", marginTop: 4, display: "block" }}>Number of days student missed</span>
+                      </div>
+
+                      {/* 3. Days Present AUTO-CALCULATED */}
+                      <div style={{ padding: 12, borderRadius: 8, background: "rgba(42,157,143,0.08)", border: "1px solid rgba(42,157,143,0.3)" }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#2a9d8f", textTransform: "uppercase", marginBottom: 4 }}>
+                          3. Days Present (Calculated)
+                        </label>
+                        <div style={{
+                          padding: "8px 12px", borderRadius: 8, background: "var(--background)",
+                          fontSize: 16, fontWeight: 800, color: "#2a9d8f", display: "flex", alignItems: "center", justifyContent: "space-between"
+                        }}>
+                          <span>{selectedStudent.days_present ?? (selectedStudent.total_days ? Math.max(0, selectedStudent.total_days - (selectedStudent.days_absent || 0)) : "—")}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(42,157,143,0.15)", color: "#2a9d8f" }}>
+                            Auto
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 10, color: "var(--subtext)", marginTop: 4, display: "block" }}>
+                          = Days Opened ({selectedStudent.total_days || 0}) - Absent ({selectedStudent.days_absent ?? 0})
+                        </span>
                       </div>
                     </div>
                   </div>

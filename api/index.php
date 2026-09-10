@@ -63,6 +63,7 @@ $router->post('/teacher/assessments/save', 'AssessmentController@saveAssessment'
 $router->get('/student/assessment', 'AssessmentController@getStudentAssessment');
 $router->get('/parent/assessment', 'AssessmentController@getStudentAssessment');
 $router->get('/reports/print', 'AssessmentController@printReportCard');
+$router->get('/reports/midterm', 'AssessmentController@printMidtermResult');
 
 // Form Teacher Portal & Class Arm Actions
 $router->get('/teacher/form-classes', 'FormTeacherController@getFormClasses');
@@ -71,13 +72,17 @@ $router->post('/teacher/form-class/save', 'FormTeacherController@saveAssessment'
 $router->post('/teacher/form-class/update-student-name', 'FormTeacherController@updateStudentName');
 $router->get('/teacher/form-class/csv-template', 'FormTeacherController@downloadCsvTemplate');
 $router->post('/teacher/form-class/import-csv', 'FormTeacherController@importCsv');
+$router->post('/teacher/form-class/set-term-days', 'FormTeacherController@setBulkTermDays');
 
 // System Settings
 $router->get('/admin/settings', 'SettingController@getSettings');
 $router->post('/admin/settings/save', 'SettingController@saveSettings');
 
-// Reports
+// Reports & Broadsheet (Admin Only)
 $router->get('/admin/reports', 'DashboardController@getAdminReports');
+$router->get('/admin/broadsheet', 'BroadsheetController@getBroadsheetData');
+$router->get('/admin/broadsheet/print', 'BroadsheetController@printBroadsheet');
+$router->get('/admin/broadsheet/export', 'BroadsheetController@exportCsv');
 
 // Fees
 $router->get('/admin/fees', 'FeeController@getAdminFees');
@@ -91,6 +96,11 @@ $router->post('/student/fees/pay', 'FeeController@payFee');
 // Users
 $router->get('/users/me', 'UserController@me');
 $router->get('/users', 'UserController@index');
+$router->post('/admin/users/create', 'UserController@createUser');
+$router->post('/admin/users/update', 'UserController@updateUser');
+$router->post('/admin/users/delete', 'UserController@deleteUser');
+$router->post('/admin/users/reset-password', 'UserController@resetPassword');
+$router->post('/admin/users/appoint-hod', 'UserController@appointHod');
 $router->post('/admin/users/assign-class', 'UserController@assignStudentClass');
 $router->get('/', function() {
     echo json_encode(["status" => "online", "message" => "Aroura LMS API is running"]);
@@ -136,9 +146,13 @@ $router->post('/admin/classes/delete', 'ClassController@deleteClass');
 $router->post('/admin/classes/assign-form-teacher', 'ClassController@assignFormTeacher');
 $router->get('/courses', 'ClassController@getCourses');
 $router->post('/admin/courses/create', 'ClassController@createCourse');
+$router->post('/admin/courses/update', 'ClassController@updateCourse');
+$router->post('/admin/courses/delete', 'ClassController@deleteCourse');
 $router->post('/admin/courses/bulk-import', 'ClassController@bulkImportCourses');
 $router->get('/class-subjects', 'ClassController@getClassSubjects');
 $router->post('/admin/class-subjects/save', 'ClassController@saveClassSubjects');
+$router->get('/hod/allocations', 'ClassController@getHodAllocations');
+$router->post('/hod/assign-teacher', 'ClassController@assignSubjectTeacherByHod');
 
 // Library
 $router->get('/library/books', 'LibraryController@getBooks');

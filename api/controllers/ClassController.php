@@ -156,11 +156,12 @@ class ClassController {
         }
 
         try {
-            $stmt = $this->conn->prepare("INSERT INTO courses (name, description, topics) VALUES (:n, :d, :t)");
+            $stmt = $this->conn->prepare("INSERT INTO courses (name, description, topics, department) VALUES (:n, :d, :t, :dept)");
             $stmt->execute([
                 ':n' => trim($data->name),
                 ':d' => isset($data->description) ? trim($data->description) : null,
-                ':t' => isset($data->topics) ? trim($data->topics) : null
+                ':t' => isset($data->topics) ? trim($data->topics) : null,
+                ':dept' => isset($data->department) ? trim($data->department) : null
             ]);
             $id = $this->conn->lastInsertId();
             
@@ -223,6 +224,7 @@ class ClassController {
 
         $nameKey = isset($headerMap['name']) ? $headerMap['name'] : (isset($headerMap['subject_name']) ? $headerMap['subject_name'] : $headerMap['subject']);
         $descKey = isset($headerMap['description']) ? $headerMap['description'] : null;
+        $deptKey = isset($headerMap['department']) ? $headerMap['department'] : (isset($headerMap['dept']) ? $headerMap['dept'] : null);
         $topicsKey = isset($headerMap['topics']) ? $headerMap['topics'] : null;
 
         $created = 0;
@@ -230,7 +232,7 @@ class ClassController {
         $errors = [];
 
         $stmtCheck = $this->conn->prepare("SELECT id FROM courses WHERE LOWER(name) = LOWER(:n) LIMIT 1");
-        $stmtInsert = $this->conn->prepare("INSERT INTO courses (name, description, topics) VALUES (:n, :d, :t)");
+        $stmtInsert = $this->conn->prepare("INSERT INTO courses (name, description, topics, department) VALUES (:n, :d, :t, :dept)");
 
         $this->conn->beginTransaction();
         try {
@@ -240,6 +242,7 @@ class ClassController {
                 if (empty($name)) continue;
 
                 $desc = ($descKey !== null && isset($row[$descKey])) ? trim($row[$descKey]) : null;
+                $dept = ($deptKey !== null && isset($row[$deptKey])) ? trim($row[$deptKey]) : null;
                 $topics = ($topicsKey !== null && isset($row[$topicsKey])) ? trim($row[$topicsKey]) : null;
 
                 // Check duplicate
@@ -252,7 +255,8 @@ class ClassController {
                 $stmtInsert->execute([
                     ':n' => $name,
                     ':d' => $desc,
-                    ':t' => $topics
+                    ':t' => $topics,
+                    ':dept' => $dept
                 ]);
                 $created++;
             }
@@ -348,6 +352,249 @@ class ClassController {
             $this->conn->rollBack();
             http_response_code(500);
             echo json_encode(["error" => "Failed to save allocation: " . $e->getMessage()]);
+        }
+    }
+
+    // Update course (subject) - Admin only
+    public function updateCourse() {
+        Auth::requireRole(['admin']);
+        $data = json_decode(file_get_contents("php://input"));
+
+        if (empty($data->id) || empty($data->name)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Subject ID and Name are required."]);
+            return;
+        }
+
+        $id = intval($data->id);
+        $name = trim($data->name);
+        $description = isset($data->description) ? trim($data->description) : null;
+        $department = isset($data->department) ? trim($data->department) : null;
+        $topics = isset($data->topics) ? trim($data->topics) : null;
+
+        try {
+            $stmt = $this->conn->prepare("
+                UPDATE courses 
+                SET name = :n, description = :d, department = :dept, topics = :t 
+                WHERE id = :id
+            ");
+            $stmt->execute([
+                ':n' => $name,
+                ':d' => $description,
+                ':dept' => $department,
+                ':t' => $topics,
+                ':id' => $id
+            ]);
+
+            echo json_encode(["success" => true, "message" => "Subject updated successfully."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to update subject: " . $e->getMessage()]);
+        }
+    }
+
+    // Delete course (subject) - Admin only
+    public function deleteCourse() {
+        Auth::requireRole(['admin']);
+        $data = json_decode(file_get_contents("php://input"));
+
+        $id = !empty($data->id) ? intval($data->id) : (isset($_GET['id']) ? intval($_GET['id']) : 0);
+
+        if (!$id) {
+            http_response_code(400);
+            echo json_encode(["error" => "Subject ID is required."]);
+            return;
+        }
+
+        try {
+            // Check if there are recorded grades
+            $chk = $this->conn->prepare("SELECT COUNT(*) FROM grades WHERE course_id = :id");
+            $chk->execute([':id' => $id]);
+            $gradeCount = intval($chk->fetchColumn());
+
+            if ($gradeCount > 0) {
+                http_response_code(400);
+                echo json_encode(["error" => "Cannot delete subject because $gradeCount grade records exist for it. You can rename or edit it instead."]);
+                return;
+            }
+
+            $stmt = $this->conn->prepare("DELETE FROM courses WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+
+            echo json_encode(["success" => true, "message" => "Subject deleted successfully."]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to delete subject: " . $e->getMessage()]);
+        }
+    }
+
+    // HOD Allocations: Get departmental subjects, classes, and assigned teachers
+    public function getHodAllocations() {
+        $user = Auth::requireRole(['admin', 'teacher']);
+
+        $department = null;
+        if ($user['role'] === 'teacher') {
+            // Must be an HOD
+            $uStmt = $this->conn->prepare("SELECT is_hod, hod_department FROM users WHERE id = :id");
+            $uStmt->execute([':id' => $user['id']]);
+            $uRow = $uStmt->fetch();
+
+            if (empty($uRow['is_hod']) || intval($uRow['is_hod']) !== 1) {
+                http_response_code(403);
+                echo json_encode(["error" => "Access denied. You are not designated as a Head of Department (HOD)."]);
+                return;
+            }
+            $department = $uRow['hod_department'];
+        } else {
+            // Admin can pass ?department=... or view all
+            $department = $_GET['department'] ?? null;
+        }
+
+        try {
+            // 1. Get courses for this department
+            if (!empty($department) && $department !== 'All') {
+                $cStmt = $this->conn->prepare("SELECT * FROM courses WHERE department = :dept ORDER BY name ASC");
+                $cStmt->execute([':dept' => $department]);
+            } else {
+                $cStmt = $this->conn->query("SELECT * FROM courses ORDER BY department ASC, name ASC");
+            }
+            $courses = $cStmt->fetchAll();
+
+            // 2. Get all classes
+            $classesStmt = $this->conn->query("SELECT id, name, department FROM classes ORDER BY name ASC");
+            $classes = $classesStmt->fetchAll();
+
+            // 3. Get all teachers
+            $tStmt = $this->conn->query("
+                SELECT u.id, u.first_name, u.last_name, u.email, u.is_hod, u.hod_department,
+                       (SELECT COUNT(*) FROM class_subjects WHERE teacher_id = u.id) as assigned_subjects_count
+                FROM users u 
+                WHERE u.role = 'teacher' 
+                ORDER BY u.first_name ASC, u.last_name ASC
+            ");
+            $teachers = $tStmt->fetchAll();
+
+            // 4. Get current allocations for these courses across all classes
+            $courseIds = array_column($courses, 'id');
+            $allocations = [];
+            if (!empty($courseIds)) {
+                $inCourses = implode(',', array_fill(0, count($courseIds), '?'));
+                $allocStmt = $this->conn->prepare("
+                    SELECT cs.*, c.name as course_name, c.department as course_department,
+                           cls.name as class_name,
+                           u.first_name, u.last_name,
+                           CONCAT(COALESCE(u.first_name,''), ' ', COALESCE(u.last_name,'')) as teacher_name
+                    FROM class_subjects cs
+                    JOIN courses c ON cs.course_id = c.id
+                    JOIN classes cls ON cs.class_id = cls.id
+                    LEFT JOIN users u ON cs.teacher_id = u.id
+                    WHERE cs.course_id IN ($inCourses)
+                    ORDER BY cls.name ASC, c.name ASC
+                ");
+                $allocStmt->execute($courseIds);
+                $allocations = $allocStmt->fetchAll();
+            }
+
+            echo json_encode([
+                "success" => true,
+                "department" => $department,
+                "courses" => $courses,
+                "classes" => $classes,
+                "teachers" => $teachers,
+                "allocations" => $allocations
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to load HOD allocations: " . $e->getMessage()]);
+        }
+    }
+
+    // HOD or Admin assigns a subject teacher to a class arm
+    public function assignSubjectTeacherByHod() {
+        $user = Auth::requireRole(['admin', 'teacher']);
+
+        $data = json_decode(file_get_contents("php://input"));
+        if (empty($data->class_id) || empty($data->course_id)) {
+            http_response_code(400);
+            echo json_encode(["error" => "Class ID and Subject ID are required."]);
+            return;
+        }
+
+        $classId = intval($data->class_id);
+        $courseId = intval($data->course_id);
+        $teacherId = !empty($data->teacher_id) ? intval($data->teacher_id) : null;
+
+        // If teacher role, verify HOD status and department ownership
+        if ($user['role'] === 'teacher') {
+            $uStmt = $this->conn->prepare("SELECT is_hod, hod_department FROM users WHERE id = :id");
+            $uStmt->execute([':id' => $user['id']]);
+            $uRow = $uStmt->fetch();
+
+            if (empty($uRow['is_hod']) || intval($uRow['is_hod']) !== 1) {
+                http_response_code(403);
+                echo json_encode(["error" => "Only appointed Heads of Department (HOD) can assign subject teachers."]);
+                return;
+            }
+
+            $hodDept = $uRow['hod_department'];
+            // Check course department
+            $cStmt = $this->conn->prepare("SELECT department FROM courses WHERE id = :id");
+            $cStmt->execute([':id' => $courseId]);
+            $courseDept = $cStmt->fetchColumn();
+
+            if (!empty($courseDept) && !empty($hodDept) && strcasecmp($courseDept, $hodDept) !== 0) {
+                http_response_code(403);
+                echo json_encode(["error" => "You are only permitted to assign teachers for subjects in your department ($hodDept)."]);
+                return;
+            }
+        }
+
+        try {
+            // Verify teacher exists and has teacher role if provided
+            $teacherName = "No Teacher";
+            if ($teacherId !== null) {
+                $tCheck = $this->conn->prepare("SELECT first_name, last_name, role FROM users WHERE id = :tid");
+                $tCheck->execute([':tid' => $teacherId]);
+                $tRow = $tCheck->fetch();
+                if (!$tRow || $tRow['role'] !== 'teacher') {
+                    http_response_code(400);
+                    echo json_encode(["error" => "Selected user is not a valid registered teacher."]);
+                    return;
+                }
+                $teacherName = $tRow['first_name'] . ' ' . $tRow['last_name'];
+            }
+
+            // Update or insert class_subjects allocation
+            $exist = $this->conn->prepare("SELECT id FROM class_subjects WHERE class_id = :cid AND course_id = :coid");
+            $exist->execute([':cid' => $classId, ':coid' => $courseId]);
+            $allocId = $exist->fetchColumn();
+
+            if ($allocId) {
+                $upd = $this->conn->prepare("UPDATE class_subjects SET teacher_id = :tid WHERE id = :id");
+                $upd->execute([':tid' => $teacherId, ':id' => $allocId]);
+            } else {
+                $ins = $this->conn->prepare("
+                    INSERT INTO class_subjects (class_id, course_id, type, teacher_id) 
+                    VALUES (:cid, :coid, 'core', :tid)
+                ");
+                $ins->execute([':cid' => $classId, ':coid' => $courseId, ':tid' => $teacherId]);
+            }
+
+            // Also update courses default teacher_id if unassigned
+            if ($teacherId !== null) {
+                $this->conn->prepare("UPDATE courses SET teacher_id = :tid WHERE id = :coid AND teacher_id IS NULL")
+                    ->execute([':tid' => $teacherId, ':coid' => $courseId]);
+            }
+
+            echo json_encode([
+                "success" => true,
+                "message" => "Assigned $teacherName to subject successfully.",
+                "teacher_id" => $teacherId,
+                "teacher_name" => $teacherName
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to assign teacher: " . $e->getMessage()]);
         }
     }
 }

@@ -194,21 +194,31 @@ class FormTeacherController {
         $term = $this->getSetting('current_term', '2nd Term');
         $session = $this->getSetting('academic_session', '2026/2027');
 
+        $totalDays = isset($data['total_days']) && $data['total_days'] !== '' && $data['total_days'] !== null ? max(0, intval($data['total_days'])) : null;
+        $daysAbsent = isset($data['days_absent']) && $data['days_absent'] !== '' && $data['days_absent'] !== null ? max(0, intval($data['days_absent'])) : ($totalDays !== null ? 0 : null);
+        $daysPresent = null;
+        if ($totalDays !== null) {
+            $daysPresent = max(0, $totalDays - ($daysAbsent ?? 0));
+        } elseif (isset($data['days_present']) && $data['days_present'] !== '' && $data['days_present'] !== null) {
+            $daysPresent = max(0, intval($data['days_present']));
+        }
+
         try {
             $query = "
                 INSERT INTO student_assessments (
-                    student_id, academic_term, academic_session,
+                    student_id, class_id, academic_term, academic_session,
                     punctuality, neatness, politeness, honesty, team_spirit, leadership, helping_others, emotional_stability, health, attitude_to_work, attentiveness, perseverance, spoken_english,
                     handwriting, verbal_fluency, sports, handling_tools, musical, drawing_painting,
                     days_present, days_absent, total_days,
                     class_teacher_comment, award_1, award_2
                 ) VALUES (
-                    :sid, :term, :session,
+                    :sid, :cid, :term, :session,
                     :punc, :neat, :poli, :hone, :team, :lead, :help, :emot, :heal, :atti, :atte, :pers, :spok,
                     :hand, :verb, :spor, :handl, :musi, :draw,
                     :present, :absent, :total,
                     :teacher_comment, :award_1, :award_2
                 ) ON DUPLICATE KEY UPDATE
+                    class_id = :cid2,
                     punctuality = :punc, neatness = :neat, politeness = :poli, honesty = :hone, team_spirit = :team, leadership = :lead, helping_others = :help, emotional_stability = :emot, health = :heal, attitude_to_work = :atti, attentiveness = :atte, perseverance = :pers, spoken_english = :spok,
                     handwriting = :hand, verbal_fluency = :verb, sports = :spor, handling_tools = :handl, musical = :musi, drawing_painting = :draw,
                     days_present = :present, days_absent = :absent, total_days = :total,
@@ -219,6 +229,7 @@ class FormTeacherController {
             $stmt = $this->conn->prepare($query);
             $stmt->execute([
                 ':sid' => $studentId,
+                ':cid' => $classId,
                 ':term' => $term,
                 ':session' => $session,
                 ':punc' => isset($data['punctuality']) && $data['punctuality'] > 0 ? min(5, max(1, intval($data['punctuality']))) : null,
@@ -240,18 +251,90 @@ class FormTeacherController {
                 ':handl' => isset($data['handling_tools']) && $data['handling_tools'] > 0 ? min(5, max(1, intval($data['handling_tools']))) : null,
                 ':musi' => isset($data['musical']) && $data['musical'] > 0 ? min(5, max(1, intval($data['musical']))) : null,
                 ':draw' => isset($data['drawing_painting']) && $data['drawing_painting'] > 0 ? min(5, max(1, intval($data['drawing_painting']))) : null,
-                ':present' => isset($data['days_present']) && $data['days_present'] !== '' && $data['days_present'] !== null ? max(0, intval($data['days_present'])) : null,
-                ':absent' => isset($data['days_absent']) && $data['days_absent'] !== '' && $data['days_absent'] !== null ? max(0, intval($data['days_absent'])) : null,
-                ':total' => isset($data['total_days']) && $data['total_days'] !== '' && $data['total_days'] !== null ? max(0, intval($data['total_days'])) : null,
+                ':present' => $daysPresent,
+                ':absent' => $daysAbsent,
+                ':total' => $totalDays,
                 ':teacher_comment' => isset($data['class_teacher_comment']) ? trim($data['class_teacher_comment']) : null,
                 ':award_1' => isset($data['award_1']) ? trim($data['award_1']) : 'NILL',
-                ':award_2' => isset($data['award_2']) ? trim($data['award_2']) : 'NILL'
+                ':award_2' => isset($data['award_2']) ? trim($data['award_2']) : 'NILL',
+                ':cid2' => $classId
             ]);
 
-            echo json_encode(["success" => true, "message" => "Form teacher assessment saved successfully."]);
+            echo json_encode([
+                "success" => true,
+                "message" => "Form teacher assessment saved successfully.",
+                "days_present" => $daysPresent,
+                "days_absent" => $daysAbsent,
+                "total_days" => $totalDays
+            ]);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(["error" => "Failed to save assessment: " . $e->getMessage()]);
+        }
+    }
+
+    // Set Total Days School Opened for all students in a class arm at once
+    public function setBulkTermDays() {
+        $user = Auth::requireRole(['teacher', 'admin']);
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!$data || empty($data['class_id']) || !isset($data['total_days'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Class ID and total_days are required."]);
+            return;
+        }
+
+        $classId = intval($data['class_id']);
+        $totalDays = max(0, intval($data['total_days']));
+        $this->verifyFormTeacherAccess($user, $classId);
+
+        $term = $this->getSetting('current_term', '2nd Term');
+        $session = $this->getSetting('academic_session', '2026/2027');
+
+        try {
+            // Find all students in this class
+            $stuStmt = $this->conn->prepare("SELECT id FROM users WHERE class_id = :cid AND role = 'student'");
+            $stuStmt->execute([':cid' => $classId]);
+            $students = $stuStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if (empty($students)) {
+                echo json_encode(["success" => true, "message" => "No students found in class."]);
+                return;
+            }
+
+            $stmt = $this->conn->prepare("
+                INSERT INTO student_assessments (
+                    student_id, class_id, academic_term, academic_session,
+                    total_days, days_absent, days_present
+                ) VALUES (
+                    :sid, :cid, :term, :sess,
+                    :total, 0, :total
+                ) ON DUPLICATE KEY UPDATE
+                    class_id = :cid2,
+                    total_days = :total2,
+                    days_present = GREATEST(0, :total3 - COALESCE(days_absent, 0))
+            ");
+
+            foreach ($students as $sid) {
+                $stmt->execute([
+                    ':sid' => $sid,
+                    ':cid' => $classId,
+                    ':term' => $term,
+                    ':sess' => $session,
+                    ':total' => $totalDays,
+                    ':cid2' => $classId,
+                    ':total2' => $totalDays,
+                    ':total3' => $totalDays
+                ]);
+            }
+
+            echo json_encode([
+                "success" => true,
+                "message" => "Set $totalDays school days for " . count($students) . " students. Days present auto-calculated."
+            ]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to update term days: " . $e->getMessage()]);
         }
     }
 
