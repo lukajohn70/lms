@@ -642,15 +642,17 @@ table.academic-table th {
   vertical-align: bottom;
 }
 table.academic-table th.vert {
-  height: 62px;
+  height: 70px;
   white-space: nowrap;
-  padding-bottom: 4px;
+  padding: 4px 2px 2px;
+  vertical-align: bottom;
 }
 table.academic-table th.vert > div {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  display: inline-block;
+  display: block;
   margin: 0 auto;
+  line-height: 1;
 }
 table.academic-table td {
   border: 1px solid #000;
@@ -1203,24 +1205,24 @@ foreach ($studentIds as $studentId):
         <thead>
           <tr>
             <th style="width: 24%; text-align: left; padding-left: 6px;">SUBJECTS</th>
-            <th class="vert">1ST TEST(20%)</th>
-            <th class="vert">2ND TEST(20%)</th>
-            <th class="vert">EXAM (60%)</th>
+            <th class="vert"><div>1ST TEST(20%)</div></th>
+            <th class="vert"><div>2ND TEST(20%)</div></th>
+            <th class="vert"><div>EXAM (60%)</div></th>
             <?php if ($isCumulative): ?>
-              <th class="vert">1ST TERM TOTAL</th>
+              <th class="vert"><div>1ST TERM TOTAL</div></th>
               <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
-                <th class="vert">2ND TERM TOTAL</th>
+                <th class="vert"><div>2ND TERM TOTAL</div></th>
               <?php endif; ?>
               <?php if ($term === '3rd Term'): ?>
-                <th class="vert">3RD TERM TOTAL</th>
+                <th class="vert"><div>3RD TERM TOTAL</div></th>
               <?php endif; ?>
-              <th class="vert">CUMMULATIVE</th>
+              <th class="vert"><div>CUMMULATIVE</div></th>
             <?php else: ?>
-              <th class="vert">TOTAL SCORE</th>
+              <th class="vert"><div>TOTAL SCORE</div></th>
             <?php endif; ?>
-            <th class="vert">GRADE</th>
-            <th class="vert">STUD. AVERAGE</th>
-            <th class="vert">CLASS AVERAGE</th>
+            <th class="vert"><div>GRADE</div></th>
+            <th class="vert"><div>STUD. AVERAGE</div></th>
+            <th class="vert"><div>CLASS AVERAGE</div></th>
             <th style="width: 14%; vertical-align: middle;">REMARK</th>
           </tr>
         </thead>

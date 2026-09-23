@@ -64,20 +64,12 @@ const NAV: Record<Role, NavItem[]> = {
     },
     { icon: <Settings size={17} />, label: "System Settings", to: "/admin/settings" },
   ],
-  parent: [
-    { icon: <LayoutDashboard size={17} />, label: "Dashboard", to: "/parent" },
-    { icon: <BarChart2 size={17} />, label: "Academic Performance", to: "/parent/performance" },
-    { icon: <MessageSquare size={17} />, label: "Communication", to: "/parent/communication" },
-    { icon: <UserCheck size={17} />, label: "Attendance", to: "/parent/performance" },
-    { icon: <Settings size={17} />, label: "My Profile", to: "/parent/settings" },
-  ],
 };
 
-const ROLE_COLOR: Record<Role, string> = {
+const ROLE_COLOR: Record<string, string> = {
   student: "#219EBC",
   teacher: "#8ECAE6",
   admin: "#FB8500",
-  parent: "#FFB703",
 };
 
 function SidebarNavItem({ item, basePath, onNavClick }: { item: NavItem; basePath: string; onNavClick?: () => void }) {

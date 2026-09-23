@@ -65,7 +65,6 @@ export default function RoleSelect() {
       student: "kolade@student.aroura.com",
       teacher: "amaka.eze@teacher.aroura.com",
       admin: "admin@aroura.com",
-      parent: "folake@parent.aroura.com",
     };
     setEmail(map[role] || "");
     setPassword("password123");
@@ -233,7 +232,7 @@ export default function RoleSelect() {
             {/* Bottom */}
             <div style={{ marginTop: 32, borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}`, paddingTop: 22 }}>
               <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 20 }}>
-                {["Student", "Teacher", "Admin", "Parent"].map(role => (
+                {["Student", "Teacher", "Admin"].map(role => (
                   <button key={role} onClick={() => autofill(role.toLowerCase())} className="shortcut-btn"
                     style={{
                       background: theme === "dark" ? "rgba(142,202,230,0.05)" : "rgba(33,158,188,0.05)",
@@ -246,15 +245,6 @@ export default function RoleSelect() {
                 ))}
               </div>
               
-              <div style={{ textAlign: "center", fontSize: 12, color: theme === "dark" ? "#8ECAE6" : "#5a7f92", marginBottom: 12 }}>
-                Prospective parent applicant?{" "}
-                <button
-                  onClick={() => navigate("/admissions/login")}
-                  style={{ background: "none", border: "none", color: "#219EBC", cursor: "pointer", fontWeight: 700, padding: 0, fontSize: 12 }}
-                >
-                  Go to Admissions Portal
-                </button>
-              </div>
 
               <p style={{ fontSize: 11.5, color: theme === "dark" ? "rgba(142,202,230,0.4)" : "rgba(90,127,146,0.6)", textAlign: "center", margin: 0 }}>
                 Powered by{" "}

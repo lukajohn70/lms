@@ -5,7 +5,6 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 const Root = lazy(() => import("./pages/Root"));
 const RoleSelect = lazy(() => import("./pages/RoleSelect"));
 const LandingPage = lazy(() => import("./pages/website/LandingPage"));
-const AdmissionsLogin = lazy(() => import("./pages/parent/AdmissionsLogin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Student
@@ -15,7 +14,6 @@ const StudentCBT = lazy(() => import("./pages/student/CBTExam"));
 const StudentCourses = lazy(() => import("./pages/student/Courses"));
 const StudentMaterials = lazy(() => import("./pages/student/Materials"));
 const StudentResults = lazy(() => import("./pages/student/Results"));
-const StudentFees = lazy(() => import("./pages/student/Fees"));
 const StudentCommunication = lazy(() => import("./pages/student/Communication"));
 const StudentLibrary = lazy(() => import("./pages/student/Library"));
 const StudentSettings = lazy(() => import("./pages/student/StudentSettings"));
@@ -45,14 +43,6 @@ const AdminSettings = lazy(() => import("./pages/admin/Settings"));
 const AdminAdmissions = lazy(() => import("./pages/admin/Admissions"));
 const AdminLibrary = lazy(() => import("./pages/admin/Library"));
 
-// Parent
-const ParentLayout = lazy(() => import("./pages/parent/ParentLayout"));
-const ParentDashboard = lazy(() => import("./pages/parent/Dashboard"));
-const ParentPerformance = lazy(() => import("./pages/parent/Performance"));
-const ParentFees = lazy(() => import("./pages/parent/Fees"));
-const ParentComm = lazy(() => import("./pages/parent/Communication"));
-const ParentAdmissions = lazy(() => import("./pages/parent/Admissions"));
-const ParentSettings = lazy(() => import("./pages/parent/ParentSettings"));
 
 export const router = createBrowserRouter([
   {
@@ -62,8 +52,6 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: LandingPage },
       { path: "login", Component: RoleSelect },
-      { path: "admissions/login", Component: AdmissionsLogin },
-      { path: "admissions", Component: ParentAdmissions },
       {
         path: "student",
         Component: StudentLayout,
@@ -74,7 +62,6 @@ export const router = createBrowserRouter([
           { path: "courses", Component: StudentCourses },
           { path: "materials", Component: StudentMaterials },
           { path: "results", Component: StudentResults },
-          { path: "fees", Component: StudentFees },
           { path: "communication", Component: StudentCommunication },
           { path: "library", Component: StudentLibrary },
           { path: "settings", Component: StudentSettings },
@@ -113,20 +100,6 @@ export const router = createBrowserRouter([
           { path: "fees", Component: AdminFees },
           { path: "reports", Component: AdminReports },
           { path: "settings", Component: AdminSettings },
-          { path: "*", Component: NotFound },
-        ],
-      },
-      {
-        path: "parent",
-        Component: ParentLayout,
-        ErrorBoundary: ErrorBoundary,
-        children: [
-          { index: true, Component: ParentDashboard },
-          { path: "performance", Component: ParentPerformance },
-          { path: "fees", Component: ParentFees },
-          { path: "communication", Component: ParentComm },
-          { path: "admissions", Component: ParentAdmissions },
-          { path: "settings", Component: ParentSettings },
           { path: "*", Component: NotFound },
         ],
       },
