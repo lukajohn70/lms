@@ -1376,6 +1376,72 @@ foreach ($studentIds as $studentId):
     </div>
   </div>
 
+  <!-- Grading Scale & Parent Signature Strip -->
+  <div style="margin-bottom: 5px; border: 1.5px solid #000;">
+    <div style="display: flex; align-items: stretch;">
+
+      <!-- Grading Key Table -->
+      <div style="flex: 1.4; border-right: 1px solid #000;">
+        <div style="background: #cbd5e1; border-bottom: 1px solid #000; padding: 2px 6px; font-weight: 900; font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.3px;">
+          GRADING SCALE / KEY
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 8.5px;">
+          <thead>
+            <tr style="background: #f8fafc;">
+              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center; width: 12%;">GRADE</th>
+              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center; width: 25%;">SCORE RANGE (%)</th>
+              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center;">REMARK</th>
+              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center; width: 12%;">GRADE</th>
+              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center; width: 25%;">SCORE RANGE (%)</th>
+              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center;">REMARK</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #16a34a;">A</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">80 – 100</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">EXCELLENT</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #ca8a04;">D</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">50 – 59</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">PASS</td>
+            </tr>
+            <tr style="background: #f8fafc;">
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #2563eb;">B</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">70 – 79</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">VERY GOOD</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #d97706;">E</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">45 – 49</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">PASS</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #0891b2;">C</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">60 – 69</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">CREDIT</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #dc2626;">F</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">0 – 44</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">FAIL</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Parent/Guardian Acknowledgment -->
+      <div style="flex: 1; display: flex; flex-direction: column;">
+        <div style="background: #cbd5e1; border-bottom: 1px solid #000; padding: 2px 6px; font-weight: 900; font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.3px;">
+          PARENT / GUARDIAN ACKNOWLEDGMENT
+        </div>
+        <div style="padding: 5px 8px; font-size: 8px; font-weight: 600; color: #374151; line-height: 1.5; flex: 1;">
+          I have seen and read this report card and I am satisfied with its content.
+        </div>
+        <div style="padding: 3px 8px 5px; display: flex; gap: 16px; align-items: flex-end;">
+          <div style="flex: 1; border-top: 1px solid #000; font-size: 7.5px; padding-top: 2px; font-weight: 700;">Signature</div>
+          <div style="flex: 1; border-top: 1px solid #000; font-size: 7.5px; padding-top: 2px; font-weight: 700;">Date</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Bottom Footer Section -->
   <div class="footer-row">
     <!-- Col 1: Vacation Date & Overall Evaluation -->
