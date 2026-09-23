@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Globe, Bell, Shield, Database, Save, ToggleLeft, ToggleRight, Check, CreditCard, User, Phone, Eye, EyeOff, BookOpen, Upload, Camera, Calendar } from "lucide-react";
+import { Globe, Bell, Shield, Database, Save, ToggleLeft, ToggleRight, Check, CreditCard, User, Phone, Eye, EyeOff, BookOpen, Upload, Camera, Calendar, Award } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { useApp } from "../../contexts/AppContext";
 import PasswordStrengthMeter from "../../components/PasswordStrengthMeter";
@@ -30,18 +30,27 @@ export default function AdminSettings() {
   const [saved, setSaved] = useState(false);
 
   // Individual setting states mapped to snake_case matching Database seeder
-  const [schoolName, setSchoolName] = useState("Aroura Academy");
+  const [schoolName, setSchoolName] = useState("Deeper Life High School");
+  const [schoolCampus, setSchoolCampus] = useState("Kaduna Campus");
+  const [schoolPrincipal, setSchoolPrincipal] = useState("Mrs. Bamishe Olumuyiwa");
   const [academicSession, setAcademicSession] = useState("2026/2027");
   const [currentTerm, setCurrentTerm] = useState("2nd Term");
-  const [schoolEmail, setSchoolEmail] = useState("admin@aroura.com");
-  const [schoolPhone, setSchoolPhone] = useState("+234 801 234 5678");
-  const [schoolAddress, setSchoolAddress] = useState("12 Aroura Close, Victoria Island, Lagos");
-  const [schoolDirectorName, setSchoolDirectorName] = useState("Mrs M I. Okafor");
-  const [schoolAcronym, setSchoolAcronym] = useState("AROURA");
-  const [schoolMotto, setSchoolMotto] = useState("MOTTO: LEADERSHIP WITH DISTINCTION");
-  const [schoolWebsite, setSchoolWebsite] = useState("WWW.DEEPERLIFEHIGHSCHOOL.ORG");
+  const [schoolEmail, setSchoolEmail] = useState("ictkaduna@deeperlifehighschool.org");
+  const [schoolPhone, setSchoolPhone] = useState("08158190115");
+  const [schoolAddress, setSchoolAddress] = useState("KM 16, Eastern Bye-Pass, Maraba Rido, Kaduna State, Nigeria");
+  const [schoolDirectorName, setSchoolDirectorName] = useState("Pastor (Dr.) W. F. Kumuyi");
+  const [schoolAcronym, setSchoolAcronym] = useState("DLHS");
+  const [schoolMotto, setSchoolMotto] = useState("Leadership with Distinction");
+  const [schoolWebsite, setSchoolWebsite] = useState("www.deeperlifehighschool.org");
   const [acceptanceFeeAmount, setAcceptanceFeeAmount] = useState("20000");
   const [resultMode, setResultMode] = useState("end_of_term");
+
+  // Grading scheme cutoff scores
+  const [gradeAMin, setGradeAMin] = useState("80");
+  const [gradeBMin, setGradeBMin] = useState("70");
+  const [gradeCMin, setGradeCMin] = useState("60");
+  const [gradeDMin, setGradeDMin] = useState("50");
+  const [gradeEMin, setGradeEMin] = useState("45");
 
   // School Logo & Term Dates
   const [schoolLogoPath, setSchoolLogoPath] = useState("");
@@ -97,7 +106,7 @@ export default function AdminSettings() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Study Guide upload state
-  const [guideCategory, setGuideCategory] = useState<"nursery" | "primary" | "secondary">("nursery");
+  const [guideCategory, setGuideCategory] = useState<"junior_secondary" | "senior_secondary">("junior_secondary");
   const [guideFile, setGuideFile] = useState<File | null>(null);
   const [guideUploading, setGuideUploading] = useState(false);
   const [guideResult, setGuideResult] = useState<{ ok: boolean; msg: string } | null>(null);
@@ -120,18 +129,26 @@ export default function AdminSettings() {
       .then((res: any) => {
         if (res && res.success && res.settings) {
           const s = res.settings;
-          setSchoolName(s.school_name || "Aroura Academy");
+          setSchoolName(s.school_name || "Deeper Life High School");
+          setSchoolCampus(s.school_campus || "Kaduna Campus");
+          setSchoolPrincipal(s.school_principal || "Mrs. Bamishe Olumuyiwa");
           setAcademicSession(s.academic_session || "2026/2027");
           setCurrentTerm(s.current_term || "2nd Term");
-          setSchoolEmail(s.school_email || "admin@aroura.com");
-          setSchoolPhone(s.school_phone || "+234 801 234 5678");
-          setSchoolAddress(s.school_address || "12 Aroura Close, Victoria Island, Lagos");
-          setSchoolDirectorName(s.school_director_name || "Mrs M I. Okafor");
-          setSchoolAcronym(s.school_acronym || "AROURA");
-          setSchoolMotto(s.school_motto || "MOTTO: LEADERSHIP WITH DISTINCTION");
-          setSchoolWebsite(s.school_website || "WWW.DEEPERLIFEHIGHSCHOOL.ORG");
+          setSchoolEmail(s.school_email || "ictkaduna@deeperlifehighschool.org");
+          setSchoolPhone(s.school_phone || "08158190115");
+          setSchoolAddress(s.school_address || "KM 16, Eastern Bye-Pass, Maraba Rido, Kaduna State, Nigeria");
+          setSchoolDirectorName(s.school_director_name || "Pastor (Dr.) W. F. Kumuyi");
+          setSchoolAcronym(s.school_acronym || "DLHS");
+          setSchoolMotto(s.school_motto || "Leadership with Distinction");
+          setSchoolWebsite(s.school_website || "www.deeperlifehighschool.org");
           setAcceptanceFeeAmount(s.acceptance_fee_amount || "20000");
           setResultMode(s.result_mode || "end_of_term");
+
+          setGradeAMin(s.grade_A_min || "80");
+          setGradeBMin(s.grade_B_min || "70");
+          setGradeCMin(s.grade_C_min || "60");
+          setGradeDMin(s.grade_D_min || "50");
+          setGradeEMin(s.grade_E_min || "45");
 
           setSchoolLogoPath(s.school_logo_path || "");
           setVacationDateTerm1(s.vacation_date_term1 || "2026-12-19");
@@ -186,6 +203,8 @@ export default function AdminSettings() {
   const handleSave = () => {
     const payload = {
       school_name: schoolName,
+      school_campus: schoolCampus,
+      school_principal: schoolPrincipal,
       academic_session: academicSession,
       current_term: currentTerm,
       school_email: schoolEmail,
@@ -197,6 +216,11 @@ export default function AdminSettings() {
       school_website: schoolWebsite,
       acceptance_fee_amount: acceptanceFeeAmount,
       result_mode: resultMode,
+      grade_A_min: gradeAMin,
+      grade_B_min: gradeBMin,
+      grade_C_min: gradeCMin,
+      grade_D_min: gradeDMin,
+      grade_E_min: gradeEMin,
       school_logo_path: schoolLogoPath,
       vacation_date_term1: vacationDateTerm1,
       resumption_date_term1: resumptionDateTerm1,
@@ -451,6 +475,10 @@ export default function AdminSettings() {
                   <input type="text" value={schoolName} onChange={e => setSchoolName(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>School Campus</label>
+                  <input type="text" value={schoolCampus} onChange={e => setSchoolCampus(e.target.value)} placeholder="e.g. Kaduna Campus" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Academic Session</label>
                   <input type="text" value={academicSession} onChange={e => setAcademicSession(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
@@ -487,19 +515,99 @@ export default function AdminSettings() {
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>School Motto (Appears on Result)</label>
-                  <input type="text" value={schoolMotto} onChange={e => setSchoolMotto(e.target.value)} placeholder="e.g. MOTTO: LEADERSHIP WITH DISTINCTION" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                  <input type="text" value={schoolMotto} onChange={e => setSchoolMotto(e.target.value)} placeholder="e.g. Leadership with Distinction" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>School Website (Appears on Result)</label>
-                  <input type="text" value={schoolWebsite} onChange={e => setSchoolWebsite(e.target.value)} placeholder="e.g. WWW.DEEPERLIFEHIGHSCHOOL.ORG" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                  <input type="text" value={schoolWebsite} onChange={e => setSchoolWebsite(e.target.value)} placeholder="e.g. www.deeperlifehighschool.org" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Director / Registrar Name</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Principal Name (Printed on Report Card)</label>
+                  <input type="text" value={schoolPrincipal} onChange={e => setSchoolPrincipal(e.target.value)} placeholder="e.g. Mrs. Bamishe Olumuyiwa" style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Director / General Overseer Name</label>
                   <input type="text" value={schoolDirectorName} onChange={e => setSchoolDirectorName(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div style={{ padding: "12px 0" }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>Admissions Acceptance Fee (₦)</label>
                   <input type="number" value={acceptanceFeeAmount} onChange={e => setAcceptanceFeeAmount(e.target.value)} style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                </div>
+              </div>
+            </Glass>
+
+            {/* Section: Grading Scale Scheme */}
+            <Glass>
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(216,27,96,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#D81B60" }}>
+                  <Award size={15} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Grading Scale Scheme</span>
+                  <div style={{ fontSize: 11, color: "var(--subtext)" }}>Configure minimum percentage score thresholds printed on student report cards</div>
+                </div>
+              </div>
+              <div style={{ padding: "16px 20px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 12, marginBottom: 16 }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#16a34a", marginBottom: 4 }}>Grade A Min (%)</label>
+                    <input type="number" min="0" max="100" value={gradeAMin} onChange={e => setGradeAMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#2563eb", marginBottom: 4 }}>Grade B Min (%)</label>
+                    <input type="number" min="0" max="100" value={gradeBMin} onChange={e => setGradeBMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#0891b2", marginBottom: 4 }}>Grade C Min (%)</label>
+                    <input type="number" min="0" max="100" value={gradeCMin} onChange={e => setGradeCMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#ca8a04", marginBottom: 4 }}>Grade D Min (%)</label>
+                    <input type="number" min="0" max="100" value={gradeDMin} onChange={e => setGradeDMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#d97706", marginBottom: 4 }}>Grade E Min (%)</label>
+                    <input type="number" min="0" max="100" value={gradeEMin} onChange={e => setGradeEMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                  </div>
+                </div>
+
+                {/* Live Preview Table */}
+                <div style={{ background: "var(--muted)", borderRadius: 10, padding: "10px 14px", border: "1px solid var(--glass-border)" }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                    Live Report Card Scale Preview
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(75px, 1fr))", gap: 6, textAlign: "center", fontSize: 11 }}>
+                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.25)" }}>
+                      <div style={{ fontWeight: 800, color: "#16a34a" }}>A</div>
+                      <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeAMin}–100%</div>
+                      <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>EXCELLENT</div>
+                    </div>
+                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(37,99,235,0.1)", border: "1px solid rgba(37,99,235,0.25)" }}>
+                      <div style={{ fontWeight: 800, color: "#2563eb" }}>B</div>
+                      <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeBMin}–{Number(gradeAMin) - 1}%</div>
+                      <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>VERY GOOD</div>
+                    </div>
+                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(8,145,178,0.1)", border: "1px solid rgba(8,145,178,0.25)" }}>
+                      <div style={{ fontWeight: 800, color: "#0891b2" }}>C</div>
+                      <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeCMin}–{Number(gradeBMin) - 1}%</div>
+                      <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>CREDIT</div>
+                    </div>
+                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(202,138,4,0.1)", border: "1px solid rgba(202,138,4,0.25)" }}>
+                      <div style={{ fontWeight: 800, color: "#ca8a04" }}>D</div>
+                      <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeDMin}–{Number(gradeCMin) - 1}%</div>
+                      <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
+                    </div>
+                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)" }}>
+                      <div style={{ fontWeight: 800, color: "#d97706" }}>E</div>
+                      <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeEMin}–{Number(gradeDMin) - 1}%</div>
+                      <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
+                    </div>
+                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.25)" }}>
+                      <div style={{ fontWeight: 800, color: "#dc2626" }}>F</div>
+                      <div style={{ fontWeight: 700, fontSize: 10 }}>0–{Number(gradeEMin) - 1}%</div>
+                      <div style={{ fontSize: 8.5, color: "#dc2626" }}>FAIL</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </Glass>
@@ -909,12 +1017,11 @@ export default function AdminSettings() {
             </div>
           </div>
           <form onSubmit={handleGuideUpload} style={{ padding: "18px 20px" }}>
-            <div className="responsive-grid-3" style={{ gap: 14, marginBottom: 16 }}>
-              {(["nursery", "primary", "secondary"] as const).map(cat => {
+            <div className="responsive-grid-2" style={{ gap: 14, marginBottom: 16 }}>
+              {(["junior_secondary", "senior_secondary"] as const).map(cat => {
                 const info = {
-                  nursery: { label: "Nursery Guide", emoji: "🐣", desc: "NUR 1–3 curriculum guide (PDF)" },
-                  primary: { label: "Primary Guide", emoji: "📖", desc: "PRI 1–6 curriculum guide (PDF)" },
-                  secondary: { label: "Secondary Guide", emoji: "🎓", desc: "JSS/SS curriculum guide (PDF)" },
+                  junior_secondary: { label: "Junior Secondary Guide", emoji: "📘", desc: "Basic 7–9 curriculum guide (PDF)" },
+                  senior_secondary: { label: "Senior Secondary Guide", emoji: "🎓", desc: "SS 1–3 curriculum guide (PDF)" },
                 }[cat];
                 const isActive = guideCategory === cat;
                 return (
@@ -985,7 +1092,7 @@ export default function AdminSettings() {
                   boxShadow: guideFile ? "0 4px 12px rgba(155,93,229,0.3)" : "none", transition: "all 0.2s"
                 }}
               >
-                <Upload size={14} /> {guideUploading ? "Uploading..." : `Upload ${guideCategory.charAt(0).toUpperCase() + guideCategory.slice(1)} Guide`}
+                <Upload size={14} /> {guideUploading ? "Uploading..." : `Upload ${guideCategory === "junior_secondary" ? "Junior Secondary" : "Senior Secondary"} Guide`}
               </button>
             </div>
           </form>

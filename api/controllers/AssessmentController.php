@@ -365,13 +365,20 @@ class AssessmentController {
         $rankStmt->execute([':term' => $term, ':session' => $session]);
         $rankings = $rankStmt->fetchAll();
 
+        // Grade scale thresholds from settings
+        $gradeA = intval($this->getSetting('grade_A_min', 80));
+        $gradeB = intval($this->getSetting('grade_B_min', 70));
+        $gradeC = intval($this->getSetting('grade_C_min', 60));
+        $gradeD = intval($this->getSetting('grade_D_min', 50));
+        $gradeE = intval($this->getSetting('grade_E_min', 45));
+
         // Grade scale helper
-        $getGradeInfo = function($score) {
-            if ($score >= 80) return ['grade' => 'A', 'remark' => 'EXCELLENT'];
-            if ($score >= 70) return ['grade' => 'B', 'remark' => 'VERY GOOD'];
-            if ($score >= 60) return ['grade' => 'C', 'remark' => 'CREDIT'];
-            if ($score >= 50) return ['grade' => 'D', 'remark' => 'PASS'];
-            if ($score >= 45) return ['grade' => 'E', 'remark' => 'PASS'];
+        $getGradeInfo = function($score) use ($gradeA, $gradeB, $gradeC, $gradeD, $gradeE) {
+            if ($score >= $gradeA) return ['grade' => 'A', 'remark' => 'EXCELLENT'];
+            if ($score >= $gradeB) return ['grade' => 'B', 'remark' => 'VERY GOOD'];
+            if ($score >= $gradeC) return ['grade' => 'C', 'remark' => 'CREDIT'];
+            if ($score >= $gradeD) return ['grade' => 'D', 'remark' => 'PASS'];
+            if ($score >= $gradeE) return ['grade' => 'E', 'remark' => 'PASS'];
             return ['grade' => 'F', 'remark' => 'FAIL'];
         };
 
@@ -1399,26 +1406,26 @@ foreach ($studentIds as $studentId):
           <tbody>
             <tr>
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #16a34a;">A</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">80 – 100</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $gradeA ?> – 100</td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">EXCELLENT</td>
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #ca8a04;">D</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">50 – 59</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $gradeD ?> – <?= $gradeC - 1 ?></td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">PASS</td>
             </tr>
             <tr style="background: #f8fafc;">
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #2563eb;">B</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">70 – 79</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $gradeB ?> – <?= $gradeA - 1 ?></td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">VERY GOOD</td>
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #d97706;">E</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">45 – 49</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $gradeE ?> – <?= $gradeD - 1 ?></td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">PASS</td>
             </tr>
             <tr>
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #0891b2;">C</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">60 – 69</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $gradeC ?> – <?= $gradeB - 1 ?></td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">CREDIT</td>
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #dc2626;">F</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">0 – 44</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">0 – <?= $gradeE - 1 ?></td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">FAIL</td>
             </tr>
           </tbody>

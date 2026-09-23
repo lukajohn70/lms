@@ -79,7 +79,7 @@ class SettingController {
         }
 
         $category = $_POST['category'];
-        if (!in_array($category, ['nursery', 'primary', 'secondary'])) {
+        if (!in_array($category, ['junior_secondary', 'senior_secondary', 'secondary', 'nursery', 'primary'])) {
             http_response_code(400);
             echo json_encode(["error" => "Invalid category"]);
             return;

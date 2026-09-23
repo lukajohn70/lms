@@ -244,10 +244,12 @@ export function Layout({ children }: { children: ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  const schoolName = settings?.school_name || "Aroura Academy";
+  const schoolName = settings?.school_name || "Deeper Life High School";
+  const schoolAcronym = settings?.school_acronym || "DLHS";
+  const schoolCampus = settings?.school_campus || "Kaduna Campus";
   const schoolParts = schoolName.split(" ");
-  const schoolFirst = schoolParts[0] || "Aroura";
-  const schoolRest = schoolParts.slice(1).join(" ") || "Academy";
+  const schoolFirst = schoolAcronym || schoolParts[0] || "DLHS";
+  const schoolRest = schoolCampus || "Kaduna Campus";
 
   const roleColor = ROLE_COLOR[user.role];
   const initials = (user.first_name?.[0] || "") + (user.last_name?.[0] || "");
@@ -283,11 +285,11 @@ export function Layout({ children }: { children: ReactNode }) {
         <img
           src="/logo.png"
           alt="School Logo"
-          style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, boxShadow: "0 4px 12px rgba(33,158,188,0.25)" }}
+          style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, boxShadow: "0 4px 12px rgba(216,27,96,0.25)" }}
         />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: "#e8f4f8", letterSpacing: "0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{schoolFirst}</div>
-          <div style={{ fontSize: 10, color: "#8ECAE6", letterSpacing: "0.08em", textTransform: "uppercase" }}>{schoolRest}</div>
+          <div style={{ fontWeight: 800, fontSize: 14.5, color: "#f8fafc", letterSpacing: "0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{schoolFirst === 'DLHS' ? 'DLHS Kaduna' : schoolFirst}</div>
+          <div style={{ fontSize: 9.5, color: "#f472b6", letterSpacing: "0.07em", fontWeight: 700, textTransform: "uppercase" }}>{schoolRest}</div>
         </div>
         {/* Close button for mobile */}
         <button

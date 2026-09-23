@@ -854,15 +854,15 @@ export default function AdminClasses() {
             <form onSubmit={handleCreateClass} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Class Name</label>
-                <input required type="text" value={newClassName} onChange={e => setNewClassName(e.target.value)} placeholder="e.g. SSS 2" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
+                <input required type="text" value={newClassName} onChange={e => setNewClassName(e.target.value)} placeholder="e.g. Basic 7 Diamond or SS 1 Science" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
               </div>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 4, display: "block" }}>Department / Stream (Optional)</label>
-                <input type="text" value={newClassDept} onChange={e => setNewClassDept(e.target.value)} placeholder="e.g. Science" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
+                <input type="text" value={newClassDept} onChange={e => setNewClassDept(e.target.value)} placeholder="e.g. Junior Section, Science, or Humanities" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
               </div>
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
                 <button type="button" onClick={() => setShowAddClass(false)} style={{ flex: 1, padding: 10, borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" style={{ flex: 1, padding: 10, borderRadius: 8, background: "#FB8500", border: "none", color: "#fff", cursor: "pointer", fontWeight: 600 }}>Create Class</button>
+                <button type="submit" style={{ flex: 1, padding: 10, borderRadius: 8, background: "#D81B60", border: "none", color: "#fff", cursor: "pointer", fontWeight: 600 }}>Create Class</button>
               </div>
             </form>
           </Glass>

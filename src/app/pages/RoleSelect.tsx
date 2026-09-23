@@ -86,9 +86,9 @@ export default function RoleSelect() {
           flex: 1; display: flex; align-items: center; justify-content: center;
           position: relative; padding: 40px; overflow-y: auto;
         }
-        .login-input:focus { border-color: #219EBC !important; box-shadow: 0 0 0 3px rgba(33,158,188,0.15) !important; }
-        .login-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(33,158,188,0.45) !important; }
-        .shortcut-btn:hover { background: rgba(33,158,188,0.12) !important; transform: translateY(-1px); }
+        .login-input:focus { border-color: #D81B60 !important; box-shadow: 0 0 0 3px rgba(216,27,96,0.15) !important; }
+        .login-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(216,27,96,0.4) !important; }
+        .shortcut-btn:hover { background: rgba(216,27,96,0.12) !important; transform: translateY(-1px); }
         @media (max-width: 900px) { .split-left { display: none; } }
       `}</style>
 
@@ -97,41 +97,41 @@ export default function RoleSelect() {
         <div className="split-left" style={{ position: "relative" }}>
           <div style={{
             position: "absolute", inset: 0,
-            background: "linear-gradient(160deg, rgba(2,48,71,0.04) 0%, rgba(2,48,71,0.28) 100%)",
+            background: "linear-gradient(160deg, rgba(5,26,68,0.3) 0%, rgba(5,26,68,0.85) 100%)",
           }} />
           <div style={{ position: "relative", zIndex: 1 }}>
             {/* Logo on left panel */}
-            <img src="/logo.png" alt="Aroura Academy" style={{ width: 56, height: 56, borderRadius: 14, marginBottom: 28, boxShadow: "0 4px 20px rgba(2,48,71,0.15)" }} />
+            <img src="/logo.png" alt="Deeper Life High School" style={{ width: 64, height: 64, borderRadius: 16, marginBottom: 24, boxShadow: "0 4px 24px rgba(5,26,68,0.4)" }} />
 
             <div style={{
-              background: "rgba(255,255,255,0.6)",
+              background: "rgba(255,255,255,0.88)",
               backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
               padding: "36px 40px", borderRadius: "22px",
               border: "1px solid rgba(255,255,255,0.75)",
               maxWidth: "480px",
-              boxShadow: "0 12px 48px rgba(2,48,71,0.1)"
+              boxShadow: "0 12px 48px rgba(5,26,68,0.25)"
             }}>
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 7,
-                background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.22)",
+                background: "rgba(216,27,96,0.1)", border: "1px solid rgba(216,27,96,0.25)",
                 padding: "4px 12px", borderRadius: 100, marginBottom: 20
               }}>
-                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#219EBC", boxShadow: "0 0 6px #219EBC" }} />
-                <span style={{ fontSize: 11.5, fontWeight: 600, color: "#023047", letterSpacing: "0.04em" }}>2026/2027 Academic Session</span>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#D81B60", boxShadow: "0 0 6px #D81B60" }} />
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: "#051A44", letterSpacing: "0.04em" }}>DLHS Kaduna Campus · 2026/2027</span>
               </div>
 
-              <h2 style={{ color: "#012030", fontSize: 38, fontWeight: 800, margin: "0 0 14px", lineHeight: 1.1, letterSpacing: "-0.025em" }}>
-                Learning<br />Evolved.
+              <h2 style={{ color: "#051A44", fontSize: 34, fontWeight: 800, margin: "0 0 10px", lineHeight: 1.15, letterSpacing: "-0.02em" }}>
+                Leadership with<br /><span style={{ color: "#D81B60" }}>Distinction.</span>
               </h2>
-              <p style={{ color: "#3d6475", fontSize: 14.5, margin: "0 0 28px", lineHeight: 1.75 }}>
-                Aroura Academy's next-generation platform for students, educators, and parents.
+              <p style={{ color: "#475569", fontSize: 14, margin: "0 0 24px", lineHeight: 1.6 }}>
+                Deeper Life High School, Kaduna Campus — Result Management and Academic Information System for Junior & Senior Secondary.
               </p>
 
               {/* Count-up stats */}
-              <div style={{ display: "flex", gap: 28, paddingTop: 20, borderTop: "1px solid rgba(33,158,188,0.15)" }}>
-                <StatCounter target={100} suffix="+" label="Students" />
-                <StatCounter target={20} suffix="+" label="Teachers" />
-                <StatCounter target={30} suffix="+" label="Courses" />
+              <div style={{ display: "flex", gap: 28, paddingTop: 20, borderTop: "1px solid rgba(5,26,68,0.1)" }}>
+                <StatCounter target={300} suffix="+" label="Students" />
+                <StatCounter target={35} suffix="+" label="Educators" />
+                <StatCounter target={16} suffix="" label="Class Arms" />
               </div>
             </div>
           </div>
@@ -157,27 +157,27 @@ export default function RoleSelect() {
           <div style={{ width: "100%", maxWidth: "420px" }}>
             {/* Logo + heading */}
             <div style={{ marginBottom: 32 }}>
-              <img src="/logo.png" alt="Aroura Academy" style={{ width: 52, height: 52, borderRadius: 14, marginBottom: 20, boxShadow: "0 6px 24px rgba(33,158,188,0.25)" }} />
-              <h1 style={{ fontSize: 26, fontWeight: 800, color: theme === "dark" ? "#e8f4f8" : "#012030", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+              <img src="/logo.png" alt="Deeper Life High School" style={{ width: 56, height: 56, borderRadius: 14, marginBottom: 20, boxShadow: "0 6px 24px rgba(216,27,96,0.3)" }} />
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: theme === "dark" ? "#f8fafc" : "#051A44", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
                 Portal Sign In
               </h1>
-              <p style={{ fontSize: 13.5, color: theme === "dark" ? "#8ECAE6" : "#5a7f92", margin: 0 }}>
-                Sign in with your email and password to access your dashboard.
+              <p style={{ fontSize: 13.5, color: theme === "dark" ? "#94a3b8" : "#475569", margin: 0 }}>
+                Deeper Life High School, Kaduna Campus Academic Portal
               </p>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {error && (
-                <div style={{ background: "rgba(251,133,0,0.08)", color: "#e07000", padding: "12px 16px", borderRadius: 10, fontSize: 13, fontWeight: 500, border: "1px solid rgba(251,133,0,0.25)", lineHeight: 1.5 }}>
+                <div style={{ background: "rgba(216,27,96,0.08)", color: "#D81B60", padding: "12px 16px", borderRadius: 10, fontSize: 13, fontWeight: 500, border: "1px solid rgba(216,27,96,0.25)", lineHeight: 1.5 }}>
                   ⚠ {error}
                 </div>
               )}
 
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: theme === "dark" ? "#e8f4f8" : "#012030", marginBottom: 5 }}>Email Address</label>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: theme === "dark" ? "#f8fafc" : "#051A44", marginBottom: 5 }}>Email Address</label>
                 <div style={{ position: "relative" }}>
-                  <Mail size={16} style={{ position: "absolute", left: 14, top: 13, color: theme === "dark" ? "#8ECAE6" : "#5a7f92", opacity: 0.7, pointerEvents: "none" }} />
+                  <Mail size={16} style={{ position: "absolute", left: 14, top: 13, color: theme === "dark" ? "#94a3b8" : "#64748b", opacity: 0.7, pointerEvents: "none" }} />
                   <input
                     className="login-input"
                     type="email" value={email} onChange={e => setEmail(e.target.value)}
@@ -185,8 +185,8 @@ export default function RoleSelect() {
                     style={{
                       width: "100%", padding: "10px 14px 10px 38px", borderRadius: 11,
                       background: theme === "dark" ? "rgba(255,255,255,0.04)" : "#fff",
-                      border: `1.5px solid ${theme === "dark" ? "rgba(142,202,230,0.18)" : "#dde3e8"}`,
-                      color: theme === "dark" ? "#e8f4f8" : "#012030",
+                      border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.14)" : "#cbd5e1"}`,
+                      color: theme === "dark" ? "#f8fafc" : "#051A44",
                       fontSize: 13.5, outline: "none", boxSizing: "border-box", transition: "all 0.2s"
                     }}
                   />
@@ -194,12 +194,12 @@ export default function RoleSelect() {
               </div>
 
               <div>
-                <label style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: theme === "dark" ? "#e8f4f8" : "#012030", marginBottom: 5 }}>
+                <label style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 600, color: theme === "dark" ? "#f8fafc" : "#051A44", marginBottom: 5 }}>
                   <span>Password</span>
-                  <a href="#" style={{ color: "#219EBC", textDecoration: "none", fontWeight: 500, fontSize: 11.5 }}>Forgot password?</a>
+                  <a href="#" style={{ color: "#D81B60", textDecoration: "none", fontWeight: 600, fontSize: 11.5 }}>Forgot password?</a>
                 </label>
                 <div style={{ position: "relative" }}>
-                  <Lock size={16} style={{ position: "absolute", left: 14, top: 13, color: theme === "dark" ? "#8ECAE6" : "#5a7f92", opacity: 0.7, pointerEvents: "none" }} />
+                  <Lock size={16} style={{ position: "absolute", left: 14, top: 13, color: theme === "dark" ? "#94a3b8" : "#64748b", opacity: 0.7, pointerEvents: "none" }} />
                   <input
                     className="login-input"
                     type="password" value={password} onChange={e => setPassword(e.target.value)}
@@ -207,8 +207,8 @@ export default function RoleSelect() {
                     style={{
                       width: "100%", padding: "10px 14px 10px 38px", borderRadius: 11,
                       background: theme === "dark" ? "rgba(255,255,255,0.04)" : "#fff",
-                      border: `1.5px solid ${theme === "dark" ? "rgba(142,202,230,0.18)" : "#dde3e8"}`,
-                      color: theme === "dark" ? "#e8f4f8" : "#012030",
+                      border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.14)" : "#cbd5e1"}`,
+                      color: theme === "dark" ? "#f8fafc" : "#051A44",
                       fontSize: 13.5, outline: "none", boxSizing: "border-box", transition: "all 0.2s"
                     }}
                   />
@@ -220,10 +220,10 @@ export default function RoleSelect() {
                 className="login-btn"
                 style={{
                   padding: "13px", borderRadius: 11, marginTop: 4,
-                  background: "linear-gradient(135deg, #219EBC 0%, #023047 100%)",
+                  background: "linear-gradient(135deg, #D81B60 0%, #051A44 100%)",
                   color: "#fff", border: "none", fontSize: 14, fontWeight: 700,
                   cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.75 : 1,
-                  boxShadow: "0 6px 20px rgba(33,158,188,0.32)", transition: "all 0.2s"
+                  boxShadow: "0 6px 20px rgba(216,27,96,0.35)", transition: "all 0.2s"
                 }}
               >
                 {loading ? "Authenticating…" : "Sign In →"}
