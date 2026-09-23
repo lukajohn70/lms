@@ -31,7 +31,6 @@ const NAV: Record<Role, NavItem[]> = {
       ],
     },
     { icon: <FileText size={17} />, label: "Results & Transcripts", to: "/student/results" },
-    { icon: <Receipt size={17} />, label: "Fees & Payments", to: "/student/fees" },
     { icon: <MessageSquare size={17} />, label: "Communication", to: "/student/communication" },
     { icon: <Library size={17} />, label: "Library & Helpdesk", to: "/student/library" },
     { icon: <Settings size={17} />, label: "Account Settings", to: "/student/settings" },
@@ -52,9 +51,7 @@ const NAV: Record<Role, NavItem[]> = {
     { icon: <Users size={17} />, label: "User Management", to: "/admin/users" },
     { icon: <BookOpen size={17} />, label: "Academic Setup", to: "/admin/classes" },
     { icon: <Library size={17} />, label: "E-Library Manager", to: "/admin/library" },
-    { icon: <GraduationCap size={17} />, label: "Admissions", to: "/admin/admissions" },
     { icon: <ClipboardList size={17} />, label: "CBT Approvals", to: "/admin/cbt" },
-    { icon: <Receipt size={17} />, label: "Fee Management", to: "/admin/fees" },
     {
       icon: <BarChart2 size={17} />, label: "Reports & Printing",
       children: [
@@ -69,9 +66,7 @@ const NAV: Record<Role, NavItem[]> = {
   ],
   parent: [
     { icon: <LayoutDashboard size={17} />, label: "Dashboard", to: "/parent" },
-    { icon: <GraduationCap size={17} />, label: "Admissions", to: "/parent/admissions" },
     { icon: <BarChart2 size={17} />, label: "Academic Performance", to: "/parent/performance" },
-    { icon: <Receipt size={17} />, label: "Fees & Payments", to: "/parent/fees" },
     { icon: <MessageSquare size={17} />, label: "Communication", to: "/parent/communication" },
     { icon: <UserCheck size={17} />, label: "Attendance", to: "/parent/performance" },
     { icon: <Settings size={17} />, label: "My Profile", to: "/parent/settings" },
@@ -285,11 +280,11 @@ export function Layout({ children }: { children: ReactNode }) {
         <img
           src="/logo.png"
           alt="School Logo"
-          style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, boxShadow: "0 4px 12px rgba(216,27,96,0.25)" }}
+          style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, boxShadow: "0 4px 12px rgba(33,158,188,0.25)" }}
         />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 14.5, color: "#f8fafc", letterSpacing: "0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{schoolFirst === 'DLHS' ? 'DLHS Kaduna' : schoolFirst}</div>
-          <div style={{ fontSize: 9.5, color: "#f472b6", letterSpacing: "0.07em", fontWeight: 700, textTransform: "uppercase" }}>{schoolRest}</div>
+          <div style={{ fontWeight: 700, fontSize: 14.5, color: "#e8f4f8", letterSpacing: "0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{schoolFirst === 'DLHS' ? 'DLHS Kaduna' : schoolFirst}</div>
+          <div style={{ fontSize: 9.5, color: "#8ECAE6", letterSpacing: "0.08em", fontWeight: 600, textTransform: "uppercase" }}>{schoolRest}</div>
         </div>
         {/* Close button for mobile */}
         <button

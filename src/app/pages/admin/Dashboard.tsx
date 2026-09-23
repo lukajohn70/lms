@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useApp } from "../../contexts/AppContext";
 import { apiClient } from "../../lib/apiClient";
-import { Users, BookOpen, ClipboardList, Receipt, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
+import { Users, BookOpen, ClipboardList, FileText, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
@@ -17,8 +17,8 @@ const deptData = [
 const alerts = [
   { type: "warning", msg: "12 students with attendance < 75%", color: "#FFB703" },
   { type: "info", msg: "3 CBTs pending HOD approval", color: "#219EBC" },
-  { type: "danger", msg: "Fee payments overdue for 18 students", color: "#FB8500" },
-  { type: "info", msg: "New material uploaded by Dr. Eze (Physics)", color: "#8ECAE6" },
+  { type: "info", msg: "Continuous assessment and term grades active", color: "#219EBC" },
+  { type: "info", msg: "New material uploaded by Physics department", color: "#8ECAE6" },
 ];
 
 export default function AdminDashboard() {
@@ -45,7 +45,7 @@ export default function AdminDashboard() {
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Admin Control Panel</div>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--heading)", margin: 0 }}>System Overview 🛡️</h1>
-        <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: "4px 0 0" }}>Aroura Academy · 2026/2027 Session · 2nd Term</p>
+        <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: "4px 0 0" }}>Result Management System</p>
       </div>
 
       <div className="responsive-grid-4">
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
           { l: "Total Students", v: stats.totalStudents, c: "#219EBC", icon: <Users size={15}/>, to: "/admin/users" },
           { l: "Teaching Staff", v: stats.teachingStaff, c: "#8ECAE6", icon: <BookOpen size={15}/>, to: "/admin/users" },
           { l: "Pending CBTs", v: stats.pendingCbts, c: "#FFB703", icon: <ClipboardList size={15}/>, to: "/admin/cbt" },
-          { l: "Fee Collections", v: `₦${Number(stats.feesCollected).toLocaleString()}`, c: "#FB8500", icon: <Receipt size={15}/>, to: "/admin/fees" },
+          { l: "Result Broadsheets", v: "Print Hub", c: "#FB8500", icon: <FileText size={15}/>, to: "/admin/reports" },
         ].map(s => (
           <Glass key={s.l} style={{ padding: "16px 18px", cursor: "pointer" }} onClick={() => navigate(s.to)}>
             <div style={{ width: 28, height: 28, borderRadius: 8, background: `${s.c}18`, display: "flex", alignItems: "center", justifyContent: "center", color: s.c, marginBottom: 10 }}>{s.icon}</div>
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
             {[
               { l: "Review CBT Approvals", to: "/admin/cbt", c: "#FFB703", badge: `${stats.pendingCbts} pending` },
               { l: "Manage Users", to: "/admin/users", c: "#219EBC", badge: null },
-              { l: "Fee Management", to: "/admin/fees", c: "#FB8500", badge: "18 overdue" },
+              { l: "Print Broadsheet & Reports", to: "/admin/reports", c: "#FB8500", badge: "Print Hub" },
               { l: "Analytics & Result Governance", to: "/admin/reports", c: "#8ECAE6", badge: stats.reopenRequests > 0 ? `${stats.reopenRequests} unlock req` : null },
             ].map(a => (
               <button key={a.l} onClick={() => navigate(a.to)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px", borderRadius: 10, background: `${a.c}0e`, border: `1px solid ${a.c}28`, cursor: "pointer", fontFamily: "'Poppins',sans-serif" }}>
