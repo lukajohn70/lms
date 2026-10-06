@@ -525,9 +525,9 @@ class BroadsheetController {
 
         /* Main Table */
         table.broadsheet-table {
-            width: 100%;
+            <?= count($subjects) <= 6 ? 'width: auto; min-width: 60%; margin: 0 auto;' : 'width: 100%;' ?>
             border-collapse: collapse;
-            table-layout: fixed;
+            table-layout: auto !important;
             border: 2px solid #000;
         }
         table.broadsheet-table th, 
@@ -537,34 +537,38 @@ class BroadsheetController {
             text-align: center;
             font-size: 9.5px;
             line-height: 1.15;
-            height: 18px;
+            height: 19px;
             vertical-align: middle;
         }
         .col-sno {
-            width: 26px;
+            width: 28px;
+            min-width: 28px;
             font-weight: bold;
         }
         .col-name {
-            width: <?= $dynamicNameWidth ?>px;
-            min-width: <?= $dynamicNameWidth ?>px;
-            max-width: <?= $dynamicNameWidth ?>px;
+            width: 1% !important;
+            white-space: nowrap !important;
             text-align: left !important;
-            padding-left: 5px !important;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            padding-left: 6px !important;
+            padding-right: 14px !important;
             font-weight: 600;
         }
         .col-sub {
-            width: 25px;
+            width: 32px;
+            min-width: 30px;
         }
         .col-avg {
-            width: 44px;
+            width: 48px;
+            min-width: 44px;
             font-weight: bold;
         }
         .col-grade {
-            width: 17px;
+            width: 32px;
+            min-width: 30px;
+            text-align: center;
+            font-size: 10px;
             font-weight: bold;
+            padding: 2px 2px;
         }
 
         /* Numbered header row */
@@ -663,7 +667,11 @@ class BroadsheetController {
                     <th class="col-sub"><?= $sub['index'] ?></th>
                 <?php endforeach; ?>
                 <th class="col-avg"></th>
-                <th class="col-grade" colspan="5"></th>
+                <th class="col-grade"></th>
+                <th class="col-grade"></th>
+                <th class="col-grade"></th>
+                <th class="col-grade"></th>
+                <th class="col-grade"></th>
             </tr>
             <!-- Subject names (vertical headers) -->
             <tr>

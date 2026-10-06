@@ -378,6 +378,7 @@ class AssessmentController {
         $juniorGradeC = intval($this->getSetting('grade_junior_C_min', 50));
         $juniorGradeD = intval($this->getSetting('grade_junior_D_min', 45));
         $juniorGradeE = intval($this->getSetting('grade_junior_E_min', 40));
+        $showPosition = $this->getSetting('show_position', '1') !== '0';
 
         // Grade scale helper (supports both Junior and Senior thresholds)
         $getGradeInfo = function($score, $isJunior = false) use (
@@ -474,16 +475,16 @@ body {
 
 .sheet {
   width: 210mm;
-  min-height: 297mm;
+  max-width: 210mm;
   margin: 0 auto 20px;
   background: #fff;
   border: 2.5px solid #5b21b6;
-  padding: 5mm 7mm 6mm;
+  padding: 4mm 6mm 5mm;
   box-sizing: border-box;
   box-shadow: 0 10px 35px rgba(0,0,0,0.35);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   page-break-after: always;
   break-after: page;
 }
@@ -635,8 +636,7 @@ body {
 .main-two-col {
   display: flex;
   gap: 7px;
-  margin-bottom: 6px;
-  flex: 1;
+  margin-bottom: 4px;
 }
 .academic-col {
   flex: 1.88;
@@ -810,11 +810,11 @@ table.domain-table td.trait-name {
   .sheet {
     width: 198mm !important;
     max-width: 198mm !important;
-    height: 287mm !important;
-    max-height: 287mm !important;
+    height: 285mm !important;
+    max-height: 285mm !important;
     margin: 0 auto !important;
-    padding: 4mm 5mm 5mm !important;
-    border: 2.5px solid #5b21b6 !important;
+    padding: 3mm 4mm 4mm !important;
+    border: 2px solid #5b21b6 !important;
     box-sizing: border-box !important;
     box-shadow: none !important;
     page-break-after: always !important;
@@ -823,7 +823,8 @@ table.domain-table td.trait-name {
     break-inside: avoid !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
+    overflow: hidden !important;
   }
   .sheet:last-child {
     page-break-after: auto !important;
@@ -1050,6 +1051,56 @@ foreach ($studentIds as $studentId):
     $studentOverallAvg = $gradedCount > 0 ? round($sumStudAvg / $gradedCount, 2) : 0.00;
     $classOverallAvg   = $classAvgCount > 0 ? round($sumClassAvg / $classAvgCount, 2) : 0.00;
 
+    $numSubjects = count($rows);
+
+    // Dynamic row sizing & target filler rows based on number of subjects
+    // Right column (Character + Psychomotor + Scale) has a fixed height of ~375px.
+    // If fewer subjects are entered, rows dynamically expand with larger padding and font size.
+    if ($numSubjects <= 9) {
+        $subjRowHeight = 21;
+        $subjPadding = '3.5px 3px';
+        $subjFontSize = '9.5px';
+        $targetRowCount = 12;
+    } elseif ($numSubjects <= 12) {
+        $subjRowHeight = 18;
+        $subjPadding = '2.8px 3px';
+        $subjFontSize = '9px';
+        $targetRowCount = 14;
+    } elseif ($numSubjects <= 15) {
+        $subjRowHeight = 16;
+        $subjPadding = '2px 3px';
+        $subjFontSize = '8.5px';
+        $targetRowCount = 16;
+    } else {
+        // 16 to 20+ subjects (e.g. Basic 7 Diamond with 18 subjects)
+        $subjRowHeight = 14;
+        $subjPadding = '1.5px 3px';
+        $subjFontSize = '8px';
+        $targetRowCount = $numSubjects;
+    }
+
+    // Performance Summary metrics
+    $distinctionCount = 0;
+    $creditCount = 0;
+    $passCount = 0;
+    $highestScore = -1;
+    $highestSubject = '';
+
+    foreach ($rows as $r) {
+        if ($r['hasScore']) {
+            $gr = $r['grade'];
+            if ($gr === 'A') $distinctionCount++;
+            elseif ($gr === 'B' || $gr === 'C') $creditCount++;
+            elseif ($gr === 'D' || $gr === 'E') $passCount++;
+
+            $sc = $r['current_total'] ?? $r['cummulative'];
+            if ($sc !== null && $sc > $highestScore) {
+                $highestScore = $sc;
+                $highestSubject = $r['subject'];
+            }
+        }
+    }
+
     // Character and psychomotor rates — only from real DB entries
     $charSum = 0; $charRated = 0;
     foreach (array_keys($characterTraits) as $k) {
@@ -1154,10 +1205,17 @@ foreach ($studentIds as $studentId):
             <td class="lbl">NUMBER IN CLASS:</td>
             <td class="val"><?= $numberInClass ?></td>
           </tr>
+          <?php if ($showPosition): ?>
           <tr>
             <td class="lbl">POSITION:</td>
             <td class="val"><?= $rankString ?></td>
           </tr>
+          <?php else: ?>
+          <tr>
+            <td class="lbl">ADMISSION NO:</td>
+            <td class="val"><?= htmlspecialchars($student['admission_number'] ?: '—') ?></td>
+          </tr>
+          <?php endif; ?>
           <tr>
             <td class="lbl">HOUSE:</td>
             <td class="val"><?= $house ?></td>
@@ -1264,72 +1322,72 @@ foreach ($studentIds as $studentId):
         </thead>
         <tbody>
           <?php foreach ($rows as $r): ?>
-          <tr>
-            <td class="subj-name"><?= $r['subject'] ?></td>
-            <td class="score-blue"><?= $r['test1'] !== null ? $r['test1'] : '&mdash;' ?></td>
-            <td class="score-blue"><?= $r['test2'] !== null ? $r['test2'] : '&mdash;' ?></td>
-            <td class="score-blue"><?= $r['exam']  !== null ? $r['exam']  : '&mdash;' ?></td>
+          <tr style="height: <?= $subjRowHeight ?>px;">
+            <td class="subj-name" style="padding: <?= $subjPadding ?>; height: <?= $subjRowHeight ?>px; font-size: <?= $subjFontSize ?>;"><?= $r['subject'] ?></td>
+            <td class="score-blue" style="padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['test1'] !== null ? $r['test1'] : '&mdash;' ?></td>
+            <td class="score-blue" style="padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['test2'] !== null ? $r['test2'] : '&mdash;' ?></td>
+            <td class="score-blue" style="padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['exam']  !== null ? $r['exam']  : '&mdash;' ?></td>
             <?php if ($isCumulative): ?>
-              <td class="score-blue"><?= $r['t1'] !== null ? $r['t1'] : '&mdash;' ?></td>
+              <td class="score-blue" style="padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['t1'] !== null ? $r['t1'] : '&mdash;' ?></td>
               <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
-                <td class="score-blue"><?= $r['t2'] !== null ? $r['t2'] : '&mdash;' ?></td>
+                <td class="score-blue" style="padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['t2'] !== null ? $r['t2'] : '&mdash;' ?></td>
               <?php endif; ?>
               <?php if ($term === '3rd Term'): ?>
-                <td class="score-blue"><?= $r['t3'] !== null ? $r['t3'] : '&mdash;' ?></td>
+                <td class="score-blue" style="padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['t3'] !== null ? $r['t3'] : '&mdash;' ?></td>
               <?php endif; ?>
-              <td style="font-weight: 700;"><?= $r['cummulative'] !== null ? $r['cummulative'] : '&mdash;' ?></td>
+              <td style="font-weight: 700; padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['cummulative'] !== null ? $r['cummulative'] : '&mdash;' ?></td>
             <?php else: ?>
-              <td class="score-blue" style="font-weight: 800;"><?= $r['current_total'] !== null ? $r['current_total'] : '&mdash;' ?></td>
+              <td class="score-blue" style="font-weight: 800; padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['current_total'] !== null ? $r['current_total'] : '&mdash;' ?></td>
             <?php endif; ?>
-            <td style="font-weight: 800;"><?= $r['grade'] ?></td>
-            <td style="font-weight: 700;"><?= $r['stud_avg'] !== null ? number_format($r['stud_avg'], 2) : '&mdash;' ?></td>
-            <td><?= $r['class_avg'] !== null ? number_format($r['class_avg'], 2) : '&mdash;' ?></td>
-            <td style="font-size: 8px; font-weight: 700;"><?= $r['remark'] ?></td>
+            <td style="font-weight: 800; padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['grade'] ?></td>
+            <td style="font-weight: 700; padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['stud_avg'] !== null ? number_format($r['stud_avg'], 2) : '&mdash;' ?></td>
+            <td style="padding: <?= $subjPadding ?>; font-size: <?= $subjFontSize ?>;"><?= $r['class_avg'] !== null ? number_format($r['class_avg'], 2) : '&mdash;' ?></td>
+            <td style="font-size: 8px; font-weight: 700; padding: <?= $subjPadding ?>;"><?= $r['remark'] ?></td>
           </tr>
           <?php endforeach; ?>
 
-          <?php for ($i = count($rows); $i < 16; $i++): ?>
-          <tr>
-            <td class="subj-name">&nbsp;</td>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
+          <?php for ($i = $numSubjects; $i < $targetRowCount; $i++): ?>
+          <tr style="height: <?= $subjRowHeight ?>px;">
+            <td class="subj-name" style="padding: <?= $subjPadding ?>; height: <?= $subjRowHeight ?>px;">&nbsp;</td>
+            <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
+            <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
+            <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
             <?php if ($isCumulative): ?>
-              <td>&nbsp;</td>
+              <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
               <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
-                <td>&nbsp;</td>
+                <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
               <?php endif; ?>
               <?php if ($term === '3rd Term'): ?>
-                <td>&nbsp;</td>
+                <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
               <?php endif; ?>
-              <td>&nbsp;</td>
+              <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
             <?php else: ?>
-              <td>&nbsp;</td>
+              <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
             <?php endif; ?>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
+            <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
+            <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
+            <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
+            <td style="padding: <?= $subjPadding ?>;">&nbsp;</td>
           </tr>
           <?php endfor; ?>
 
           <!-- Total Row 1 -->
-          <tr style="font-weight: 900;">
-            <td class="subj-name cum-red"><?= $isCumulative ? 'CUMMULATIVE:' : 'TOTAL:' ?></td>
-            <td class="score-blue"><?= $sumTest1 ?></td>
-            <td class="score-blue"><?= $sumTest2 ?></td>
-            <td class="score-blue"><?= $sumExam ?></td>
+          <tr style="font-weight: 900; height: <?= max(16, $subjRowHeight) ?>px;">
+            <td class="subj-name cum-red" style="padding: <?= $subjPadding ?>;"><?= $isCumulative ? 'CUMMULATIVE:' : 'TOTAL:' ?></td>
+            <td class="score-blue" style="padding: <?= $subjPadding ?>;"><?= $sumTest1 ?></td>
+            <td class="score-blue" style="padding: <?= $subjPadding ?>;"><?= $sumTest2 ?></td>
+            <td class="score-blue" style="padding: <?= $subjPadding ?>;"><?= $sumExam ?></td>
             <?php if ($isCumulative): ?>
-              <td class="score-blue"><?= $sumTerm1 ?></td>
+              <td class="score-blue" style="padding: <?= $subjPadding ?>;"><?= $sumTerm1 ?></td>
               <?php if ($term === '2nd Term' || $term === '3rd Term'): ?>
-                <td class="score-blue"><?= $sumTerm2 ?></td>
+                <td class="score-blue" style="padding: <?= $subjPadding ?>;"><?= $sumTerm2 ?></td>
               <?php endif; ?>
               <?php if ($term === '3rd Term'): ?>
-                <td class="score-blue"><?= $sumTerm3 ?></td>
+                <td class="score-blue" style="padding: <?= $subjPadding ?>;"><?= $sumTerm3 ?></td>
               <?php endif; ?>
-              <td style="font-weight: 900;"><?= $sumCumTotal ?></td>
+              <td style="font-weight: 900; padding: <?= $subjPadding ?>;"><?= $sumCumTotal ?></td>
             <?php else: ?>
-              <td class="score-blue" style="font-weight: 900;"><?= $sumCurrentTotal ?></td>
+              <td class="score-blue" style="font-weight: 900; padding: <?= $subjPadding ?>;"><?= $sumCurrentTotal ?></td>
             <?php endif; ?>
             <td></td>
             <td></td>
@@ -1338,12 +1396,29 @@ foreach ($studentIds as $studentId):
           </tr>
 
           <!-- Total Row 2 -->
-          <tr style="font-weight: 900;">
-            <td class="subj-name cum-red"><?= $isCumulative ? 'CUMMULATIVE (%):' : 'AVERAGE (%):' ?></td>
-            <td colspan="<?= $isCumulative ? ($term === '3rd Term' ? 8 : ($term === '2nd Term' ? 7 : 6)) : 5 ?>"></td>
-            <td style="font-weight: 900;"><?= number_format($studentOverallAvg, 2) ?></td>
-            <td style="font-weight: 900;"><?= number_format($classOverallAvg, 2) ?></td>
-            <td></td>
+          <tr style="font-weight: 900; height: <?= max(16, $subjRowHeight) ?>px;">
+            <td class="subj-name cum-red" style="padding: <?= $subjPadding ?>;"><?= $isCumulative ? 'CUMMULATIVE (%):' : 'AVERAGE (%):' ?></td>
+            <td colspan="<?= $isCumulative ? ($term === '3rd Term' ? 8 : ($term === '2nd Term' ? 7 : 6)) : 5 ?>" style="padding: <?= $subjPadding ?>;"></td>
+            <td style="font-weight: 900; padding: <?= $subjPadding ?>;"><?= number_format($studentOverallAvg, 2) ?></td>
+            <td style="font-weight: 900; padding: <?= $subjPadding ?>;"><?= number_format($classOverallAvg, 2) ?></td>
+            <td style="padding: <?= $subjPadding ?>;"></td>
+          </tr>
+
+          <!-- Academic Performance Summary Strip -->
+          <?php
+            $summaryColSpan = $isCumulative ? ($term === '3rd Term' ? 12 : ($term === '2nd Term' ? 11 : 10)) : 9;
+          ?>
+          <tr style="background: #f1f5f9; font-size: 8px; font-weight: 700;">
+            <td colspan="<?= $summaryColSpan ?>" style="padding: 2.5px 6px; text-align: left; border: 1px solid #000; line-height: 1.35;">
+              <span style="color: #1e3a8a; font-weight: 900; letter-spacing: 0.3px;">PERFORMANCE SUMMARY:</span>
+              Offered: <strong><?= $numSubjects ?></strong> &nbsp;|&nbsp;
+              Distinctions (A): <strong style="color: #16a34a;"><?= $distinctionCount ?></strong> &nbsp;|&nbsp;
+              Credits (B–C): <strong style="color: #2563eb;"><?= $creditCount ?></strong> &nbsp;|&nbsp;
+              Passes (D–E): <strong style="color: #ca8a04;"><?= $passCount ?></strong>
+              <?php if ($highestSubject && $highestScore >= 0): ?>
+                &nbsp;|&nbsp; Best: <strong style="color: #15803d;"><?= htmlspecialchars($highestSubject) ?> (<?= $highestScore ?>%)</strong>
+              <?php endif; ?>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -1421,70 +1496,49 @@ foreach ($studentIds as $studentId):
     </div>
   </div>
 
-  <!-- Grading Scale & Parent Signature Strip -->
-  <div style="margin-bottom: 5px; border: 1.5px solid #000;">
-    <div style="display: flex; align-items: stretch;">
-
-      <!-- Grading Key Table -->
-      <div style="flex: 1.4; border-right: 1px solid #000;">
-        <div style="background: #cbd5e1; border-bottom: 1px solid #000; padding: 2px 6px; font-weight: 900; font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.3px;">
-          GRADING SCALE / KEY <?= $isJunior ? '(JUNIOR SCHOOL - BASIC 7–9)' : '(SENIOR SCHOOL - SS 1–3)' ?>
-        </div>
-        <table style="width: 100%; border-collapse: collapse; font-size: 8.5px;">
-          <thead>
-            <tr style="background: #f8fafc;">
-              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center; width: 12%;">GRADE</th>
-              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center; width: 25%;">SCORE RANGE (%)</th>
-              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center;">REMARK</th>
-              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center; width: 12%;">GRADE</th>
-              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center; width: 25%;">SCORE RANGE (%)</th>
-              <th style="border: 1px solid #000; padding: 2px 5px; font-weight: 900; text-align: center;">REMARK</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #16a34a;">A</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $activeGradeA ?> – 100</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">EXCELLENT</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #ca8a04;">D</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $activeGradeD ?> – <?= $activeGradeC - 1 ?></td>
-              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">PASS</td>
-            </tr>
-            <tr style="background: #f8fafc;">
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #2563eb;">B</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $activeGradeB ?> – <?= $activeGradeA - 1 ?></td>
-              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">VERY GOOD</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #d97706;">E</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $activeGradeE ?> – <?= $activeGradeD - 1 ?></td>
-              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">PASS</td>
-            </tr>
-            <tr>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #0891b2;">C</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $activeGradeC ?> – <?= $activeGradeB - 1 ?></td>
-              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">CREDIT</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #dc2626;">F</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">0 – <?= $activeGradeE - 1 ?></td>
-              <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">FAIL</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Parent/Guardian Acknowledgment -->
-      <div style="flex: 1; display: flex; flex-direction: column;">
-        <div style="background: #cbd5e1; border-bottom: 1px solid #000; padding: 2px 6px; font-weight: 900; font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.3px;">
-          PARENT / GUARDIAN ACKNOWLEDGMENT
-        </div>
-        <div style="padding: 5px 8px; font-size: 8px; font-weight: 600; color: #374151; line-height: 1.5; flex: 1;">
-          I have seen and read this report card and I am satisfied with its content.
-        </div>
-        <div style="padding: 3px 8px 5px; display: flex; gap: 16px; align-items: flex-end;">
-          <div style="flex: 1; border-top: 1px solid #000; font-size: 7.5px; padding-top: 2px; font-weight: 700;">Signature</div>
-          <div style="flex: 1; border-top: 1px solid #000; font-size: 7.5px; padding-top: 2px; font-weight: 700;">Date</div>
-        </div>
-      </div>
-
+  <!-- Full-Width Grading Scale / Key Strip -->
+  <div style="margin-bottom: 4px; border: 1.5px solid #000;">
+    <div style="background: #cbd5e1; border-bottom: 1px solid #000; padding: 2px 6px; font-weight: 900; font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.3px; text-align: center;">
+      GRADING SCALE / KEY <?= $isJunior ? '(JUNIOR SCHOOL - BASIC 7–9)' : '(SENIOR SCHOOL - SS 1–3)' ?>
     </div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 8.5px;">
+      <thead>
+        <tr style="background: #f8fafc;">
+          <th style="border: 1px solid #000; padding: 2px 4px; font-weight: 900; text-align: center; width: 10%;">GRADE</th>
+          <th style="border: 1px solid #000; padding: 2px 4px; font-weight: 900; text-align: center; width: 23%;">SCORE RANGE (%)</th>
+          <th style="border: 1px solid #000; padding: 2px 4px; font-weight: 900; text-align: center; width: 17%;">REMARK</th>
+          <th style="border: 1px solid #000; padding: 2px 4px; font-weight: 900; text-align: center; width: 10%;">GRADE</th>
+          <th style="border: 1px solid #000; padding: 2px 4px; font-weight: 900; text-align: center; width: 23%;">SCORE RANGE (%)</th>
+          <th style="border: 1px solid #000; padding: 2px 4px; font-weight: 900; text-align: center; width: 17%;">REMARK</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 800; color: #16a34a;">A</td>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 700;"><?= $activeGradeA ?> – 100</td>
+          <td style="border: 1px solid #000; padding: 2px 4px; font-weight: 700; text-align: center;">EXCELLENT</td>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 800; color: #ca8a04;">D</td>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 700;"><?= $activeGradeD ?> – <?= $activeGradeC - 1 ?></td>
+          <td style="border: 1px solid #000; padding: 2px 4px; font-weight: 700; text-align: center;">PASS</td>
+        </tr>
+        <tr style="background: #f8fafc;">
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 800; color: #2563eb;">B</td>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 700;"><?= $activeGradeB ?> – <?= $activeGradeA - 1 ?></td>
+          <td style="border: 1px solid #000; padding: 2px 4px; font-weight: 700; text-align: center;">VERY GOOD</td>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 800; color: #d97706;">E</td>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 700;"><?= $activeGradeE ?> – <?= $activeGradeD - 1 ?></td>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 700; text-align: center;">PASS</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 800; color: #0891b2;">C</td>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 700;"><?= $activeGradeC ?> – <?= $activeGradeB - 1 ?></td>
+          <td style="border: 1px solid #000; padding: 2px 4px; font-weight: 700; text-align: center;">CREDIT</td>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 800; color: #dc2626;">F</td>
+          <td style="border: 1px solid #000; padding: 2px 4px; text-align: center; font-weight: 700;">0 – <?= $activeGradeE - 1 ?></td>
+          <td style="border: 1px solid #000; padding: 2px 4px; font-weight: 700; text-align: center;">FAIL</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <!-- Bottom Footer Section -->

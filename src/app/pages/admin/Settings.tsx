@@ -46,6 +46,7 @@ export default function AdminSettings() {
   const [schoolWebsite, setSchoolWebsite] = useState("www.deeperlifehighschool.org");
   const [acceptanceFeeAmount, setAcceptanceFeeAmount] = useState("20000");
   const [resultMode, setResultMode] = useState("end_of_term");
+  const [showPosition, setShowPosition] = useState(true);
 
   // Grading scheme cutoff scores
   const [gradeAMin, setGradeAMin] = useState("80");
@@ -161,6 +162,7 @@ export default function AdminSettings() {
           setSchoolWebsite(s.school_website || "www.deeperlifehighschool.org");
           setAcceptanceFeeAmount(s.acceptance_fee_amount || "20000");
           setResultMode(s.result_mode || "end_of_term");
+          setShowPosition(s.show_position === undefined ? true : s.show_position === "1");
 
           setGradeAMin(s.grade_A_min || "80");
           setGradeBMin(s.grade_B_min || "70");
@@ -248,6 +250,7 @@ export default function AdminSettings() {
       school_website: schoolWebsite,
       acceptance_fee_amount: acceptanceFeeAmount,
       result_mode: resultMode,
+      show_position: showPosition ? "1" : "0",
       grade_A_min: gradeAMin,
       grade_B_min: gradeBMin,
       grade_C_min: gradeCMin,
@@ -541,6 +544,15 @@ export default function AdminSettings() {
                     <option value="mid_term">Mid-Term (Evaluations out of 20)</option>
                     <option value="end_of_term">Full Term (Final grades out of 100)</option>
                   </select>
+                </div>
+                <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--heading)", textTransform: "uppercase", letterSpacing: "0.04em" }}>Show Student Position / Rank</label>
+                    <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>Enable or disable showing student position (e.g. 1st, 2nd, 94th) on printed report cards</div>
+                  </div>
+                  <button type="button" onClick={() => setShowPosition(!showPosition)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                    {showPosition ? <ToggleRight size={30} style={{ color: "#219EBC" }} /> : <ToggleLeft size={30} style={{ color: "rgba(142,202,230,0.3)" }} />}
+                  </button>
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>School Contact Email</label>
