@@ -35,3 +35,10 @@ api/.env.*
 # Temporary and upload directories
 api/uploads/*
 !api/uploads/.gitkeep
+!api/uploads/.htaccess
+!api/uploads/logos/
+!api/uploads/logos/*
+uploads/*
+!uploads/.htaccess
+!uploads/logos/
+!uploads/logos/*

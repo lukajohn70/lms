@@ -62,9 +62,9 @@ export default function RoleSelect() {
 
   const autofill = (role: string) => {
     const map: Record<string, string> = {
-      student: "kolade@student.aroura.com",
-      teacher: "amaka.eze@teacher.aroura.com",
-      admin: "admin@aroura.com",
+      student: "kolade@student.dlhs.edu.ng",
+      teacher: "amaka.eze@teacher.dlhs.edu.ng",
+      admin: "admin@dlhs.edu.ng",
     };
     setEmail(map[role] || "");
     setPassword("password123");
@@ -100,7 +100,7 @@ export default function RoleSelect() {
           }} />
           <div style={{ position: "relative", zIndex: 1 }}>
             {/* Logo on left panel */}
-            <img src="/logo.png" alt="Aroura Academy" style={{ width: 56, height: 56, borderRadius: 14, marginBottom: 28, boxShadow: "0 4px 20px rgba(2,48,71,0.15)" }} />
+            <img src="/logo.png" alt="Deeper Life High School" style={{ width: 56, height: 56, borderRadius: 14, marginBottom: 28, boxShadow: "0 4px 20px rgba(2,48,71,0.15)", objectFit: "contain" }} />
 
             <div style={{
               background: "rgba(255,255,255,0.6)",
@@ -123,7 +123,7 @@ export default function RoleSelect() {
                 Learning<br />Evolved.
               </h2>
               <p style={{ color: "#3d6475", fontSize: 14.5, margin: "0 0 28px", lineHeight: 1.75 }}>
-                Aroura Academy's next-generation platform for students, educators, and parents.
+                Deeper Life High School's next-generation portal for students and educators.
               </p>
 
               {/* Count-up stats */}
@@ -156,7 +156,7 @@ export default function RoleSelect() {
           <div style={{ width: "100%", maxWidth: "420px" }}>
             {/* Logo + heading */}
             <div style={{ marginBottom: 32 }}>
-              <img src="/logo.png" alt="Aroura Academy" style={{ width: 52, height: 52, borderRadius: 14, marginBottom: 20, boxShadow: "0 6px 24px rgba(33,158,188,0.25)" }} />
+              <img src="/logo.png" alt="Deeper Life High School" style={{ width: 52, height: 52, borderRadius: 14, marginBottom: 20, boxShadow: "0 6px 24px rgba(33,158,188,0.25)", objectFit: "contain" }} />
               <h1 style={{ fontSize: 26, fontWeight: 800, color: theme === "dark" ? "#e8f4f8" : "#012030", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
                 Portal Sign In
               </h1>

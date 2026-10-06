@@ -423,12 +423,28 @@ class BroadsheetController {
         $students = $data['students'];
         $summary = $data['summary'];
 
+        // Dynamically compute width for student name column based on the longest name in the class
+        $maxNameLen = 14;
+        if (!empty($students)) {
+            foreach ($students as $stu) {
+                $len = strlen(trim($stu['name'] ?? ''));
+                if ($len > $maxNameLen) {
+                    $maxNameLen = $len;
+                }
+            }
+        }
+        // At 9.5px font-size in Arial uppercase: ~5.9px per character + 14px padding.
+        // Clamp dynamically between 110px and 200px so it fits the longest name snugly without wasting landscape space.
+        $dynamicNameWidth = max(110, min(200, intval($maxNameLen * 5.9 + 14)));
+
         ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Broadsheet - <?= htmlspecialchars($school['class_title']) ?> (<?= htmlspecialchars($school['term']) ?> <?= htmlspecialchars($school['session']) ?>)</title>
+    <link rel="icon" type="image/x-icon" href="/lms/favicon.ico">
+    <link rel="icon" type="image/png" href="<?= htmlspecialchars(!empty($school['logo_url']) ? $school['logo_url'] : '/lms/public/favicon.png') ?>">
     <style>
         @page {
             size: landscape;
@@ -529,7 +545,9 @@ class BroadsheetController {
             font-weight: bold;
         }
         .col-name {
-            width: 180px;
+            width: <?= $dynamicNameWidth ?>px;
+            min-width: <?= $dynamicNameWidth ?>px;
+            max-width: <?= $dynamicNameWidth ?>px;
             text-align: left !important;
             padding-left: 5px !important;
             white-space: nowrap;

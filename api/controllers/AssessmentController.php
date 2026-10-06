@@ -330,7 +330,7 @@ class AssessmentController {
         $schoolEmail   = $this->getSetting('school_email', 'DLHSEXAMSKADUNA@YAHOO.COM');
         $schoolWebsite = $this->getSetting('school_website', 'WWW.DEEPERLIFEHIGHSCHOOL.ORG');
         $schoolMotto   = $this->getSetting('school_motto', 'MOTTO: LEADERSHIP WITH DISTINCTION');
-        $logoPath      = $this->getSetting('school_logo_path', '');
+        $logoPath      = $this->getSetting('school_logo_path', 'uploads/logos/dlhs_logo.webp');
 
         // Vacation & resumption dates — keyed by term number
         $termNum = ($term === '1st Term') ? '1' : (($term === '2nd Term') ? '2' : '3');
@@ -425,7 +425,9 @@ class AssessmentController {
             'drawing_painting' => 'Drawing/Painting'
         ];
 
-        $apiBase  = 'http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+        $proto    = $isHttps ? 'https://' : 'http://';
+        $apiBase  = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
         $logoSrc  = $logoPath ? "$apiBase/$logoPath" : '';
         ?>
 <!DOCTYPE html>
@@ -433,6 +435,8 @@ class AssessmentController {
 <head>
 <meta charset="UTF-8">
 <title><?= count($studentIds) > 1 ? "Batch Report Cards - " . htmlspecialchars($batchClassName) : "Report Card" ?></title>
+<link rel="icon" type="image/x-icon" href="/lms/favicon.ico">
+<link rel="icon" type="image/png" href="<?= htmlspecialchars($logoSrc ?: '/lms/public/favicon.png') ?>">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1645,15 +1649,37 @@ foreach ($studentIds as $studentId):
         // School settings
         $schoolName   = $this->getSetting('school_name', 'DEEPER LIFE HIGH SCHOOL');
         $schoolCampus = $this->getSetting('school_campus', 'KADUNA CAMPUS');
-        $logoPath     = $this->getSetting('school_logo_path', '');
-        $apiBase      = 'http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
+        $schoolPrincipal = $this->getSetting('school_principal', 'Mrs. Bamishe Olumuyiwa');
+        $logoPath     = $this->getSetting('school_logo_path', 'uploads/logos/dlhs_logo.webp');
+        $isHttps      = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+        $proto        = $isHttps ? 'https://' : 'http://';
+        $apiBase      = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
         $logoSrc      = $logoPath ? "$apiBase/$logoPath" : '';
+
+        // Vacation & Resumption dates for Mid-Term Break
+        $termNum = ($term === '1st Term') ? '1' : (($term === '2nd Term') ? '2' : '3');
+        $midtermVacationDate   = $this->getSetting('midterm_vacation_date_term' . $termNum, '');
+        if (!$midtermVacationDate) {
+            $midtermVacationDate = $this->getSetting('midterm_vacation_date', '');
+        }
+        $midtermResumptionDate = $this->getSetting('midterm_resumption_date_term' . $termNum, '');
+        if (!$midtermResumptionDate) {
+            $midtermResumptionDate = $this->getSetting('midterm_resumption_date', '');
+        }
+
+        $fmtDate = function($d) {
+            if (!$d) return "—";
+            $ts = strtotime($d);
+            return date('jS F, Y', $ts);
+        };
         ?>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title><?= count($studentIds) > 1 ? "Batch Mid-Term Results — " . htmlspecialchars($batchClassName) : "Mid-Term Result" ?></title>
+<link rel="icon" type="image/x-icon" href="/lms/favicon.ico">
+<link rel="icon" type="image/png" href="<?= htmlspecialchars($logoSrc ?: '/lms/public/favicon.png') ?>">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1696,6 +1722,25 @@ body { font-family: 'Roboto', Arial, sans-serif; color: #000; background: #33415
 .remark-box { border: 1.5px solid #000; }
 .remark-box-title { background: #e5e7eb; border-bottom: 1px solid #000; padding: 4px 8px; font-weight: 900; font-size: 10px; text-transform: uppercase; }
 .remark-box-body { padding: 10px 10px; font-size: 11px; font-weight: 700; min-height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; }
+
+/* Endorsement & Mid-term Dates Section */
+.endorsement-section { display: flex; gap: 12px; margin-top: 10px; }
+.break-calendar-box { flex: 1; border: 1.5px solid #000; display: flex; flex-direction: column; }
+.signature-stamp-box { flex: 1.25; border: 1.5px solid #000; display: flex; flex-direction: column; }
+.box-hdr { background: #e5e7eb; border-bottom: 1px solid #000; padding: 4px 8px; font-weight: 900; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+.calendar-details { padding: 8px 12px; display: flex; flex-direction: column; justify-content: center; flex: 1; }
+.cal-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px dashed #cbd5e1; font-size: 10.5px; }
+.cal-row:last-of-type { border-bottom: none; }
+.cal-lbl { font-weight: 800; color: #334155; font-size: 10px; }
+.cal-val { font-weight: 900; color: #0f172a; }
+.cal-note { font-size: 8.5px; font-style: italic; color: #64748b; margin-top: 6px; }
+.endorsement-body { padding: 6px 12px; display: flex; align-items: center; justify-content: space-around; flex: 1; min-height: 72px; }
+.stamp-wrapper { flex-shrink: 0; transform: rotate(-5deg); opacity: 0.95; }
+.sign-block { text-align: center; display: flex; flex-direction: column; align-items: center; }
+.sign-canvas { height: 38px; }
+.principal-title { border-top: 1px solid #000; padding-top: 3px; width: 140px; }
+.principal-name { font-weight: 800; font-size: 10px; color: #000; text-transform: uppercase; }
+.principal-role { font-weight: 700; font-size: 8.5px; color: #64748b; letter-spacing: 0.5px; }
 
 @media print {
   html, body { width: 210mm !important; margin: 0 !important; padding: 0 !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -1880,6 +1925,71 @@ foreach ($studentIds as $sid):
     <div class="remark-box">
       <div class="remark-box-title">PRINCIPAL'S COMMENT:</div>
       <div class="remark-box-body"><?= htmlspecialchars($principalComment) ?></div>
+    </div>
+  </div>
+
+  <!-- Mid-term Dates & Principal Endorsement Section -->
+  <div class="endorsement-section">
+    <!-- Mid-Term Break Calendar Box -->
+    <div class="break-calendar-box">
+      <div class="box-hdr">MID-TERM BREAK CALENDAR</div>
+      <div class="calendar-details">
+        <div class="cal-row">
+          <span class="cal-lbl">DATE OF VACATION:</span>
+          <span class="cal-val"><?= htmlspecialchars($fmtDate($midtermVacationDate)) ?></span>
+        </div>
+        <div class="cal-row">
+          <span class="cal-lbl">DATE OF RESUMPTION:</span>
+          <span class="cal-val"><?= htmlspecialchars($fmtDate($midtermResumptionDate)) ?></span>
+        </div>
+        <div class="cal-note">
+          * Students are required to observe the break and resume promptly on the stated date.
+        </div>
+      </div>
+    </div>
+
+    <!-- Principal's Signature & Stamp Box -->
+    <div class="signature-stamp-box">
+      <div class="box-hdr">PRINCIPAL'S SIGNATURE & OFFICIAL STAMP</div>
+      <div class="endorsement-body">
+        <!-- Stamp Seal -->
+        <div class="stamp-wrapper">
+          <svg class="official-stamp" viewBox="0 0 140 140" width="84" height="84">
+            <defs>
+              <path id="stampCircleTop" d="M 22,70 A 48,48 0 0,1 118,70" fill="none" />
+              <path id="stampCircleBottom" d="M 118,70 A 48,48 0 0,1 22,70" fill="none" />
+            </defs>
+            <!-- Outer Double Ring -->
+            <circle cx="70" cy="70" r="66" fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-dasharray="7,3" />
+            <circle cx="70" cy="70" r="62" fill="none" stroke="#1e3a8a" stroke-width="1.2" />
+            <circle cx="70" cy="70" r="44" fill="none" stroke="#1e3a8a" stroke-width="1.2" />
+            <!-- Curved Text along circle -->
+            <text fill="#1e3a8a" font-size="8" font-weight="900" letter-spacing="1.1">
+              <textPath href="#stampCircleTop" startOffset="50%" text-anchor="middle">DEEPER LIFE HIGH SCHOOL</textPath>
+            </text>
+            <text fill="#1e3a8a" font-size="8.5" font-weight="900" letter-spacing="1.4">
+              <textPath href="#stampCircleBottom" startOffset="50%" text-anchor="middle">★ KADUNA CAMPUS ★</textPath>
+            </text>
+            <!-- Center Seal Content -->
+            <text x="70" y="59" text-anchor="middle" fill="#1e3a8a" font-size="7" font-weight="800" letter-spacing="0.5">OFFICIAL</text>
+            <text x="70" y="71" text-anchor="middle" fill="#dc2626" font-size="9" font-weight="900" letter-spacing="1">VERIFIED</text>
+            <text x="70" y="82" text-anchor="middle" fill="#1e3a8a" font-size="6.5" font-weight="700"><?= htmlspecialchars($session) ?></text>
+          </svg>
+        </div>
+
+        <!-- Signature & Principal Name -->
+        <div class="sign-block">
+          <div class="sign-canvas">
+            <svg width="125" height="38" viewBox="0 0 125 38">
+              <path d="M10,26 C26,5 36,33 46,15 C56,0 62,31 76,17 C86,7 92,28 112,19 M30,26 C53,23 80,21 106,22" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="principal-title">
+            <div class="principal-name"><?= htmlspecialchars($schoolPrincipal) ?></div>
+            <div class="principal-role">PRINCIPAL</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

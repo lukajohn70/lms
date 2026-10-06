@@ -49,15 +49,7 @@ export default function AdminLibrary() {
     if (cover) formData.append("cover", cover);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/library/upload`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
-        },
-        body: formData
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      await apiClient.postForm('/admin/library/upload', formData);
       
       setTitle("");
       setAuthor("");

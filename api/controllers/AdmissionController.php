@@ -44,7 +44,7 @@ class AdmissionController {
         // Auto schedule entrance exam
         // Let's schedule it for next Saturday from today at 9:00 AM
         $nextSaturday = date('Y-m-d H:i:s', strtotime('next Saturday 09:00:00'));
-        $venue = "Aroura Academy Main Auditorium";
+        $venue = "DLHS Main Auditorium";
         $seatNumber = "SEAT-" . rand(100, 999);
 
         // Handle Base64 Passport Photograph Upload
@@ -204,7 +204,7 @@ class AdmissionController {
             }
 
             // 3. Create student user account
-            $studentEmail = strtolower($application['child_first_name'] . '.' . $application['child_last_name'] . $application['id'] . '@aroura.com');
+            $studentEmail = strtolower($application['child_first_name'] . '.' . $application['child_last_name'] . $application['id'] . '@dlhs.edu.ng');
             $studentEmail = str_replace(' ', '', $studentEmail);
             $studentPasswordHash = password_hash($data->password, PASSWORD_BCRYPT);
 
@@ -393,7 +393,7 @@ class AdmissionController {
         $sStmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'school_name' LIMIT 1");
         $sStmt->execute();
         $sName = $sStmt->fetchColumn();
-        $schoolName = $sName ? $sName : "Aroura Academy";
+        $schoolName = $sName ? $sName : "Deeper Life High School";
         
         $words = explode(" ", preg_replace("/[^a-zA-Z ]/", "", $schoolName));
         $prefix = "";

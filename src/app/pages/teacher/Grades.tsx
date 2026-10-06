@@ -297,7 +297,7 @@ export default function Grades() {
 
     const filename = `${subjectSlug}_${termSlug}_${fileSuffix}_Template.csv`;
     const csvContent = "\uFEFF" + [
-      `# Aroura Academy Grade Mark Sheet`,
+      `# Deeper Life High School Grade Mark Sheet`,
       `# Subject: ${subjectName} | Term: ${selectedTerm} | Session: 2026/2027`,
       `# Scores precision: 2 decimal places. Limits: Asgn (5), Proj (5), Test (10), CA2 (20), Exam (60)`,
       headers.join(","),

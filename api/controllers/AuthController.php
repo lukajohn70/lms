@@ -20,14 +20,29 @@ class AuthController {
         }
 
         $ident = trim($data->email);
+        $legacyIdent = str_replace(
+            ['@student.dlhs.edu.ng', '@teacher.dlhs.edu.ng', '@dlhs.edu.ng', '@dlhs.com'],
+            ['@student.aroura.com', '@teacher.aroura.com', '@aroura.com', '@aroura.com'],
+            $ident
+        );
+        $dlhsIdent = str_replace(
+            ['@student.aroura.com', '@teacher.aroura.com', '@aroura.edu', '@aroura.com'],
+            ['@student.dlhs.edu.ng', '@teacher.dlhs.edu.ng', '@dlhs.edu.ng', '@dlhs.edu.ng'],
+            $ident
+        );
+
         $query = "SELECT id, email, password_hash, role, first_name, last_name, phone, relationship 
                   FROM users 
                   WHERE email = :ident 
+                     OR email = :legacyIdent
+                     OR email = :dlhsIdent
                      OR admission_number = :ident 
-                     OR (role = 'admin' AND :ident = 'admin')
+                     OR (role = 'admin' AND (:ident = 'admin' OR :ident = 'admin@dlhs.edu.ng'))
                   LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':ident', $ident);
+        $stmt->bindParam(':legacyIdent', $legacyIdent);
+        $stmt->bindParam(':dlhsIdent', $dlhsIdent);
         $stmt->execute();
 
         $user = $stmt->fetch();

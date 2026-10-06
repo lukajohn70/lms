@@ -246,16 +246,18 @@ export default function ParentAdmissions() {
     if (!printWindow) return;
 
     const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-    const sName = settings?.school_name || "Aroura Academy";
-    const sAcronym = settings?.school_acronym || "AROURA";
-    const sAddress = settings?.school_address || "12 Aroura Close, Victoria Island, Lagos, Nigeria";
-    const sPhone = settings?.school_phone || "+234 801 234 5678";
-    const sEmail = settings?.school_email || "admissions@aroura.edu.ng";
+    const sName = settings?.school_name || "Deeper Life High School";
+    const sAcronym = settings?.school_acronym || "DLHS";
+    const sAddress = settings?.school_address || "Km 42, Lagos-Ibadan Expressway, Ogun State, Nigeria";
+    const sPhone = settings?.school_phone || "+234 800 354 7466";
+    const sEmail = settings?.school_email || "info@deeperlifehighschool.org";
 
     printWindow.document.write(`
       <html>
         <head>
           <title>Payment Receipt - ${paymentRef}</title>
+          <link rel="icon" type="image/x-icon" href="/favicon.ico">
+          <link rel="icon" type="image/png" href="/logo.png">
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
             body { font-family: 'Montserrat', sans-serif; background: #f4f6f8; margin: 0; padding: 20px; color: #023047; }
@@ -326,11 +328,11 @@ export default function ParentAdmissions() {
     const sessionYear = settings?.academic_session || "2026/2027";
     
     // Dynamic School Variables
-    const sName = settings?.school_name || "Aroura Academy";
-    const sAcronym = settings?.school_acronym || "AROURA";
-    const sAddress = settings?.school_address || "12 Aroura Close, Victoria Island, Lagos, Nigeria";
-    const sPhone = settings?.school_phone || "+234 801 234 5678";
-    const sEmail = settings?.school_email || "admissions@aroura.edu.ng";
+    const sName = settings?.school_name || "Deeper Life High School";
+    const sAcronym = settings?.school_acronym || "DLHS";
+    const sAddress = settings?.school_address || "Km 42, Lagos-Ibadan Expressway, Ogun State, Nigeria";
+    const sPhone = settings?.school_phone || "+234 800 354 7466";
+    const sEmail = settings?.school_email || "info@deeperlifehighschool.org";
     const sDirector = settings?.school_director_name || "Mrs M I. Okafor";
     const acceptanceFee = parseInt(settings?.acceptance_fee_amount || "20000").toLocaleString();
 
@@ -338,6 +340,8 @@ export default function ParentAdmissions() {
       <html>
         <head>
           <title>Admission Letter - ${app.child_first_name} ${app.child_last_name}</title>
+          <link rel="icon" type="image/x-icon" href="/favicon.ico">
+          <link rel="icon" type="image/png" href="/logo.png">
           <style>
             @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@700;800&display=swap');
             * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -480,6 +484,8 @@ export default function ParentAdmissions() {
       <html>
         <head>
           <title>Entrance Exam Card - ${appDetails.child_first_name || ''} ${appDetails.child_last_name || ''}</title>
+          <link rel="icon" type="image/x-icon" href="/favicon.ico">
+          <link rel="icon" type="image/png" href="/logo.png">
           <style>
             body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #023047; padding: 20px; }
             .card { border: 3px double #219EBC; padding: 30px; max-width: 650px; margin: 0 auto; position: relative; border-radius: 12px; background: #fafdfc; }
@@ -508,11 +514,11 @@ export default function ParentAdmissions() {
         </head>
         <body>
           <div class="card">
-            <div class="watermark">AROURA ACADEMY</div>
+            <div class="watermark">DEEPER LIFE HIGH SCHOOL</div>
             <div class="header">
               <img src="/logo.png" class="logo" alt="Logo" />
               <div class="title">
-                <h1>Aroura Academy</h1>
+                <h1>Deeper Life High School</h1>
                 <p>Entrance Examination Photo Card</p>
               </div>
             </div>
@@ -809,7 +815,7 @@ export default function ParentAdmissions() {
                     <div style={{ background: "rgba(33,158,188,0.08)", border: "1px solid rgba(33,158,188,0.2)", borderRadius: 10, padding: 14, fontSize: 12.5, lineHeight: 1.6 }}>
                       <div style={{ fontWeight: 700, color: "#219EBC", marginBottom: 6 }}>Transfer Instructions:</div>
                       <div>Bank: <strong>Guaranty Trust Bank (GTBank)</strong></div>
-                      <div>Account Name: <strong>Aroura Academy Admissions</strong></div>
+                      <div>Account Name: <strong>Deeper Life High School Admissions</strong></div>
                       <div>Account Number: <strong style={{ fontSize: 14, color: "#fb8500" }}>0123456789</strong></div>
                       <div style={{ marginTop: 6, fontStyle: "italic", opacity: 0.8 }}>Please transfer exactly <strong>₦10,000</strong> to the account above, then fill in your transfer details below to verify.</div>
                     </div>
@@ -1536,7 +1542,7 @@ export default function ParentAdmissions() {
               <form onSubmit={handleAcceptSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ fontSize: 13, color: "var(--subtext)", lineHeight: 1.5 }}>
                   Setting up a portal account for <strong>{acceptApp.child_first_name} {acceptApp.child_last_name}</strong>.
-                  This will generate their Aroura Academy student credentials.
+                  This will generate their Deeper Life High School student credentials.
                 </div>
 
                 <div>

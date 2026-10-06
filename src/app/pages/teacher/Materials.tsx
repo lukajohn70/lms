@@ -62,14 +62,7 @@ export default function Materials() {
     form.append("material_file", file);
 
     try {
-      const baseUrl = window.location.origin;
-      const res = await fetch(`${baseUrl}/lms/api/index.php?path=/materials/upload`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Upload failed");
+      await apiClient.postForm('/materials/upload', form);
 
       setSuccess(true);
       setTitle("");

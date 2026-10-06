@@ -52,21 +52,13 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-6 border-b" style={{ borderColor: "rgba(142,202,230,0.1)" }}>
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{
-            background: "linear-gradient(135deg, #219EBC 0%, #FB8500 100%)",
-            boxShadow: "0 4px 20px rgba(33,158,188,0.4)",
-          }}
-        >
-          <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "18px", color: "#fff" }}>A</span>
-        </div>
+        <img src="/logo.png" alt="DLHS" className="w-10 h-10 rounded-xl object-contain" />
         <div>
-          <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: "15px", color: "#e8f4f8", letterSpacing: "0.02em" }}>
-            Aroura
+          <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: "14px", color: "#e8f4f8", letterSpacing: "0.02em" }}>
+            Deeper Life
           </div>
-          <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 400, fontSize: "11px", color: "#8ECAE6", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Academy
+          <div style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 500, fontSize: "11px", color: "#8ECAE6", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            High School
           </div>
         </div>
       </div>

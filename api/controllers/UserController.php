@@ -567,9 +567,9 @@ class UserController {
                     continue;
                 }
 
-                // Auto-generate email: firstname.lastname@aroura.edu
+                // Auto-generate email: firstname.lastname@dlhs.edu.ng
                 $baseEmail = strtolower(preg_replace('/[^A-Za-z]/', '', $firstName) . '.' . preg_replace('/[^A-Za-z]/', '', $lastName));
-                $email = $baseEmail . '@aroura.edu';
+                $email = $baseEmail . '@dlhs.edu.ng';
                 
                 // Handle duplicate emails by appending a number
                 $suffix = 1;
@@ -578,7 +578,7 @@ class UserController {
                     if ($stmtCheck->rowCount() === 0) {
                         break;
                     }
-                    $email = $baseEmail . $suffix . '@aroura.edu';
+                    $email = $baseEmail . $suffix . '@dlhs.edu.ng';
                     $suffix++;
                 }
 

@@ -17,9 +17,9 @@ function LoadingScreen() {
             boxShadow: "0 4px 24px rgba(33,158,188,0.4)",
           }}
         >
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 22, color: "#fff" }}>A</span>
+          <span style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 16, color: "#fff" }}>DLHS</span>
         </div>
-        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 13, color: "#8ECAE6" }}>Loading Aroura Academy…</div>
+        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 13, color: "#8ECAE6" }}>Loading Deeper Life High School…</div>
       </div>
     </div>
   );

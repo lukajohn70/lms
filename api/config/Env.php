@@ -1,5 +1,22 @@
 <?php
 
+// ── PHP 7.4 Polyfills for PHP 8 string functions ──────────────────────────────
+if (!function_exists('str_starts_with')) {
+    function str_starts_with(string $haystack, string $needle): bool {
+        return $needle === '' || strpos($haystack, $needle) === 0;
+    }
+}
+if (!function_exists('str_ends_with')) {
+    function str_ends_with(string $haystack, string $needle): bool {
+        return $needle === '' || substr($haystack, -strlen($needle)) === $needle;
+    }
+}
+if (!function_exists('str_contains')) {
+    function str_contains(string $haystack, string $needle): bool {
+        return $needle === '' || strpos($haystack, $needle) !== false;
+    }
+}
+
 /**
  * Env — Lightweight .env file loader.
  *
@@ -31,7 +48,7 @@ class Env {
             $line = trim($line);
 
             // Skip comments and blank lines
-            if ($line === '' || str_starts_with($line, '#')) continue;
+            if ($line === '' || substr($line, 0, 1) === '#') continue;
 
             // Split on the first '=' only
             $eqPos = strpos($line, '=');
@@ -57,8 +74,12 @@ class Env {
 
     /**
      * Get an environment variable with an optional default.
+     *
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
      */
-    public static function get(string $key, mixed $default = null): mixed {
+    public static function get(string $key, $default = null) {
         $val = $_ENV[$key] ?? getenv($key);
         return ($val !== false && $val !== null) ? $val : $default;
     }

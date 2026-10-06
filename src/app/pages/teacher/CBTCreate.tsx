@@ -41,7 +41,7 @@ export default function CBTCreate() {
     ];
 
     const csvContent = "\uFEFF" + [
-      "# Aroura Academy CBT Question Bank Template",
+      "# Deeper Life High School CBT Question Bank Template",
       "# correct_option can be A, B, C, or D (or 1, 2, 3, 4)",
       headers.join(","),
       ...rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(","))

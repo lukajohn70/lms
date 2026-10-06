@@ -68,7 +68,7 @@ class RegistrationController {
 
             // 2. Create the child user account
             // Generating a default email and password for the student based on their name for simplicity
-            $studentEmail = strtolower($registration['child_first_name'] . '.' . $registration['child_last_name'] . $registration['id'] . '@aroura.com');
+            $studentEmail = strtolower($registration['child_first_name'] . '.' . $registration['child_last_name'] . $registration['id'] . '@dlhs.edu.ng');
             // Remove spaces from email just in case
             $studentEmail = str_replace(' ', '', $studentEmail);
             $defaultPassword = "password123";
@@ -78,7 +78,7 @@ class RegistrationController {
             $sStmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'school_name' LIMIT 1");
             $sStmt->execute();
             $sName = $sStmt->fetchColumn();
-            $schoolName = $sName ? $sName : "Aroura Academy";
+            $schoolName = $sName ? $sName : "Deeper Life High School";
             
             $words = explode(" ", preg_replace("/[^a-zA-Z ]/", "", $schoolName));
             $prefix = "";

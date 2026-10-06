@@ -115,7 +115,7 @@ class DashboardController {
         echo json_encode([
             "academic_term" => $this->getSetting('current_term', '2nd Term'),
             "academic_session" => $this->getSetting('academic_session', '2026/2027'),
-            "school_name" => $this->getSetting('school_name', 'Aroura Academy'),
+            "school_name" => $this->getSetting('school_name', 'Deeper Life High School'),
             "stats" => [
                 "avgScore" => $avgScore,
                 "classRank" => $classRank,
@@ -239,7 +239,7 @@ class DashboardController {
         echo json_encode([
             "academic_term" => $this->getSetting('current_term', '2nd Term'),
             "academic_session" => $this->getSetting('academic_session', '2026/2027'),
-            "school_name" => $this->getSetting('school_name', 'Aroura Academy'),
+            "school_name" => $this->getSetting('school_name', 'Deeper Life High School'),
             "stats" => [
                 "totalStudents"    => $totalStudents,
                 "teachingStaff"    => $teachingStaff,

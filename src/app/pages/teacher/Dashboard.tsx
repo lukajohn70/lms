@@ -39,7 +39,7 @@ export default function TeacherDashboard() {
   }
 
   const { stats, classes } = data;
-  const schoolName  = settings?.school_name  || "Aroura Academy";
+  const schoolName  = settings?.school_name  || "Deeper Life High School";
   const currentTerm = settings?.current_term || "2nd Term";
   const session     = settings?.academic_session || "2026/2027";
 

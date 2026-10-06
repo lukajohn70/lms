@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Globe, Bell, Shield, Database, Save, ToggleLeft, ToggleRight, Check, CreditCard, User, Phone, Eye, EyeOff, BookOpen, Upload, Camera, Calendar, Award } from "lucide-react";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient, API_BASE_URL } from "../../lib/apiClient";
 import { useApp } from "../../contexts/AppContext";
+
+const API_MEDIA_BASE = API_BASE_URL.replace('/index.php', '/');
 import PasswordStrengthMeter from "../../components/PasswordStrengthMeter";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
@@ -68,10 +70,18 @@ export default function AdminSettings() {
 
   const [vacationDateTerm1, setVacationDateTerm1] = useState("2026-12-19");
   const [resumptionDateTerm1, setResumptionDateTerm1] = useState("2027-01-10");
+  const [midtermVacationDateTerm1, setMidtermVacationDateTerm1] = useState("2026-10-24");
+  const [midtermResumptionDateTerm1, setMidtermResumptionDateTerm1] = useState("2026-10-29");
+
   const [vacationDateTerm2, setVacationDateTerm2] = useState("2027-04-04");
   const [resumptionDateTerm2, setResumptionDateTerm2] = useState("2027-04-22");
+  const [midtermVacationDateTerm2, setMidtermVacationDateTerm2] = useState("2027-02-19");
+  const [midtermResumptionDateTerm2, setMidtermResumptionDateTerm2] = useState("2027-02-23");
+
   const [vacationDateTerm3, setVacationDateTerm3] = useState("2027-07-25");
   const [resumptionDateTerm3, setResumptionDateTerm3] = useState("2027-09-15");
+  const [midtermVacationDateTerm3, setMidtermVacationDateTerm3] = useState("2027-06-11");
+  const [midtermResumptionDateTerm3, setMidtermResumptionDateTerm3] = useState("2027-06-15");
 
   // Toggle states
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -127,7 +137,7 @@ export default function AdminSettings() {
       setLastName(user.last_name || "");
       setPhone((user as any)?.phone || "");
       if ((user as any)?.avatar_path) {
-        setAvatarPreview(`http://localhost/lms/api/${(user as any).avatar_path}`);
+        setAvatarPreview(`${API_MEDIA_BASE}${(user as any).avatar_path}`);
       }
     }
   }, [user]);
@@ -167,10 +177,18 @@ export default function AdminSettings() {
           setSchoolLogoPath(s.school_logo_path || "");
           setVacationDateTerm1(s.vacation_date_term1 || "2026-12-19");
           setResumptionDateTerm1(s.resumption_date_term1 || "2027-01-10");
+          setMidtermVacationDateTerm1(s.midterm_vacation_date_term1 || "2026-10-24");
+          setMidtermResumptionDateTerm1(s.midterm_resumption_date_term1 || "2026-10-29");
+
           setVacationDateTerm2(s.vacation_date_term2 || "2027-04-04");
           setResumptionDateTerm2(s.resumption_date_term2 || "2027-04-22");
+          setMidtermVacationDateTerm2(s.midterm_vacation_date_term2 || "2027-02-19");
+          setMidtermResumptionDateTerm2(s.midterm_resumption_date_term2 || "2027-02-23");
+
           setVacationDateTerm3(s.vacation_date_term3 || "2027-07-25");
           setResumptionDateTerm3(s.resumption_date_term3 || "2027-09-15");
+          setMidtermVacationDateTerm3(s.midterm_vacation_date_term3 || "2027-06-11");
+          setMidtermResumptionDateTerm3(s.midterm_resumption_date_term3 || "2027-06-15");
 
           setEmailNotifications(s.email_notifications === "1");
           setCbtReminders(s.cbt_reminders === "1");
@@ -243,10 +261,18 @@ export default function AdminSettings() {
       school_logo_path: schoolLogoPath,
       vacation_date_term1: vacationDateTerm1,
       resumption_date_term1: resumptionDateTerm1,
+      midterm_vacation_date_term1: midtermVacationDateTerm1,
+      midterm_resumption_date_term1: midtermResumptionDateTerm1,
+
       vacation_date_term2: vacationDateTerm2,
       resumption_date_term2: resumptionDateTerm2,
+      midterm_vacation_date_term2: midtermVacationDateTerm2,
+      midterm_resumption_date_term2: midtermResumptionDateTerm2,
+
       vacation_date_term3: vacationDateTerm3,
       resumption_date_term3: resumptionDateTerm3,
+      midterm_vacation_date_term3: midtermVacationDateTerm3,
+      midterm_resumption_date_term3: midtermResumptionDateTerm3,
       email_notifications: emailNotifications,
       cbt_reminders: cbtReminders,
       fee_due_alerts: feeDueAlerts,
@@ -464,7 +490,7 @@ export default function AdminSettings() {
                   <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                     <div style={{ width: 56, height: 56, borderRadius: 10, background: "var(--muted)", border: "1.5px dashed var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
                       {schoolLogoPath ? (
-                        <img src={`http://localhost/lms/api/${schoolLogoPath}`} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <img src={`${API_MEDIA_BASE}${schoolLogoPath}`} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
                         <span style={{ fontSize: 18, fontWeight: 800, color: "#219EBC" }}>{schoolAcronym.slice(0, 2)}</span>
                       )}
@@ -747,14 +773,24 @@ export default function AdminSettings() {
                 {/* 1st Term */}
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#219EBC", marginBottom: 8, textTransform: "uppercase" }}>1st Term Calendar</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
                     <div>
-                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Vacation Date</label>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>End of Term Vacation</label>
                       <input type="date" value={vacationDateTerm1} onChange={e => setVacationDateTerm1(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
                     </div>
                     <div>
-                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Resumption Date</label>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Next Term Resumption</label>
                       <input type="date" value={resumptionDateTerm1} onChange={e => setResumptionDateTerm1(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Mid-Term Break Vacation</label>
+                      <input type="date" value={midtermVacationDateTerm1} onChange={e => setMidtermVacationDateTerm1(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Mid-Term Break Resumption</label>
+                      <input type="date" value={midtermResumptionDateTerm1} onChange={e => setMidtermResumptionDateTerm1(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
                     </div>
                   </div>
                 </div>
@@ -762,14 +798,24 @@ export default function AdminSettings() {
                 {/* 2nd Term */}
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#FFB703", marginBottom: 8, textTransform: "uppercase" }}>2nd Term Calendar</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
                     <div>
-                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Vacation Date</label>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>End of Term Vacation</label>
                       <input type="date" value={vacationDateTerm2} onChange={e => setVacationDateTerm2(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
                     </div>
                     <div>
-                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Resumption Date</label>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Next Term Resumption</label>
                       <input type="date" value={resumptionDateTerm2} onChange={e => setResumptionDateTerm2(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Mid-Term Break Vacation</label>
+                      <input type="date" value={midtermVacationDateTerm2} onChange={e => setMidtermVacationDateTerm2(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Mid-Term Break Resumption</label>
+                      <input type="date" value={midtermResumptionDateTerm2} onChange={e => setMidtermResumptionDateTerm2(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
                     </div>
                   </div>
                 </div>
@@ -777,14 +823,24 @@ export default function AdminSettings() {
                 {/* 3rd Term */}
                 <div style={{ padding: "12px 0" }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#FB8500", marginBottom: 8, textTransform: "uppercase" }}>3rd Term Calendar</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
                     <div>
-                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Vacation Date</label>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>End of Term Vacation</label>
                       <input type="date" value={vacationDateTerm3} onChange={e => setVacationDateTerm3(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
                     </div>
                     <div>
-                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Resumption Date</label>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Next Term Resumption</label>
                       <input type="date" value={resumptionDateTerm3} onChange={e => setResumptionDateTerm3(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Mid-Term Break Vacation</label>
+                      <input type="date" value={midtermVacationDateTerm3} onChange={e => setMidtermVacationDateTerm3(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>Mid-Term Break Resumption</label>
+                      <input type="date" value={midtermResumptionDateTerm3} onChange={e => setMidtermResumptionDateTerm3(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
                     </div>
                   </div>
                 </div>

@@ -82,12 +82,12 @@ export default function AdmissionsLogin() {
             background: "linear-gradient(160deg, rgba(2,48,71,0.06) 0%, rgba(2,48,71,0.35) 100%)",
           }} />
           <div style={{ position: "relative", zIndex: 1 }}>
-            <img src="/logo.png" alt="Aroura Academy" style={{ width: 56, height: 56, borderRadius: 14, marginBottom: 20, boxShadow: "0 4px 20px rgba(2,48,71,0.15)" }} />
+            <img src="/logo.png" alt="Deeper Life High School" style={{ width: 56, height: 56, borderRadius: 14, marginBottom: 20, boxShadow: "0 4px 20px rgba(2,48,71,0.15)", objectFit: "contain" }} />
             <h2 style={{ color: "#012030", fontSize: 36, fontWeight: 800, margin: "0 0 8px", lineHeight: 1.1, letterSpacing: "-0.025em" }}>
               Admissions Portal
             </h2>
             <p style={{ color: "#3d6475", fontSize: 14, margin: "0 0 32px", lineHeight: 1.6, maxWidth: 440 }}>
-              Welcome to the Aroura Academy child enrollment portal. Please register a Parent profile or log in below to start or continue your application.
+              Welcome to the Deeper Life High School child enrollment portal. Please register a Parent profile or log in below to start or continue your application.
             </p>
           </div>
 

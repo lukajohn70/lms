@@ -666,9 +666,9 @@ export function Layout({ children }: { children: ReactNode }) {
                     <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Contact Support</h4>
                     
                     <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11.5, color: "var(--subtext)", marginBottom: 18, background: "rgba(33,158,188,0.06)", border: "1px solid rgba(33,158,188,0.15)", borderRadius: 10, padding: 12 }}>
-                      <div>📞 Phone: <strong>{settings?.school_phone || "+234 801 234 5678"}</strong></div>
-                      <div>✉ Email: <strong>{settings?.school_email || "support@aroura.edu.ng"}</strong></div>
-                      <div>📍 Address: <strong>{settings?.school_address || "Aroura Academy Campus"}</strong></div>
+                      <div>📞 Phone: <strong>{settings?.school_phone || "+234 800 354 7466"}</strong></div>
+                      <div>✉ Email: <strong>{settings?.school_email || "support@deeperlifehighschool.org"}</strong></div>
+                      <div>📍 Address: <strong>{settings?.school_address || "Deeper Life High School Campus"}</strong></div>
                     </div>
 
                     {ticketSent ? (

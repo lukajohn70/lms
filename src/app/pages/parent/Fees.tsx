@@ -99,16 +99,18 @@ export default function ParentFees() {
     if (!printWindow) return;
 
     const today = new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-    const sName = settings?.school_name || "Aroura Academy";
-    const sAcronym = settings?.school_acronym || "AROURA";
-    const sAddress = settings?.school_address || "12 Aroura Close, Victoria Island, Lagos, Nigeria";
-    const sPhone = settings?.school_phone || "+234 801 234 5678";
-    const sEmail = settings?.school_email || "admissions@aroura.edu.ng";
+    const sName = settings?.school_name || "Deeper Life High School";
+    const sAcronym = settings?.school_acronym || "DLHS";
+    const sAddress = settings?.school_address || "Km 42, Lagos-Ibadan Expressway, Ogun State, Nigeria";
+    const sPhone = settings?.school_phone || "+234 800 354 7466";
+    const sEmail = settings?.school_email || "info@deeperlifehighschool.org";
 
     printWindow.document.write(`
       <html>
         <head>
           <title>Payment Receipt - ${paymentRef}</title>
+          <link rel="icon" type="image/x-icon" href="/favicon.ico">
+          <link rel="icon" type="image/png" href="/logo.png">
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
             body { font-family: 'Montserrat', sans-serif; background: #f4f6f8; margin: 0; padding: 20px; color: #023047; }

@@ -37,5 +37,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',   // expose to local network (access via Mac's IP e.g. http://192.168.x.x:5173)
     port: 5173,
+    proxy: {
+      '/lms/api': {
+        target: 'http://localhost',
+        changeOrigin: true,
+      },
+    },
   },
 })

@@ -179,6 +179,8 @@ export default function AdminAdmissions() {
       <html>
         <head>
           <title>Admission Letter - ${app.child_first_name} ${app.child_last_name}</title>
+          <link rel="icon" type="image/x-icon" href="/favicon.ico">
+          <link rel="icon" type="image/png" href="/logo.png">
           <style>
             @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@700;800&display=swap');
             * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -246,12 +248,12 @@ export default function AdminAdmissions() {
           <div class="page">
             <!-- HEADER -->
             <div class="header">
-              <img src="${window.location.origin}/lms/public/logo.png" class="logo" alt="Aroura Academy Logo" onerror="this.style.display='none'" />
+              <img src="${window.location.origin}/logo.png" class="logo" alt="Deeper Life High School Logo" onerror="this.style.display='none'" />
               <div class="school-info">
-                <div class="school-name">Aroura Academy</div>
-                <div class="school-tagline">Excellence in Education · Est. 2005</div>
+                <div class="school-name">Deeper Life High School</div>
+                <div class="school-tagline">Leadership with Distinction</div>
                 <div class="school-contact">
-                  📍 12 Aroura Close, Victoria Island, Lagos, Nigeria &nbsp;|&nbsp; 📞 +234 801 234 5678 &nbsp;|&nbsp; ✉ admissions@aroura.edu.ng
+                  📍 Km 42, Lagos-Ibadan Expressway, Ogun State, Nigeria &nbsp;|&nbsp; 📞 +234 800 354 7466 &nbsp;|&nbsp; ✉ info@deeperlifehighschool.org
                 </div>
               </div>
               <div class="ref-block">
@@ -273,10 +275,10 @@ export default function AdminAdmissions() {
 
             <!-- OPENING BODY -->
             <p class="body-text">
-              On behalf of the Management and Board of Directors of <strong>Aroura Academy</strong>, it is our distinct pleasure and honour to inform you that, following the successful completion of our Entrance Examination and the thorough review of your application, your ward has been <strong>offered admission</strong> into Aroura Academy for the <strong>${sessionYear} Academic Session</strong>.
+              On behalf of the Management and Board of Governors of <strong>Deeper Life High School</strong>, it is our distinct pleasure and honour to inform you that, following the successful completion of our Entrance Examination and the thorough review of your application, your ward has been <strong>offered admission</strong> into Deeper Life High School for the <strong>${sessionYear} Academic Session</strong>.
             </p>
             <p class="body-text">
-              We are confident that your ward possesses the qualities and academic potential that align with Aroura Academy's standards of excellence. We warmly welcome <strong>${app.child_first_name} ${app.child_last_name}</strong> into our school community.
+              We are confident that your ward possesses the qualities and academic potential that align with Deeper Life High School's standards of excellence. We warmly welcome <strong>${app.child_first_name} ${app.child_last_name}</strong> into our school community.
             </p>
 
             <!-- CANDIDATE INFO TABLE -->
@@ -329,12 +331,12 @@ export default function AdminAdmissions() {
 
             <!-- FEE NOTE -->
             <div class="fee-note">
-              ⚠ Please note that this offer of admission <strong>expires 30 days from the date of this letter</strong> if the acceptance fee and school fees are not paid. Aroura Academy reserves the right to offer the position to another candidate.
+              ⚠ Please note that this offer of admission <strong>expires 30 days from the date of this letter</strong> if acceptance procedures are not completed. Deeper Life High School reserves the right to offer the position to another candidate.
             </div>
 
             <!-- CLOSING -->
             <p class="body-text">
-              We look forward to welcoming <strong>${app.child_first_name}</strong> to Aroura Academy and are excited to partner with your family in shaping an extraordinary educational journey. Should you require any clarification, please do not hesitate to contact the Admissions Office.
+              We look forward to welcoming <strong>${app.child_first_name}</strong> to Deeper Life High School and are excited to partner with your family in shaping an extraordinary educational journey. Should you require any clarification, please do not hesitate to contact the Admissions Office.
             </p>
             <p class="body-text">Yours faithfully,</p>
 
@@ -342,16 +344,16 @@ export default function AdminAdmissions() {
             <div class="signature-block">
               <div class="sign-left">
                 <div class="sign-line"></div>
-                <div style="font-weight: 700; font-size: 14px;">The Registrar</div>
-                <div class="sign-label">Aroura Academy &nbsp;|&nbsp; Admissions Office</div>
+                <div style="font-weight: 700; font-size: 14px;">The Principal / Registrar</div>
+                <div class="sign-label">Deeper Life High School &nbsp;|&nbsp; Admissions Office</div>
               </div>
-              <div class="stamp-circle">AROURA<br/>ACADEMY<br/>OFFICIAL<br/>SEAL</div>
+              <div class="stamp-circle">DLHS<br/>OFFICIAL<br/>SEAL</div>
             </div>
 
             <!-- FOOTER -->
             <div class="footer">
-              This is an officially generated document by the Aroura Academy Admissions Management System.<br/>
-              For verification, contact admissions@aroura.edu.ng or call +234 801 234 5678.
+              This is an officially generated document by the Deeper Life High School Management System.<br/>
+              For verification, contact info@deeperlifehighschool.org or call +234 800 354 7466.
             </div>
           </div>
           <script>
@@ -379,6 +381,8 @@ export default function AdminAdmissions() {
       <html>
         <head>
           <title>Entrance Exam Card - ${appDetails.child_first_name || ''} ${appDetails.child_last_name || ''}</title>
+          <link rel="icon" type="image/x-icon" href="/favicon.ico">
+          <link rel="icon" type="image/png" href="/logo.png">
           <style>
             body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #023047; padding: 20px; }
             .card { border: 3px double #219EBC; padding: 30px; max-width: 650px; margin: 0 auto; position: relative; border-radius: 12px; background: #fafdfc; }
@@ -407,11 +411,11 @@ export default function AdminAdmissions() {
         </head>
         <body>
           <div class="card">
-            <div class="watermark">AROURA ACADEMY</div>
+            <div class="watermark">DEEPER LIFE HIGH SCHOOL</div>
             <div class="header">
               <img src="/logo.png" class="logo" alt="Logo" />
               <div class="title">
-                <h1>Aroura Academy</h1>
+                <h1>Deeper Life High School</h1>
                 <p>Entrance Examination Photo Card</p>
               </div>
             </div>

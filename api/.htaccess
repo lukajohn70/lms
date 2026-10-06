@@ -3,13 +3,23 @@ SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 
 # ── Protect the .env file from direct web access ─────────────────────────────
 <Files ".env">
-    Order Deny,Allow
-    Deny from all
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Deny,Allow
+        Deny from all
+    </IfModule>
 </Files>
 
 # ── Block direct HTTP access to diagnostic and migration utility scripts ──────
 # These files should only be run from the command line (CLI), never via a browser.
 <FilesMatch "^(diagnose|diagnose_schema|fix_fees|migrate|migrate_v2|migrate_v3)\.php$">
-    Order Deny,Allow
-    Deny from all
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Deny,Allow
+        Deny from all
+    </IfModule>
 </FilesMatch>

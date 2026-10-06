@@ -460,7 +460,7 @@ class FormTeacherController {
         fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
 
         // Comment instructions
-        fputcsv($out, ["# AROURA ACADEMY — FORM TEACHER ASSESSMENT TEMPLATE"]);
+        fputcsv($out, ["# DEEPER LIFE HIGH SCHOOL — FORM TEACHER ASSESSMENT TEMPLATE"]);
         fputcsv($out, ["# Class Arm: $className | Term: $term | Session: $session"]);
         fputcsv($out, ["# Ratings scale: 1 (Poor) to 5 (Excellent). Do not edit student_id or admission_number."]);
         fputcsv($out, $headers);

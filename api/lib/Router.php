@@ -44,6 +44,10 @@ class Router {
                 // Extract named params
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
                 
+                if (is_callable($route['action'])) {
+                    return call_user_func($route['action'], $params);
+                }
+
                 list($controllerClass, $methodName) = explode('@', $route['action']);
                 
                 require_once __DIR__ . '/../controllers/' . $controllerClass . '.php';

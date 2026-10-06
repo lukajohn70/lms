@@ -201,7 +201,7 @@ export default function AdminClasses() {
     ];
 
     const csvContent = "\uFEFF" + [
-      "# Aroura Academy Subjects (Courses) Template",
+      "# Deeper Life High School Subjects (Courses) Template",
       "# Required column: name",
       headers.join(","),
       ...rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(","))

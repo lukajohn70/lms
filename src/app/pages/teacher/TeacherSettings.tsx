@@ -62,13 +62,7 @@ export default function TeacherSettings() {
     formData.append("avatar", file);
 
     try {
-      const token = localStorage.getItem("token") || "";
-      const res = await fetch(`${API_BASE_URL}?path=/users/update-avatar`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
+      const data = await apiClient.postForm('/users/update-avatar', formData);
       if (data.success && data.avatar_path) {
         updateUser({ avatar_path: data.avatar_path } as any);
         setAvatarSuccess(true);

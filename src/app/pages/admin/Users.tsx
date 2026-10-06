@@ -12,16 +12,16 @@ const STUDENT_HEADERS = ["first_name", "last_name", "role", "phone", "gender", "
 const TEACHER_HEADERS = ["first_name", "last_name", "role", "phone", "gender", "date_of_birth", "subject"];
 
 // NOTE: 'email' column is intentionally omitted — backend auto-generates it as:
-// firstname.lastname[id]@aroura.edu  (duplicates get a numeric suffix)
+// firstname.lastname[id]@dlhs.edu.ng  (duplicates get a numeric suffix)
 const ROLE_TEMPLATES: Record<string, { headers: string[]; rows: string[][] }> = {
   student: {
     headers: STUDENT_HEADERS,
     rows: [
-      ["Amara",       "Okafor",    "student", "+234 801 234 5678", "Female", "2010-03-15", "JSS2"],
-      ["Chukwuemeka", "Adeyemi",   "student", "+234 802 345 6789", "Male",   "2011-07-22", "PRI 4"],
-      ["Babatunde",   "Ibrahim",   "student", "+234 805 678 9012", "Male",   "2009-12-30", "SS1"],
-      ["Adaeze",      "Nwosu",     "student", "+234 806 789 0123", "Female", "2012-01-08", "NUR 2"],
-      ["Emeka",       "Obiora",    "student", "+234 807 890 1234", "Male",   "2010-09-17", "PRI 6"],
+      ["Amara",       "Okafor",    "student", "+234 801 234 5678", "Female", "2010-03-15", "JSS 2"],
+      ["Chukwuemeka", "Adeyemi",   "student", "+234 802 345 6789", "Male",   "2011-07-22", "JSS 1"],
+      ["Babatunde",   "Ibrahim",   "student", "+234 805 678 9012", "Male",   "2009-12-30", "SS 1"],
+      ["Adaeze",      "Nwosu",     "student", "+234 806 789 0123", "Female", "2012-01-08", "JSS 3"],
+      ["Emeka",       "Obiora",    "student", "+234 807 890 1234", "Male",   "2010-09-17", "SS 2"],
     ],
   },
   teacher: {
@@ -41,14 +41,14 @@ function downloadCsvTemplate(role: "student" | "teacher" = "student") {
   const rows = [template.headers, ...template.rows];
   const csv = rows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
   // Add a comment header
-  const note = `# Aroura Academy LMS - ${role.charAt(0).toUpperCase() + role.slice(1)} Import Template\n` +
+  const note = `# Deeper Life High School LMS - ${role.charAt(0).toUpperCase() + role.slice(1)} Import Template\n` +
     `# Email is AUTO-GENERATED from firstname.lastname — do NOT add an email column.\n` +
     `# Password is AUTO-GENERATED as firstname + 4 digits. Share it with the user to change on first login.\n`;
   const blob = new Blob([note + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.setAttribute("download", `aroura_${role}_import_template.csv`);
+  link.setAttribute("download", `dlhs_${role}_import_template.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -760,7 +760,7 @@ export default function UsersPage() {
               <div style={{ marginTop: 8, fontSize: 11, color: "var(--subtext)" }}>
                 Role must be one of: <strong>student</strong>, <strong>teacher</strong>. 
                 <br/><br/>
-                <span style={{ color: "#2a9d8f", fontWeight: 600 }}>Emails & Passwords are AUTO-GENERATED.</span> Do not include them in the CSV. The backend creates emails as <em>firstname.lastname@aroura.edu</em> and passwords as <em>firstname + 4 digits</em>.
+                <span style={{ color: "#2a9d8f", fontWeight: 600 }}>Emails & Passwords are AUTO-GENERATED.</span> Do not include them in the CSV. The backend creates emails as <em>firstname.lastname@dlhs.edu.ng</em> and passwords as <em>firstname + 4 digits</em>.
               </div>
             </div>
 

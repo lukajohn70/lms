@@ -29,7 +29,11 @@ class Auth {
         return $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
     }
 
-    public static function verifyJWT(string $token): array|false {
+    /**
+     * @param string $token
+     * @return array|false
+     */
+    public static function verifyJWT(string $token) {
         $parts = explode('.', $token);
         if (count($parts) !== 3) {
             return false;
@@ -72,9 +76,10 @@ class Auth {
             }
         }
 
-        // NOTE: The ?token= URL fallback has been intentionally removed.
-        // Tokens in URLs appear in server logs, browser history, and referrer headers.
-        // All requests must send the token exclusively in the Authorization: Bearer header.
+        // Fallback: Query parameter for browser window.open navigations (print views, exports)
+        if (!empty($_GET['token'])) {
+            return trim($_GET['token']);
+        }
 
         return null;
     }

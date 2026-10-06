@@ -130,7 +130,7 @@ $router->post('/admin/users/reset-password', 'UserController@resetPassword');
 $router->post('/admin/users/appoint-hod', 'UserController@appointHod');
 $router->post('/admin/users/assign-class', 'UserController@assignStudentClass');
 $router->get('/', function() {
-    echo json_encode(["status" => "online", "message" => "Aroura LMS API is running"]);
+    echo json_encode(["status" => "online", "message" => "DLHS LMS API is running"]);
 });
 $router->post('/parent/update-profile', 'UserController@updateProfile');
 $router->post('/parent/update-password', 'UserController@updatePassword');
