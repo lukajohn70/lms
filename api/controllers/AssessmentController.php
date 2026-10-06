@@ -365,20 +365,36 @@ class AssessmentController {
         $rankStmt->execute([':term' => $term, ':session' => $session]);
         $rankings = $rankStmt->fetchAll();
 
-        // Grade scale thresholds from settings
-        $gradeA = intval($this->getSetting('grade_A_min', 80));
-        $gradeB = intval($this->getSetting('grade_B_min', 70));
-        $gradeC = intval($this->getSetting('grade_C_min', 60));
-        $gradeD = intval($this->getSetting('grade_D_min', 50));
-        $gradeE = intval($this->getSetting('grade_E_min', 45));
+        // Grade scale thresholds from settings - Senior (SS 1 - SS 3)
+        $seniorGradeA = intval($this->getSetting('grade_A_min', 80));
+        $seniorGradeB = intval($this->getSetting('grade_B_min', 70));
+        $seniorGradeC = intval($this->getSetting('grade_C_min', 60));
+        $seniorGradeD = intval($this->getSetting('grade_D_min', 50));
+        $seniorGradeE = intval($this->getSetting('grade_E_min', 45));
 
-        // Grade scale helper
-        $getGradeInfo = function($score) use ($gradeA, $gradeB, $gradeC, $gradeD, $gradeE) {
-            if ($score >= $gradeA) return ['grade' => 'A', 'remark' => 'EXCELLENT'];
-            if ($score >= $gradeB) return ['grade' => 'B', 'remark' => 'VERY GOOD'];
-            if ($score >= $gradeC) return ['grade' => 'C', 'remark' => 'CREDIT'];
-            if ($score >= $gradeD) return ['grade' => 'D', 'remark' => 'PASS'];
-            if ($score >= $gradeE) return ['grade' => 'E', 'remark' => 'PASS'];
+        // Grade scale thresholds from settings - Junior (Basic 7 - Basic 9 / JSS 1 - 3)
+        $juniorGradeA = intval($this->getSetting('grade_junior_A_min', 70));
+        $juniorGradeB = intval($this->getSetting('grade_junior_B_min', 60));
+        $juniorGradeC = intval($this->getSetting('grade_junior_C_min', 50));
+        $juniorGradeD = intval($this->getSetting('grade_junior_D_min', 45));
+        $juniorGradeE = intval($this->getSetting('grade_junior_E_min', 40));
+
+        // Grade scale helper (supports both Junior and Senior thresholds)
+        $getGradeInfo = function($score, $isJunior = false) use (
+            $seniorGradeA, $seniorGradeB, $seniorGradeC, $seniorGradeD, $seniorGradeE,
+            $juniorGradeA, $juniorGradeB, $juniorGradeC, $juniorGradeD, $juniorGradeE
+        ) {
+            $gA = $isJunior ? $juniorGradeA : $seniorGradeA;
+            $gB = $isJunior ? $juniorGradeB : $seniorGradeB;
+            $gC = $isJunior ? $juniorGradeC : $seniorGradeC;
+            $gD = $isJunior ? $juniorGradeD : $seniorGradeD;
+            $gE = $isJunior ? $juniorGradeE : $seniorGradeE;
+
+            if ($score >= $gA) return ['grade' => 'A', 'remark' => 'EXCELLENT'];
+            if ($score >= $gB) return ['grade' => 'B', 'remark' => 'VERY GOOD'];
+            if ($score >= $gC) return ['grade' => 'C', 'remark' => 'CREDIT'];
+            if ($score >= $gD) return ['grade' => 'D', 'remark' => 'PASS'];
+            if ($score >= $gE) return ['grade' => 'E', 'remark' => 'PASS'];
             return ['grade' => 'F', 'remark' => 'FAIL'];
         };
 
@@ -872,6 +888,22 @@ foreach ($studentIds as $studentId):
         if ($cRow) $className = strtoupper($cRow);
     }
 
+    // Detect Junior vs Senior secondary level
+    $isJunior = (
+        stripos($className, 'BASIC') !== false ||
+        stripos($className, 'JSS') !== false ||
+        stripos($className, 'JUNIOR') !== false ||
+        stripos($className, 'JS ') !== false ||
+        stripos($className, 'JS1') !== false ||
+        stripos($className, 'JS2') !== false ||
+        stripos($className, 'JS3') !== false
+    );
+    $activeGradeA = $isJunior ? $juniorGradeA : $seniorGradeA;
+    $activeGradeB = $isJunior ? $juniorGradeB : $seniorGradeB;
+    $activeGradeC = $isJunior ? $juniorGradeC : $seniorGradeC;
+    $activeGradeD = $isJunior ? $juniorGradeD : $seniorGradeD;
+    $activeGradeE = $isJunior ? $juniorGradeE : $seniorGradeE;
+
     // Attendance — use only real DB values, no dummy fallbacks
     if (isset($assessment['days_present']) && $assessment['days_present'] !== null && $assessment['days_present'] !== '') {
         $presentDays = intval($assessment['days_present']);
@@ -969,7 +1001,7 @@ foreach ($studentIds as $studentId):
             $studAvg     = $cummulative;
         }
 
-        $gInfo = $getGradeInfo($studAvg);
+        $gInfo = $getGradeInfo($studAvg, $isJunior);
 
         // Class average: only use real DB value; null means no class data
         $classAvg = (isset($classAvgMap[$cid]) && $classAvgMap[$cid] !== null)
@@ -1392,7 +1424,7 @@ foreach ($studentIds as $studentId):
       <!-- Grading Key Table -->
       <div style="flex: 1.4; border-right: 1px solid #000;">
         <div style="background: #cbd5e1; border-bottom: 1px solid #000; padding: 2px 6px; font-weight: 900; font-size: 8.5px; text-transform: uppercase; letter-spacing: 0.3px;">
-          GRADING SCALE / KEY
+          GRADING SCALE / KEY <?= $isJunior ? '(JUNIOR SCHOOL - BASIC 7–9)' : '(SENIOR SCHOOL - SS 1–3)' ?>
         </div>
         <table style="width: 100%; border-collapse: collapse; font-size: 8.5px;">
           <thead>
@@ -1408,26 +1440,26 @@ foreach ($studentIds as $studentId):
           <tbody>
             <tr>
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #16a34a;">A</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $gradeA ?> – 100</td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $activeGradeA ?> – 100</td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">EXCELLENT</td>
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #ca8a04;">D</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $gradeD ?> – <?= $gradeC - 1 ?></td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $activeGradeD ?> – <?= $activeGradeC - 1 ?></td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">PASS</td>
             </tr>
             <tr style="background: #f8fafc;">
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #2563eb;">B</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $gradeB ?> – <?= $gradeA - 1 ?></td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $activeGradeB ?> – <?= $activeGradeA - 1 ?></td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">VERY GOOD</td>
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #d97706;">E</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $gradeE ?> – <?= $gradeD - 1 ?></td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $activeGradeE ?> – <?= $activeGradeD - 1 ?></td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">PASS</td>
             </tr>
             <tr>
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #0891b2;">C</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $gradeC ?> – <?= $gradeB - 1 ?></td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;"><?= $activeGradeC ?> – <?= $activeGradeB - 1 ?></td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">CREDIT</td>
               <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 800; color: #dc2626;">F</td>
-              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">0 – <?= $gradeE - 1 ?></td>
+              <td style="border: 1px solid #000; padding: 2px 5px; text-align: center; font-weight: 700;">0 – <?= $activeGradeE - 1 ?></td>
               <td style="border: 1px solid #000; padding: 2px 5px; font-weight: 700;">FAIL</td>
             </tr>
           </tbody>

@@ -1,2 +1,8 @@
 Options -Indexes
 Options +FollowSymLinks
+
+# Block direct access to scratch/utility scripts
+<FilesMatch "^scratch_.*\.php$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>

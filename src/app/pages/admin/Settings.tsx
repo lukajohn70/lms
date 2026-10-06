@@ -52,6 +52,14 @@ export default function AdminSettings() {
   const [gradeDMin, setGradeDMin] = useState("50");
   const [gradeEMin, setGradeEMin] = useState("45");
 
+  // Junior Secondary Grading Scheme (Basic 7 - 9 / JSS)
+  const [gradeJuniorAMin, setGradeJuniorAMin] = useState("70");
+  const [gradeJuniorBMin, setGradeJuniorBMin] = useState("60");
+  const [gradeJuniorCMin, setGradeJuniorCMin] = useState("50");
+  const [gradeJuniorDMin, setGradeJuniorDMin] = useState("45");
+  const [gradeJuniorEMin, setGradeJuniorEMin] = useState("40");
+  const [activeGradingScheme, setActiveGradingScheme] = useState<"senior" | "junior">("senior");
+
   // School Logo & Term Dates
   const [schoolLogoPath, setSchoolLogoPath] = useState("");
   const [logoUploading, setLogoUploading] = useState(false);
@@ -150,6 +158,12 @@ export default function AdminSettings() {
           setGradeDMin(s.grade_D_min || "50");
           setGradeEMin(s.grade_E_min || "45");
 
+          setGradeJuniorAMin(s.grade_junior_A_min || "70");
+          setGradeJuniorBMin(s.grade_junior_B_min || "60");
+          setGradeJuniorCMin(s.grade_junior_C_min || "50");
+          setGradeJuniorDMin(s.grade_junior_D_min || "45");
+          setGradeJuniorEMin(s.grade_junior_E_min || "40");
+
           setSchoolLogoPath(s.school_logo_path || "");
           setVacationDateTerm1(s.vacation_date_term1 || "2026-12-19");
           setResumptionDateTerm1(s.resumption_date_term1 || "2027-01-10");
@@ -221,6 +235,11 @@ export default function AdminSettings() {
       grade_C_min: gradeCMin,
       grade_D_min: gradeDMin,
       grade_E_min: gradeEMin,
+      grade_junior_A_min: gradeJuniorAMin,
+      grade_junior_B_min: gradeJuniorBMin,
+      grade_junior_C_min: gradeJuniorCMin,
+      grade_junior_D_min: gradeJuniorDMin,
+      grade_junior_E_min: gradeJuniorEMin,
       school_logo_path: schoolLogoPath,
       vacation_date_term1: vacationDateTerm1,
       resumption_date_term1: resumptionDateTerm1,
@@ -538,78 +557,179 @@ export default function AdminSettings() {
 
             {/* Section: Grading Scale Scheme */}
             <Glass>
-              <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(216,27,96,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#D81B60" }}>
-                  <Award size={15} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Grading Scale Scheme</span>
-                  <div style={{ fontSize: 11, color: "var(--subtext)" }}>Configure minimum percentage score thresholds printed on student report cards</div>
-                </div>
-              </div>
-              <div style={{ padding: "16px 20px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 12, marginBottom: 16 }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#16a34a", marginBottom: 4 }}>Grade A Min (%)</label>
-                    <input type="number" min="0" max="100" value={gradeAMin} onChange={e => setGradeAMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(216,27,96,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#D81B60" }}>
+                    <Award size={15} />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#2563eb", marginBottom: 4 }}>Grade B Min (%)</label>
-                    <input type="number" min="0" max="100" value={gradeBMin} onChange={e => setGradeBMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#0891b2", marginBottom: 4 }}>Grade C Min (%)</label>
-                    <input type="number" min="0" max="100" value={gradeCMin} onChange={e => setGradeCMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#ca8a04", marginBottom: 4 }}>Grade D Min (%)</label>
-                    <input type="number" min="0" max="100" value={gradeDMin} onChange={e => setGradeDMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#d97706", marginBottom: 4 }}>Grade E Min (%)</label>
-                    <input type="number" min="0" max="100" value={gradeEMin} onChange={e => setGradeEMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Grading Scale Scheme</span>
+                    <div style={{ fontSize: 11, color: "var(--subtext)" }}>Independent minimum percentage score thresholds for Senior and Junior schools</div>
                   </div>
                 </div>
 
-                {/* Live Preview Table */}
-                <div style={{ background: "var(--muted)", borderRadius: 10, padding: "10px 14px", border: "1px solid var(--glass-border)" }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-                    Live Report Card Scale Preview
+                {/* Scheme Switcher Tabs */}
+                <div style={{ display: "flex", background: "var(--muted)", padding: 3, borderRadius: 8, border: "1px solid var(--glass-border)" }}>
+                  <button
+                    onClick={() => setActiveGradingScheme("senior")}
+                    style={{
+                      padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700,
+                      background: activeGradingScheme === "senior" ? "#219EBC" : "transparent",
+                      color: activeGradingScheme === "senior" ? "#fff" : "var(--subtext)",
+                      transition: "all 0.15s"
+                    }}
+                  >
+                    Senior (SS 1–3)
+                  </button>
+                  <button
+                    onClick={() => setActiveGradingScheme("junior")}
+                    style={{
+                      padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700,
+                      background: activeGradingScheme === "junior" ? "#FB8500" : "transparent",
+                      color: activeGradingScheme === "junior" ? "#fff" : "var(--subtext)",
+                      transition: "all 0.15s"
+                    }}
+                  >
+                    Junior (Basic 7–9)
+                  </button>
+                </div>
+              </div>
+
+              {activeGradingScheme === "senior" ? (
+                <div style={{ padding: "16px 20px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "#219EBC", textTransform: "uppercase", letterSpacing: "0.05em" }}>Senior Secondary Grading Thresholds (SS 1 - SS 3)</span>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(75px, 1fr))", gap: 6, textAlign: "center", fontSize: 11 }}>
-                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.25)" }}>
-                      <div style={{ fontWeight: 800, color: "#16a34a" }}>A</div>
-                      <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeAMin}–100%</div>
-                      <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>EXCELLENT</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#16a34a", marginBottom: 4 }}>Grade A Min (%)</label>
+                      <input type="number" min="0" max="100" value={gradeAMin} onChange={e => setGradeAMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
                     </div>
-                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(37,99,235,0.1)", border: "1px solid rgba(37,99,235,0.25)" }}>
-                      <div style={{ fontWeight: 800, color: "#2563eb" }}>B</div>
-                      <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeBMin}–{Number(gradeAMin) - 1}%</div>
-                      <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>VERY GOOD</div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#2563eb", marginBottom: 4 }}>Grade B Min (%)</label>
+                      <input type="number" min="0" max="100" value={gradeBMin} onChange={e => setGradeBMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
                     </div>
-                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(8,145,178,0.1)", border: "1px solid rgba(8,145,178,0.25)" }}>
-                      <div style={{ fontWeight: 800, color: "#0891b2" }}>C</div>
-                      <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeCMin}–{Number(gradeBMin) - 1}%</div>
-                      <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>CREDIT</div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#0891b2", marginBottom: 4 }}>Grade C Min (%)</label>
+                      <input type="number" min="0" max="100" value={gradeCMin} onChange={e => setGradeCMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
                     </div>
-                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(202,138,4,0.1)", border: "1px solid rgba(202,138,4,0.25)" }}>
-                      <div style={{ fontWeight: 800, color: "#ca8a04" }}>D</div>
-                      <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeDMin}–{Number(gradeCMin) - 1}%</div>
-                      <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#ca8a04", marginBottom: 4 }}>Grade D Min (%)</label>
+                      <input type="number" min="0" max="100" value={gradeDMin} onChange={e => setGradeDMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
                     </div>
-                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)" }}>
-                      <div style={{ fontWeight: 800, color: "#d97706" }}>E</div>
-                      <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeEMin}–{Number(gradeDMin) - 1}%</div>
-                      <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#d97706", marginBottom: 4 }}>Grade E Min (%)</label>
+                      <input type="number" min="0" max="100" value={gradeEMin} onChange={e => setGradeEMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
                     </div>
-                    <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.25)" }}>
-                      <div style={{ fontWeight: 800, color: "#dc2626" }}>F</div>
-                      <div style={{ fontWeight: 700, fontSize: 10 }}>0–{Number(gradeEMin) - 1}%</div>
-                      <div style={{ fontSize: 8.5, color: "#dc2626" }}>FAIL</div>
+                  </div>
+
+                  {/* Live Preview Table */}
+                  <div style={{ background: "var(--muted)", borderRadius: 10, padding: "10px 14px", border: "1px solid var(--glass-border)" }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                      Senior Report Card Scale Preview
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(75px, 1fr))", gap: 6, textAlign: "center", fontSize: 11 }}>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#16a34a" }}>A</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeAMin}–100%</div>
+                        <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>EXCELLENT</div>
+                      </div>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(37,99,235,0.1)", border: "1px solid rgba(37,99,235,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#2563eb" }}>B</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeBMin}–{Number(gradeAMin) - 1}%</div>
+                        <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>VERY GOOD</div>
+                      </div>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(8,145,178,0.1)", border: "1px solid rgba(8,145,178,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#0891b2" }}>C</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeCMin}–{Number(gradeBMin) - 1}%</div>
+                        <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>CREDIT</div>
+                      </div>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(202,138,4,0.1)", border: "1px solid rgba(202,138,4,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#ca8a04" }}>D</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeDMin}–{Number(gradeCMin) - 1}%</div>
+                        <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
+                      </div>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#d97706" }}>E</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeEMin}–{Number(gradeDMin) - 1}%</div>
+                        <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
+                      </div>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#dc2626" }}>F</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>0–{Number(gradeEMin) - 1}%</div>
+                        <div style={{ fontSize: 8.5, color: "#dc2626" }}>FAIL</div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div style={{ padding: "16px 20px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.05em" }}>Junior Secondary Grading Thresholds (Basic 7, 8, 9 / JSS 1–3)</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#16a34a", marginBottom: 4 }}>Grade A Min (%)</label>
+                      <input type="number" min="0" max="100" value={gradeJuniorAMin} onChange={e => setGradeJuniorAMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#2563eb", marginBottom: 4 }}>Grade B Min (%)</label>
+                      <input type="number" min="0" max="100" value={gradeJuniorBMin} onChange={e => setGradeJuniorBMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#0891b2", marginBottom: 4 }}>Grade C Min (%)</label>
+                      <input type="number" min="0" max="100" value={gradeJuniorCMin} onChange={e => setGradeJuniorCMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#ca8a04", marginBottom: 4 }}>Grade D Min (%)</label>
+                      <input type="number" min="0" max="100" value={gradeJuniorDMin} onChange={e => setGradeJuniorDMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#d97706", marginBottom: 4 }}>Grade E Min (%)</label>
+                      <input type="number" min="0" max="100" value={gradeJuniorEMin} onChange={e => setGradeJuniorEMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
+                    </div>
+                  </div>
+
+                  {/* Live Preview Table */}
+                  <div style={{ background: "var(--muted)", borderRadius: 10, padding: "10px 14px", border: "1px solid var(--glass-border)" }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                      Junior Report Card Scale Preview (Basic 7, 8, 9)
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(75px, 1fr))", gap: 6, textAlign: "center", fontSize: 11 }}>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#16a34a" }}>A</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeJuniorAMin}–100%</div>
+                        <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>EXCELLENT</div>
+                      </div>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(37,99,235,0.1)", border: "1px solid rgba(37,99,235,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#2563eb" }}>B</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeJuniorBMin}–{Number(gradeJuniorAMin) - 1}%</div>
+                        <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>VERY GOOD</div>
+                      </div>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(8,145,178,0.1)", border: "1px solid rgba(8,145,178,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#0891b2" }}>C</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeJuniorCMin}–{Number(gradeJuniorBMin) - 1}%</div>
+                        <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>CREDIT</div>
+                      </div>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(202,138,4,0.1)", border: "1px solid rgba(202,138,4,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#ca8a04" }}>D</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeJuniorDMin}–{Number(gradeJuniorCMin) - 1}%</div>
+                        <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
+                      </div>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#d97706" }}>E</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeJuniorEMin}–{Number(gradeJuniorDMin) - 1}%</div>
+                        <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
+                      </div>
+                      <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.25)" }}>
+                        <div style={{ fontWeight: 800, color: "#dc2626" }}>F</div>
+                        <div style={{ fontWeight: 700, fontSize: 10 }}>0–{Number(gradeJuniorEMin) - 1}%</div>
+                        <div style={{ fontSize: 8.5, color: "#dc2626" }}>FAIL</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </Glass>
 
             {/* Section: Term Vacation & Resumption Calendar */}
@@ -681,9 +801,7 @@ export default function AdminSettings() {
               </div>
               <div style={{ padding: "4px 20px 12px" }}>
                 {[
-                  { l: "Email Notifications", d: "Send email alerts for new results, attendance, and fees", state: emailNotifications, set: setEmailNotifications },
-                  { l: "CBT Reminders", d: "Remind students 24h before upcoming exams", state: cbtReminders, set: setCbtReminders },
-                  { l: "Fee Due Alerts", d: "Alert parents when fee deadlines are approaching", state: feeDueAlerts, set: setFeeDueAlerts },
+                  { l: "Email Notifications", d: "Send email alerts for published results and attendance updates", state: emailNotifications, set: setEmailNotifications },
                   { l: "System Announcements", d: "Broadcast notices to all users", state: systemAnnouncements, set: setSystemAnnouncements },
                 ].map(t => (
                   <div key={t.l} style={{ display: "flex", alignItems: "center", justifyContent: "between", padding: "14px 0", borderBottom: "1px solid var(--glass-border)" }}>

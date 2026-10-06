@@ -1,15 +1,42 @@
 <?php
-// Set CORS headers
-header("Access-Control-Allow-Origin: *"); // Adjust in production
+// ── Bootstrap: load environment variables first ──────────────────────────────
+require_once 'config/Env.php';
+Env::load(__DIR__ . '/.env');
+
+// ── CORS ─────────────────────────────────────────────────────────────────────
+$allowedOrigin = Env::get('CORS_ORIGIN', 'http://localhost');
+
+// In development mode also allow common localhost variants automatically.
+$requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$appEnv        = Env::get('APP_ENV', 'production');
+
+if ($appEnv === 'development') {
+    $devOrigins = [
+        'http://localhost',
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1',
+        'http://127.0.0.1:5173',
+    ];
+    $originToSend = in_array($requestOrigin, $devOrigins) ? $requestOrigin : $allowedOrigin;
+} else {
+    // Production: only the explicitly configured origin is allowed.
+    $originToSend = $allowedOrigin;
+}
+
+header("Access-Control-Allow-Origin: {$originToSend}");
+header("Vary: Origin");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
+    http_response_code(204);
     exit();
 }
+
 
 require_once 'controllers/MaterialController.php';
 require_once 'controllers/AdmissionController.php';

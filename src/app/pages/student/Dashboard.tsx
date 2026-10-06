@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useApp } from "../../contexts/AppContext";
 import { apiClient } from "../../lib/apiClient";
 import {
-  TrendingUp, Award, BookOpen, CheckSquare, Zap, AlarmClock, BarChart2, CalendarDays, AlertTriangle,
+  TrendingUp, Award, BookOpen, CheckSquare, Zap, AlarmClock, BarChart2, CalendarDays, AlertTriangle, FileText,
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -109,7 +109,7 @@ export default function StudentDashboard() {
           </p>
         </div>
         <button
-          onClick={() => navigate("/student/cbt")}
+          onClick={() => navigate("/student/results")}
           style={{
             display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 10,
             background: "linear-gradient(135deg, #FB8500, #e67600)",
@@ -117,7 +117,7 @@ export default function StudentDashboard() {
             fontSize: 13, fontWeight: 700, color: "#fff",
           }}
         >
-          <Zap size={14} fill="#fff" /> Study Mode
+          <FileText size={14} /> My Report Card
         </button>
       </div>
 
@@ -148,7 +148,7 @@ export default function StudentDashboard() {
           { label: "Avg. Score", value: `${stats.avgScore}%`, delta: "GPA Rate", icon: <TrendingUp size={15}/>, color: "#219EBC", to: "/student/results" },
           { label: "Class Position", value: stats.classRank, delta: "Dynamic Rank", icon: <Award size={15}/>, color: "#FFB703", to: "/student/results" },
           { label: "Active Courses", value: stats.activeCourses, delta: "Enrolled", icon: <BookOpen size={15}/>, color: "#8ECAE6", to: "/student/courses" },
-          { label: "CBTs Completed", value: `${stats.cbtsCompleted}/${stats.totalCbts}`, delta: "Exams Done", icon: <CheckSquare size={15}/>, color: "#FB8500", to: "/student/cbt" },
+          { label: "Attendance Rate", value: `${attPercent}%`, delta: `${present}/${total} Days`, icon: <CheckSquare size={15}/>, color: "#FB8500", to: "/student/results" },
         ].map((s) => (
           <Glass key={s.label} style={{ padding: "16px 18px", cursor: "pointer" }} onClick={() => navigate(s.to)}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -165,38 +165,33 @@ export default function StudentDashboard() {
       <div className="responsive-dashboard-3">
         {/* LEFT */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* CBT Card */}
+          {/* Result Card */}
           <Glass>
-            <CardHeader icon={<Zap size={15}/>} color="#FFB703" title="CBT Center" sub={upcomingCbt ? "Next upcoming exam" : "No upcoming exams"} />
+            <CardHeader icon={<Award size={15}/>} color="#FFB703" title="Academic Status" sub="Official Terminal Results" />
             <div style={{ padding: 16 }}>
-              {upcomingCbt ? (
-                <>
-                  <div style={{ background: "rgba(255,183,3,0.07)", border: "1px solid rgba(255,183,3,0.18)", borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)", marginBottom: 2 }}>{upcomingCbt.title}</div>
-                    <div style={{ fontSize: 11, color: "var(--subtext)", marginBottom: 10 }}>{upcomingCbt.description}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-                      <AlarmClock size={11} style={{ color: "#FFB703" }} />
-                      <span style={{ fontSize: 10, color: "#FFB703", textTransform: "uppercase", letterSpacing: "0.05em" }}>Starts In</span>
-                    </div>
-                    <Countdown target={examTarget} />
-                  </div>
-                  <button
-                    onClick={() => navigate("/student/cbt")}
-                    style={{
-                      width: "100%", padding: "11px", borderRadius: 10,
-                      background: "linear-gradient(135deg, #FB8500, #e67600)",
-                      border: "none", cursor: "pointer",
-                      fontSize: 13, fontWeight: 700, color: "#fff",
-                      boxShadow: "0 4px 16px rgba(251,133,0,0.3)",
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    }}
-                  >
-                    <Zap size={14} fill="#fff" /> START CBT NOW
-                  </button>
-                </>
-              ) : (
-                <div style={{ fontSize: 13, color: "var(--subtext)", textAlign: "center", padding: "20px 0" }}>You have no scheduled exams.</div>
-              )}
+              <div style={{ background: "rgba(255,183,3,0.07)", border: "1px solid rgba(255,183,3,0.18)", borderRadius: 10, padding: "14px", marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", marginBottom: 4 }}>Continuous Assessment & Exams</div>
+                <div style={{ fontSize: 11.5, color: "var(--subtext)", marginBottom: 10, lineHeight: 1.5 }}>
+                  Term results are compiled from 1st Test (20%), 2nd Test (20%), and Terminal Exam (60%). Check your official report card.
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,183,3,0.2)", paddingTop: 8 }}>
+                  <span style={{ fontSize: 11, color: "var(--subtext)" }}>Overall Average</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: "#FFB703" }}>{stats.avgScore}%</span>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate("/student/results")}
+                style={{
+                  width: "100%", padding: "11px", borderRadius: 10,
+                  background: "linear-gradient(135deg, #219EBC, #1a8aaa)",
+                  border: "none", cursor: "pointer",
+                  fontSize: 13, fontWeight: 700, color: "#fff",
+                  boxShadow: "0 4px 16px rgba(33,158,188,0.3)",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                }}
+              >
+                <FileText size={14} /> Open Result Portal
+              </button>
             </div>
           </Glass>
 

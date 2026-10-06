@@ -25,13 +25,26 @@ class BroadsheetController {
         return $raw;
     }
 
-    private function calculateGradeLetter($score) {
+    private function calculateGradeLetter($score, $isJunior = false) {
         if ($score === null || $score === '') return null;
         $s = floatval($score);
-        if ($s >= 70) return 'A';
-        if ($s >= 60) return 'B';
-        if ($s >= 50) return 'C';
-        if ($s >= 45) return 'D';
+
+        if ($isJunior) {
+            $gA = intval($this->getSetting('grade_junior_A_min', 70));
+            $gB = intval($this->getSetting('grade_junior_B_min', 60));
+            $gC = intval($this->getSetting('grade_junior_C_min', 50));
+            $gD = intval($this->getSetting('grade_junior_D_min', 45));
+        } else {
+            $gA = intval($this->getSetting('grade_A_min', 80));
+            $gB = intval($this->getSetting('grade_B_min', 70));
+            $gC = intval($this->getSetting('grade_C_min', 60));
+            $gD = intval($this->getSetting('grade_D_min', 50));
+        }
+
+        if ($s >= $gA) return 'A';
+        if ($s >= $gB) return 'B';
+        if ($s >= $gC) return 'C';
+        if ($s >= $gD) return 'D';
         return 'F';
     }
 
@@ -106,7 +119,16 @@ class BroadsheetController {
         }
 
         // Determine if senior or junior
-        $isSenior = (stripos($classTitle, 'SSS') !== false || stripos($classTitle, 'S.S.S') !== false || stripos($classTitle, 'SENIOR') !== false);
+        $isSenior = (
+            stripos($classTitle, 'SSS') !== false ||
+            stripos($classTitle, 'S.S.S') !== false ||
+            stripos($classTitle, 'SENIOR') !== false ||
+            stripos($classTitle, 'SS ') !== false ||
+            stripos($classTitle, 'SS1') !== false ||
+            stripos($classTitle, 'SS2') !== false ||
+            stripos($classTitle, 'SS3') !== false
+        );
+        $isJunior = !$isSenior;
         $levelTitle = $isSenior ? "END OF TERM RESULT FOR SENIOR CLASS" : "END OF TERM RESULT FOR JUNIOR CLASS";
 
         if (empty($targetClassIds)) {
@@ -272,7 +294,7 @@ class BroadsheetController {
                     $totalScore += $sc;
                     $offeredCount++;
 
-                    $letter = $this->calculateGradeLetter($sc);
+                    $letter = $this->calculateGradeLetter($sc, $isJunior);
                     if ($letter && isset($gradeCounts[$letter])) {
                         $gradeCounts[$letter]++;
                     }

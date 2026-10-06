@@ -231,16 +231,22 @@ class DashboardController {
         $stmt->execute();
         $reopenRequests = intval($stmt->fetchColumn());
 
+        // Pending admissions applications
+        $stmt = $this->conn->prepare("SELECT COUNT(*) FROM admissions WHERE status = 'pending'");
+        $stmt->execute();
+        $pendingAdmissions = intval($stmt->fetchColumn());
+
         echo json_encode([
             "academic_term" => $this->getSetting('current_term', '2nd Term'),
             "academic_session" => $this->getSetting('academic_session', '2026/2027'),
             "school_name" => $this->getSetting('school_name', 'Aroura Academy'),
             "stats" => [
-                "totalStudents" => $totalStudents,
-                "teachingStaff" => $teachingStaff,
-                "pendingCbts" => $pendingCbts,
-                "feesCollected" => floatval($feesCollected),
-                "reopenRequests" => $reopenRequests
+                "totalStudents"    => $totalStudents,
+                "teachingStaff"    => $teachingStaff,
+                "pendingCbts"      => $pendingCbts,
+                "feesCollected"    => floatval($feesCollected),
+                "reopenRequests"   => $reopenRequests,
+                "pendingAdmissions" => $pendingAdmissions,
             ]
         ]);
     }

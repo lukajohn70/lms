@@ -2,11 +2,10 @@ import { useEffect, useRef } from "react";
 import { X, AlertTriangle, CheckCircle, Info, Bell } from "lucide-react";
 
 const notifications = [
-  { id: 1, icon: <AlertTriangle size={13} />, title: "Attendance Alert", message: "Student absent on 11/04/2026. Contact admin if this is an error.", time: "2h ago", read: false, color: "#FFB703" },
-  { id: 2, icon: <CheckCircle size={13} />, title: "System Alert", message: "HOD approved new Computer Science material. 15 CBT questions extracted.", time: "5h ago", read: false, color: "#219EBC" },
-  { id: 3, icon: <Bell size={13} />, title: "CBT Reminder", message: "Quantum Mechanics exam starts in 2 days. Review your materials!", time: "1d ago", read: false, color: "#FFB703" },
-  { id: 4, icon: <Info size={13} />, title: "Parent Portal", message: "Your parent/guardian viewed your latest result. Feedback pending.", time: "2d ago", read: true, color: "#219EBC" },
-  { id: 5, icon: <CheckCircle size={13} />, title: "Fee Payment", message: "2nd term school fees payment due by 30/06/2026. ₦40,000 outstanding.", time: "3d ago", read: true, color: "#FB8500" },
+  { id: 1, icon: <CheckCircle size={13} />, title: "Result Published", message: "Official broadsheets for 3rd Term have been approved and published.", time: "1h ago", read: false, color: "#219EBC" },
+  { id: 2, icon: <Info size={13} />, title: "Report Card Ready", message: "Term report card computation complete with CA and Exam grades.", time: "4h ago", read: false, color: "#2a9d8f" },
+  { id: 3, icon: <AlertTriangle size={13} />, title: "Attendance Update", message: "Daily class attendance register has been updated for this week.", time: "1d ago", read: false, color: "#FFB703" },
+  { id: 4, icon: <CheckCircle size={13} />, title: "Academic Setup", message: "Grading scales for Junior and Senior secondary schools are active.", time: "2d ago", read: true, color: "#8ECAE6" },
 ];
 
 export function NotificationPanel({ onClose }: { onClose: () => void }) {

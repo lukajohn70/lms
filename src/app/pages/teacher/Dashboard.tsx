@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useApp } from "../../contexts/AppContext";
 import { apiClient } from "../../lib/apiClient";
-import { Users, BookOpen, ClipboardList, CheckSquare, TrendingUp, BarChart2 } from "lucide-react";
+import { Users, BookOpen, ClipboardList, CheckSquare, TrendingUp, BarChart2, FileText } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
@@ -58,7 +58,7 @@ export default function TeacherDashboard() {
         {[
           { l: "Total Students", v: stats.totalStudents, c: "#219EBC", icon: <Users size={15}/> },
           { l: "Active Classes", v: stats.activeClasses, c: "#8ECAE6", icon: <BookOpen size={15}/> },
-          { l: "CBTs Created", v: stats.cbtsCreated, c: "#FFB703", icon: <ClipboardList size={15}/> },
+          { l: "Assessments Recorded", v: stats.gradesSubmitted || stats.cbtsCreated || 0, c: "#FFB703", icon: <FileText size={15}/> },
           { l: "Materials Uploaded", v: stats.materialsUploaded, c: "#FB8500", icon: <CheckSquare size={15}/> },
         ].map(s => (
           <Glass key={s.l} style={{ padding: "16px 18px" }}>
@@ -160,7 +160,7 @@ export default function TeacherDashboard() {
       {/* Quick actions */}
       <div className="responsive-grid-4" style={{ marginTop: 18, gap: 12 }}>
         {[
-          { l: "Create CBT", to: "/teacher/cbt", c: "#FFB703", icon: <ClipboardList size={16}/> },
+          { l: "View Broadsheet", to: "/teacher/broadsheet", c: "#FFB703", icon: <FileText size={16}/> },
           { l: "Upload Material", to: "/teacher/materials", c: "#219EBC", icon: <BookOpen size={16}/> },
           { l: "Mark Attendance", to: "/teacher/attendance", c: "#8ECAE6", icon: <CheckSquare size={16}/> },
           { l: "Grade Students", to: "/teacher/grades", c: "#FB8500", icon: <TrendingUp size={16}/> },

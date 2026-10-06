@@ -23,11 +23,10 @@ const NAV: Record<Role, NavItem[]> = {
   student: [
     { icon: <LayoutDashboard size={17} />, label: "Dashboard", to: "/student" },
     {
-      icon: <GraduationCap size={17} />, label: "Academics & CBT",
+      icon: <GraduationCap size={17} />, label: "Academics",
       children: [
         { icon: <BookOpen size={15} />, label: "My Courses", to: "/student/courses" },
         { icon: <FlaskConical size={15} />, label: "Lesson Materials", to: "/student/materials" },
-        { icon: <ClipboardList size={15} />, label: "Test Center (CBT)", to: "/student/cbt" },
       ],
     },
     { icon: <FileText size={17} />, label: "Results & Transcripts", to: "/student/results" },
@@ -38,7 +37,6 @@ const NAV: Record<Role, NavItem[]> = {
   teacher: [
     { icon: <LayoutDashboard size={17} />, label: "Dashboard", to: "/teacher" },
     { icon: <Users size={17} />, label: "My Classes", to: "/teacher/classes" },
-    { icon: <ClipboardList size={17} />, label: "Create CBT", to: "/teacher/cbt" },
     { icon: <FileText size={17} />, label: "Upload Materials", to: "/teacher/materials" },
     { icon: <CalendarDays size={17} />, label: "Attendance", to: "/teacher/attendance" },
     { icon: <CheckSquare size={17} />, label: "Grade Submissions", to: "/teacher/grades" },
@@ -51,7 +49,6 @@ const NAV: Record<Role, NavItem[]> = {
     { icon: <Users size={17} />, label: "User Management", to: "/admin/users" },
     { icon: <BookOpen size={17} />, label: "Academic Setup", to: "/admin/classes" },
     { icon: <Library size={17} />, label: "E-Library Manager", to: "/admin/library" },
-    { icon: <ClipboardList size={17} />, label: "CBT Approvals", to: "/admin/cbt" },
     {
       icon: <BarChart2 size={17} />, label: "Reports & Printing",
       children: [
@@ -549,7 +546,6 @@ export function Layout({ children }: { children: ReactNode }) {
               onClick={() => {
                 if (user.role === 'student') navigate('/student/settings');
                 else if (user.role === 'admin') navigate('/admin/settings');
-                else if (user.role === 'parent') navigate('/parent/settings');
                 else if (user.role === 'teacher') navigate('/teacher/settings');
               }}
               title="Account Settings"
@@ -685,7 +681,7 @@ export function Layout({ children }: { children: ReactNode }) {
                       <form onSubmit={handleSendSupport} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                         <div>
                           <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", marginBottom: 4, textTransform: "uppercase" }}>Subject</label>
-                          <input type="text" required value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. CBT login error" style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                          <input type="text" required value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Grade query or report card issue" style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
                         </div>
                         <div>
                           <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", marginBottom: 4, textTransform: "uppercase" }}>Message Description</label>
@@ -711,32 +707,23 @@ const getFaqsForRole = (role: string) => {
   const r = role.toLowerCase();
   if (r === "student") {
     return [
-      { q: "How do I take a Computer Based Test (CBT)?", a: "Navigate to 'Academics & CBT' > 'Test Center (CBT)'. If there is an active exam scheduled, click 'Start Exam' to begin. Your timer will count down automatically." },
       { q: "Where can I view my term results?", a: "Go to the 'Results & Transcripts' page. Select the session and term to view your compiled grade sheet and download your PDF transcript." },
-      { q: "How do I access lecture notes?", a: "Click on 'Lesson Materials' under 'Academics & CBT' to download PDFs, docx, or slide guides uploaded by your class teachers." },
+      { q: "How do I access lecture notes?", a: "Click on 'Lesson Materials' under 'Academics' to download PDFs, docx, or slide guides uploaded by your class teachers." },
       { q: "What should I do if a score is incorrect?", a: "Send a direct message to your subject teacher using the Communication portal, or submit a support ticket here so the admin can review it." }
-    ];
-  }
-  if (r === "parent") {
-    return [
-      { q: "How is the Admissions Acceptance Fee paid?", a: "Once your child is admitted, go to the parent dashboard admissions list and click 'Accept Offer'. Complete the payment using Card, Bank Transfer, or USSD tabs." },
-      { q: "Where do I retrieve printable receipts?", a: "Go to the 'Fees & Payments' page. Scroll down to 'Payment Ledger History'. Under the actions column, click the receipt print icon next to any past payment." },
-      { q: "How do I add or register another child?", a: "On the parent dashboard, click the '+ Apply for Admission' or 'Start Application' button to begin registration and form payment." },
-      { q: "How do I contact teachers directly?", a: "Open the 'Communication' page. Select the child's teacher from the left sidebar and type your message in the chat box." }
     ];
   }
   if (r === "teacher") {
     return [
-      { q: "How do I create a new CBT Exam?", a: "Go to 'Create CBT' in the sidebar. Select your course, set exam title, duration, and add questions. Click 'Submit for Approval' to send it to the administrator." },
       { q: "Where do I enter continuous assessments?", a: "Go to 'Grade Submissions'. Select the class and course. You can record CA1 (20%), CA2 (20%), and final Exam (60%) scores directly in the grade spreadsheet." },
       { q: "How is daily attendance recorded?", a: "Click 'Attendance' in the sidebar. Choose the class and date. Toggle student circles to mark Present/Absent and click Save." },
-      { q: "Can I upload materials for my classes?", a: "Yes. Navigate to 'Upload Materials'. Drag & drop slides, PDF lecture notes, or syllabus files, then assign them to the relevant class." }
+      { q: "Can I upload materials for my classes?", a: "Yes. Navigate to 'Upload Materials'. Drag & drop slides, PDF lecture notes, or syllabus files, then assign them to the relevant class." },
+      { q: "How do I view class broadsheets?", a: "Navigate to 'Broadsheets' under Reports & Printing to view and print compiled results." }
     ];
   }
   return [
-    { q: "How do I set the global school fees rates?", a: "Go to 'Fee Management' and select the 'Fee Rates Configuration' tab. You can configure Acceptance, Tuition, and Books & Materials rates globally." },
-    { q: "How do I register multiple users at once?", a: "Go to 'User Management'. Click 'Download CSV Template', prepare your user sheet, and click 'Bulk Import CSV' to register them in one go." },
-    { q: "How do I verify bank transfer fee payments?", a: "Go to 'Fee Management' and scroll through pending receipts. Click 'Record Payment' next to the balance, enter the paid amount, and confirm." },
-    { q: "Where do I update school address and director name?", a: "Go to 'System Settings' under 'General Parameters'. Modify the fields and click 'Save Changes' to update admission letters globally." }
+    { q: "How do I configure the grading scale scheme?", a: "Go to 'Settings' and scroll to the 'Grading Scale Scheme' card to set A, B, C, D, E minimum score thresholds for Senior and Junior schools." },
+    { q: "How do I register multiple users at once?", a: "Go to 'User Management'. Click 'Download CSV Template', prepare your user sheet, and click 'Import CSV/XLSX' to register them in one go." },
+    { q: "How do I print term report cards?", a: "Go to 'Reports & Printing' > 'Report Cards'. Select the class and term to view and batch print official report cards." }
   ];
 };
+
