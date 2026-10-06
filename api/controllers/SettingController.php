@@ -154,5 +154,50 @@ class SettingController {
             echo json_encode(["error" => "Failed to save uploaded logo file."]);
         }
     }
+
+    public function uploadPrincipalSignature() {
+        Auth::requireRole(['admin']);
+
+        if (!isset($_FILES['signature_file'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Signature file is required."]);
+            return;
+        }
+
+        $file = $_FILES['signature_file'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['png', 'jpg', 'jpeg', 'webp', 'svg'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Only PNG, JPG, WEBP, or SVG images are allowed."]);
+            return;
+        }
+
+        $targetDir = __DIR__ . "/../uploads/signatures/";
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = "principal_signature_" . time() . "." . $ext;
+        $targetFilePath = $targetDir . $fileName;
+        $relPath = "uploads/signatures/" . $fileName;
+
+        if (move_uploaded_file($file["tmp_name"], $targetFilePath)) {
+            $stmt = $this->conn->prepare("
+                INSERT INTO system_settings (setting_key, setting_value) 
+                VALUES ('principal_signature_path', :val)
+                ON DUPLICATE KEY UPDATE setting_value = :val
+            ");
+            $stmt->execute([':val' => $relPath]);
+
+            echo json_encode([
+                "success" => true,
+                "message" => "Principal signature uploaded successfully.",
+                "signature_path" => $relPath
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to save uploaded signature file."]);
+        }
+    }
 }
 

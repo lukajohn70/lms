@@ -331,6 +331,7 @@ class AssessmentController {
         $schoolWebsite = $this->getSetting('school_website', 'WWW.DEEPERLIFEHIGHSCHOOL.ORG');
         $schoolMotto   = $this->getSetting('school_motto', 'MOTTO: LEADERSHIP WITH DISTINCTION');
         $logoPath      = $this->getSetting('school_logo_path', 'uploads/logos/dlhs_logo.webp');
+        $signaturePath = $this->getSetting('principal_signature_path', '');
 
         // Vacation & resumption dates — keyed by term number
         $termNum = ($term === '1st Term') ? '1' : (($term === '2nd Term') ? '2' : '3');
@@ -430,6 +431,7 @@ class AssessmentController {
         $proto    = $isHttps ? 'https://' : 'http://';
         $apiBase  = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
         $logoSrc  = $logoPath ? "$apiBase/$logoPath" : '';
+        $signatureSrc = $signaturePath ? "$apiBase/$signaturePath" : '';
         ?>
 <!DOCTYPE html>
 <html>
@@ -1625,10 +1627,15 @@ foreach ($studentIds as $studentId):
 
       <div class="boxed-card" style="margin-bottom: 0;">
         <div class="boxed-card-title" style="text-align: center;">Principal's Signature</div>
-        <div class="boxed-card-body" style="text-align: center; min-height: 52px; display: flex; align-items: center; justify-content: center;">
-          <svg width="125" height="42" viewBox="0 0 125 42">
-            <path d="M12,28 C28,6 38,36 48,16 C58,0 64,34 78,18 C88,8 94,30 114,20 M32,28 C55,25 82,23 108,24" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+        <div class="boxed-card-body" style="text-align: center; min-height: 48px; display: flex; align-items: center; justify-content: center; padding: 2px 4px;">
+          <?php if ($signatureSrc): ?>
+            <img src="<?= $signatureSrc ?>" alt="Principal's Signature" style="max-height: 44px; max-width: 130px; object-fit: contain;">
+          <?php else: ?>
+            <div style="width: 120px; height: 38px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;">
+              <div style="width: 100%; border-bottom: 1px dashed #64748b; margin-bottom: 2px;"></div>
+              <span style="font-size: 7.5px; color: #64748b; font-weight: 600;">Authorized Signatory</span>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
     </div>
@@ -1705,10 +1712,12 @@ foreach ($studentIds as $studentId):
         $schoolCampus = $this->getSetting('school_campus', 'KADUNA CAMPUS');
         $schoolPrincipal = $this->getSetting('school_principal', 'Mrs. Bamishe Olumuyiwa');
         $logoPath     = $this->getSetting('school_logo_path', 'uploads/logos/dlhs_logo.webp');
+        $signaturePath = $this->getSetting('principal_signature_path', '');
         $isHttps      = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
         $proto        = $isHttps ? 'https://' : 'http://';
         $apiBase      = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
         $logoSrc      = $logoPath ? "$apiBase/$logoPath" : '';
+        $signatureSrc = $signaturePath ? "$apiBase/$signaturePath" : '';
 
         // Vacation & Resumption dates for Mid-Term Break
         $termNum = ($term === '1st Term') ? '1' : (($term === '2nd Term') ? '2' : '3');
@@ -2033,10 +2042,15 @@ foreach ($studentIds as $sid):
 
         <!-- Signature & Principal Name -->
         <div class="sign-block">
-          <div class="sign-canvas">
-            <svg width="125" height="38" viewBox="0 0 125 38">
-              <path d="M10,26 C26,5 36,33 46,15 C56,0 62,31 76,17 C86,7 92,28 112,19 M30,26 C53,23 80,21 106,22" fill="none" stroke="#1e3a8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+          <div class="sign-canvas" style="min-height: 40px; display: flex; align-items: center; justify-content: center;">
+            <?php if ($signatureSrc): ?>
+              <img src="<?= $signatureSrc ?>" alt="Principal's Signature" style="max-height: 40px; max-width: 130px; object-fit: contain;">
+            <?php else: ?>
+              <div style="width: 120px; height: 34px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;">
+                <div style="width: 100%; border-bottom: 1px dashed #64748b; margin-bottom: 2px;"></div>
+                <span style="font-size: 7.5px; color: #64748b; font-weight: 600;">Authorized Signatory</span>
+              </div>
+            <?php endif; ?>
           </div>
           <div class="principal-title">
             <div class="principal-name"><?= htmlspecialchars($schoolPrincipal) ?></div>

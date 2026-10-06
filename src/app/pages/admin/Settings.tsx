@@ -69,6 +69,12 @@ export default function AdminSettings() {
   const [logoResult, setLogoResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Principal Signature
+  const [principalSignaturePath, setPrincipalSignaturePath] = useState("");
+  const [signatureUploading, setSignatureUploading] = useState(false);
+  const [signatureResult, setSignatureResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const signatureInputRef = useRef<HTMLInputElement>(null);
+
   const [vacationDateTerm1, setVacationDateTerm1] = useState("2026-12-19");
   const [resumptionDateTerm1, setResumptionDateTerm1] = useState("2027-01-10");
   const [midtermVacationDateTerm1, setMidtermVacationDateTerm1] = useState("2026-10-24");
@@ -177,6 +183,7 @@ export default function AdminSettings() {
           setGradeJuniorEMin(s.grade_junior_E_min || "40");
 
           setSchoolLogoPath(s.school_logo_path || "");
+          setPrincipalSignaturePath(s.principal_signature_path || "");
           setVacationDateTerm1(s.vacation_date_term1 || "2026-12-19");
           setResumptionDateTerm1(s.resumption_date_term1 || "2027-01-10");
           setMidtermVacationDateTerm1(s.midterm_vacation_date_term1 || "2026-10-24");
@@ -234,6 +241,29 @@ export default function AdminSettings() {
     }
   };
 
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSignatureUploading(true);
+    setSignatureResult(null);
+    const formData = new FormData();
+    formData.append("signature_file", file);
+    try {
+      const res: any = await apiClient.postForm("/admin/upload-signature", formData);
+      if (res && res.success) {
+        setPrincipalSignaturePath(res.signature_path);
+        setSignatureResult({ ok: true, msg: "Principal's signature uploaded successfully!" });
+      } else {
+        setSignatureResult({ ok: false, msg: res?.error || "Failed to upload signature." });
+      }
+    } catch (err: any) {
+      setSignatureResult({ ok: false, msg: err?.message || "Upload error. Please try again." });
+    } finally {
+      setSignatureUploading(false);
+      setTimeout(() => setSignatureResult(null), 4000);
+    }
+  };
+
   const handleSave = () => {
     const payload = {
       school_name: schoolName,
@@ -262,6 +292,7 @@ export default function AdminSettings() {
       grade_junior_D_min: gradeJuniorDMin,
       grade_junior_E_min: gradeJuniorEMin,
       school_logo_path: schoolLogoPath,
+      principal_signature_path: principalSignaturePath,
       vacation_date_term1: vacationDateTerm1,
       resumption_date_term1: resumptionDateTerm1,
       midterm_vacation_date_term1: midtermVacationDateTerm1,
@@ -512,6 +543,37 @@ export default function AdminSettings() {
                       {logoResult && (
                         <div style={{ fontSize: 11, fontWeight: 600, color: logoResult.ok ? "#2a9d8f" : "#ef4444", marginTop: 4 }}>
                           {logoResult.msg}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Principal's Official Signature */}
+                <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.04em" }}>Principal's Official Signature</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ width: 140, height: 56, borderRadius: 10, background: "#fff", border: "1.5px dashed var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0, padding: 4 }}>
+                      {principalSignaturePath ? (
+                        <img src={`${API_MEDIA_BASE}${principalSignaturePath}`} alt="Signature" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+                      ) : (
+                        <span style={{ fontSize: 11, color: "var(--subtext)", fontStyle: "italic", textAlign: "center" }}>No signature uploaded</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <button
+                        type="button"
+                        onClick={() => signatureInputRef.current?.click()}
+                        disabled={signatureUploading}
+                        style={{ padding: "6px 14px", borderRadius: 8, background: "#0284c7", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        {signatureUploading ? "Uploading..." : "Upload Signature"}
+                      </button>
+                      <input ref={signatureInputRef} type="file" accept="image/*" onChange={handleSignatureUpload} style={{ display: "none" }} />
+                      <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 4 }}>PNG, JPG, WEBP, or SVG (transparent background recommended). Printed on official report cards.</div>
+                      {signatureResult && (
+                        <div style={{ fontSize: 11, fontWeight: 600, color: signatureResult.ok ? "#2a9d8f" : "#ef4444", marginTop: 4 }}>
+                          {signatureResult.msg}
                         </div>
                       )}
                     </div>
