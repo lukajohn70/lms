@@ -65,6 +65,13 @@ class BroadsheetController {
             else $campus = 'CAMPUS';
         }
 
+        // School logo resolution
+        $logoPath = $this->getSetting('school_logo_path', 'uploads/logos/dlhs_logo.webp');
+        $isHttps  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+        $proto    = $isHttps ? 'https://' : 'http://';
+        $apiBase  = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
+        $logoUrl  = $logoPath ? "$apiBase/$logoPath" : '';
+
         // Fetch all classes for options and mapping
         $allClassesStmt = $this->conn->query("SELECT id, name, department FROM classes ORDER BY name ASC");
         $allClasses = $allClassesStmt->fetchAll();
@@ -140,7 +147,8 @@ class BroadsheetController {
                     "level_title" => $levelTitle,
                     "term" => $term,
                     "session" => $session,
-                    "is_senior" => $isSenior
+                    "is_senior" => $isSenior,
+                    "logo_url" => $logoUrl
                 ],
                 "subjects" => [],
                 "students" => [],
@@ -182,7 +190,8 @@ class BroadsheetController {
                     "level_title" => $levelTitle,
                     "term" => $term,
                     "session" => $session,
-                    "is_senior" => $isSenior
+                    "is_senior" => $isSenior,
+                    "logo_url" => $logoUrl
                 ],
                 "subjects" => [],
                 "students" => [],
@@ -381,7 +390,8 @@ class BroadsheetController {
                 "level_title" => $levelTitle,
                 "term" => $term,
                 "session" => $session,
-                "is_senior" => $isSenior
+                "is_senior" => $isSenior,
+                "logo_url" => $logoUrl
             ],
             "subjects" => $subjects,
             "students" => $compiledStudents,
@@ -496,17 +506,48 @@ class BroadsheetController {
             text-align: center;
             margin-bottom: 6px;
         }
+        .header-title-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 4px;
+        }
+        .school-logo-img {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+        .logo-fallback-badge {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: 2px solid #dc2626;
+            background: #fef2f2;
+            color: #dc2626;
+            font-size: 18px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .title-details {
+            text-align: center;
+        }
         .school-title {
             font-size: 20px;
             font-weight: 900;
             letter-spacing: 0.5px;
             margin: 0;
             text-transform: uppercase;
+            line-height: 1.15;
         }
         .sub-title {
             font-size: 13px;
             font-weight: bold;
-            margin: 2px 0 6px 0;
+            margin: 2px 0 0 0;
             letter-spacing: 0.3px;
         }
         .meta-strip {
@@ -647,8 +688,17 @@ class BroadsheetController {
     </div>
 
     <div class="header-container">
-        <h1 class="school-title"><?= htmlspecialchars($school['name']) ?></h1>
-        <div class="sub-title"><?= htmlspecialchars($school['level_title']) ?></div>
+        <div class="header-title-box">
+            <?php if (!empty($school['logo_url'])): ?>
+                <img src="<?= htmlspecialchars($school['logo_url']) ?>" alt="School Logo" class="school-logo-img">
+            <?php else: ?>
+                <div class="logo-fallback-badge">✝</div>
+            <?php endif; ?>
+            <div class="title-details">
+                <h1 class="school-title"><?= htmlspecialchars($school['name']) ?></h1>
+                <div class="sub-title"><?= htmlspecialchars($school['level_title']) ?></div>
+            </div>
+        </div>
         <div class="meta-strip">
             <span>CLASS: <?= htmlspecialchars($school['class_title']) ?></span>
             <span>TERM: <?= htmlspecialchars(strtoupper(str_replace(' Term', '', $school['term']))) ?></span>

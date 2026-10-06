@@ -375,11 +375,18 @@ export default function BroadsheetViewer() {
         <Glass style={{ padding: 20, overflow: "hidden" }}>
           {/* School Header Box */}
           <div style={{ textAlign: "center", marginBottom: 14 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 900, color: "var(--heading)", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: 0.5 }}>
-              {school.name || "DEEPER LIFE HIGH SCHOOL"}
-            </h2>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--subtext)", marginBottom: 8 }}>
-              {school.level_title || "END OF TERM RESULT"}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 4 }}>
+              {school.logo_url ? (
+                <img src={school.logo_url} alt="School Logo" style={{ width: 44, height: 44, objectFit: "contain" }} />
+              ) : null}
+              <div>
+                <h2 style={{ fontSize: 18, fontWeight: 900, color: "var(--heading)", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  {school.name || "DEEPER LIFE HIGH SCHOOL"}
+                </h2>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--subtext)" }}>
+                  {school.level_title || "END OF TERM RESULT"}
+                </div>
+              </div>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 14px", background: "var(--muted)", borderRadius: 8, fontSize: 11.5, fontWeight: 700, color: "var(--heading)" }}>
               <span>CLASS: <strong>{school.class_title}</strong></span>
