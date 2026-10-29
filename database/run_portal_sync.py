@@ -136,9 +136,12 @@ class SyncManager:
         self.scores_synced = 0
         self.assessments_synced = 0
         self.photos_synced = 0
+        self.allocations_synced = 0
         self.errors_count = 0
         self.recent_logs = []
         self.is_running = True
+        self.portal_student_ids = {}
+        self.portal_class_ids = {}
         
         self.update_status(0, "Initializing DLHS Portal Sync Engine...", "starting")
 
@@ -168,6 +171,7 @@ class SyncManager:
             "scores_synced": self.scores_synced,
             "assessments_synced": self.assessments_synced,
             "photos_synced": self.photos_synced,
+            "allocations_synced": self.allocations_synced,
             "errors_count": self.errors_count,
             "elapsed_seconds": round(time.time() - self.start_time, 1),
             "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -186,11 +190,12 @@ class SyncManager:
         c.autocommit(True)
         return c
 
-    def fetch_url(self, url, timeout=20, max_retries=3):
+    def fetch_url(self, url, data=None, timeout=20, max_retries=3):
         for attempt in range(max_retries):
             cookie = get_current_cookie()
             req = urllib.request.Request(
                 url,
+                data=data,
                 headers={
                     'Cookie': cookie,
                     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) DLHS-SyncEngine/2.0'
@@ -209,6 +214,51 @@ class SyncManager:
                     raise
                 time.sleep(1)
         return ""
+
+    def resolve_teacher_id(self, portal_tname, db_teachers, cur):
+        if not portal_tname or portal_tname.upper() in ['NILL', 'NULL', 'NONE', '-', '']:
+            return None
+        
+        clean_n = re.sub(r'[^A-Z0-9]', '', portal_tname.upper())
+        if 'IDOKO' in clean_n and 'JOSEPH' in clean_n: return 134
+        if 'KOLAWOLE' in clean_n and 'STEPHEN' in clean_n: return 132
+        if 'MONDAY' in clean_n and 'ALHAMDU' in clean_n: return 126
+
+        raw_tokens = re.sub(r'^(MR|MRS|MS|MISS|DR)\.?\s+', '', portal_tname.strip(), flags=re.I)
+        pt_tokens = set(re.findall(r'[A-Za-z]+', raw_tokens.upper()))
+        best_id, best_overlap = None, 0
+        for t in db_teachers:
+            t_tokens = set(re.findall(r'[A-Za-z]+', f"{t['first_name']} {t['last_name']}".upper()))
+            overlap = len(pt_tokens & t_tokens)
+            if overlap > best_overlap:
+                best_overlap = overlap
+                best_id = t['id']
+
+        if best_overlap >= 2 or (len(pt_tokens) == 1 and best_overlap >= 1):
+            return best_id
+
+        # Auto-create missing teacher in users table
+        parts = [p.title() for p in re.findall(r'[A-Za-z]+', raw_tokens)]
+        fn = parts[0] if len(parts) > 0 else 'Teacher'
+        ln = parts[-1] if len(parts) > 1 else parts[0]
+        email = f"{ln.lower()}{fn.lower()}_kaduna@deeperlifehighschool.org"
+
+        cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+        existing = cur.fetchone()
+        if existing:
+            tid = existing['id'] if isinstance(existing, dict) else existing[0]
+            db_teachers.append({'id': tid, 'first_name': fn, 'last_name': ln, 'email': email})
+            return tid
+
+        dummy_pass = '$2y$10$wT8m9Z1gV6oP1z0o3q6b4.xW7gE6a5d4c3b2a1e0f9g8h7j6k5l4'
+        cur.execute("""
+            INSERT INTO users (first_name, last_name, email, role, password_hash)
+            VALUES (%s, %s, %s, 'teacher', %s)
+        """, (fn, ln, email, dummy_pass))
+        new_tid = cur.lastrowid
+        db_teachers.append({'id': new_tid, 'first_name': fn, 'last_name': ln, 'email': email})
+        self.log(f"   ★ Auto-registered new teacher: {portal_tname} -> {fn} {ln} (ID: {new_tid})")
+        return new_tid
 
     def run_sync(self):
         try:
@@ -316,6 +366,9 @@ class SyncManager:
                 'AGRICSCIENCE': clean_str('Agricultural Science'),
                 'AGRIC': clean_str('Agricultural Science'),
                 'DIGITALTECHNOLOGY': clean_str('Digital Technology'),
+                'DIGITALTECHNOLOGIES': clean_str('Digital Technology'),   # Portal uses plural form
+                'VISUALART': clean_str('Visual Arts'),                    # Portal uses singular form
+                'VISUALARTS': clean_str('Visual Arts'),
                 'DATA': clean_str('Data Processing'),
                 'DATAPROCESSING': clean_str('Data Processing'),
                 'CIVIC': clean_str('Civic Education'),
@@ -367,11 +420,104 @@ class SyncManager:
             current_session_idx = 0
 
             # -------------------------------------------------------------
+            # SCOPE: SUBJECT ALLOCATIONS & COURSE CATALOG
+            # -------------------------------------------------------------
+            if 'allocations' in self.scope:
+                self.log("📚 Phase 1: Synchronizing Subject Allocations & Course Catalog...")
+                self.update_status(8, "Syncing Subject Allocations from DLHS Portal...", "running")
+                
+                # Preload existing courses and teachers
+                cur.execute("SELECT id, name FROM courses")
+                for c in cur.fetchall():
+                    course_name_to_id[clean_str(c['name'])] = c['id']
+
+                cur.execute("SELECT id, first_name, last_name, email FROM users WHERE role IN ('teacher', 'admin', 'hod')")
+                db_teachers = cur.fetchall()
+
+                alloc_total = 0
+                new_courses_total = 0
+
+                for portal_cid, class_name in CLASSES.items():
+                    target_class_id = class_map.get(class_name.upper())
+                    if not target_class_id:
+                        continue
+                    
+                    try:
+                        post_data = urllib.parse.urlencode({'class_ID': portal_cid}).encode()
+                        html = self.fetch_url('https://dlhsportal.org/sms/admin/list_subjs.php', data=post_data, timeout=15)
+                        if not html:
+                            continue
+                        
+                        is_junior = any(j in class_name.upper() for j in ['BASIC', 'JSS', 'JS'])
+                        for tr in re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL):
+                            tds = [re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', d)).strip() for d in re.findall(r'<td[^>]*>(.*?)</td>', tr, re.DOTALL)]
+                            if len(tds) >= 4:
+                                sr, subj_title, cname, teacher_raw = tds[0], tds[1].strip(), tds[2], tds[3].strip()
+                                if not subj_title or subj_title.upper() in ['SUBJECT TITLE', '']:
+                                    continue
+                                
+                                # 1. Resolve or Auto-Create Course
+                                cid = resolve_course_id(subj_title)
+                                if not cid:
+                                    clean_title = subj_title.title()
+                                    cur.execute("INSERT INTO courses (name, department) VALUES (%s, %s)", (clean_title, 'General'))
+                                    cid = cur.lastrowid
+                                    course_name_to_id[clean_str(subj_title)] = cid
+                                    course_name_to_id[clean_str(clean_title)] = cid
+                                    new_courses_total += 1
+                                    self.log(f"   ★ Created new course: {clean_title} (ID: {cid})")
+
+                                # 2. Resolve or Auto-Create Teacher
+                                tid = self.resolve_teacher_id(teacher_raw, db_teachers, cur)
+
+                                # 3. Determine Core vs Elective
+                                subj_norm = clean_str(subj_title)
+                                is_elective = False
+                                if not is_junior:
+                                    elective_keywords = ['FURTHERMATH', 'CATERING', 'ANIMALHUSBANDRY', 'FOODANDNUTRITION', 'GARMENT', 'FASHION', 'COMMERCE', 'FINANCIALACCOUNT', 'LITERATURE', 'VISUALART', 'FRENCH', 'SOLAR', 'HORTICULTURE', 'TECHNICALDRAW', 'MUSIC', 'HAUSA']
+                                    if any(ek in subj_norm for ek in elective_keywords):
+                                        is_elective = True
+                                sub_type = 'elective' if is_elective else 'core'
+
+                                # 4. Upsert class_subjects
+                                cur.execute("""
+                                    INSERT INTO class_subjects (class_id, course_id, type, teacher_id)
+                                    VALUES (%s, %s, %s, %s)
+                                    ON DUPLICATE KEY UPDATE
+                                        type = VALUES(type),
+                                        teacher_id = COALESCE(VALUES(teacher_id), class_subjects.teacher_id)
+                                """, (target_class_id, cid, sub_type, tid))
+
+                                # 5. Upsert teacher_allocations for active sessions
+                                for _, s_name in sessions_to_sync:
+                                    if tid:
+                                        cur.execute("""
+                                            INSERT INTO teacher_allocations (teacher_id, class_id, course_id, academic_session)
+                                            VALUES (%s, %s, %s, %s)
+                                            ON DUPLICATE KEY UPDATE teacher_id = VALUES(teacher_id)
+                                        """, (tid, target_class_id, cid, s_name))
+
+                                # 6. Auto-enroll class students
+                                cur.execute("""
+                                    INSERT IGNORE INTO enrollments (student_id, course_id)
+                                    SELECT id, %s FROM users WHERE class_id = %s AND role = 'student'
+                                """, (cid, target_class_id))
+
+                                alloc_total += 1
+
+                        self.log(f"   ✓ {class_name}: synced subject allocations")
+                    except Exception as e:
+                        self.log(f"   ⚠ Error fetching allocations for {class_name}: {str(e)}", "WARN")
+
+                self.allocations_synced = alloc_total
+                self.log(f"✅ Subject Allocations: {alloc_total} allocations synced, {new_courses_total} new courses created.")
+
+            # -------------------------------------------------------------
             # SCOPE: SCORES (Broadsheets and CA Breakdown)
             # -------------------------------------------------------------
             sync_scores_requested = any(s in self.scope for s in ['scores', 'ca_scores', 'exam_scores', 'broadsheet'])
             if sync_scores_requested:
-                self.log("📊 Phase 1: Synchronizing Master Broadsheets & Scores...")
+                self.log("📊 Phase 2: Synchronizing Master Broadsheets & Scores...")
                 for sec_id, session_name in sessions_to_sync:
                     current_session_idx += 1
                     sess_progress_base = 10 + ((current_session_idx - 1) / total_sessions) * 45
@@ -431,7 +577,7 @@ class SyncManager:
                                             mid_records = self.fetch_class_midterm_records(
                                                 portal_cid, class_name, sec_id, session_name,
                                                 t_code, term_name, cat, target_class_id,
-                                                resolve_student_id, resolve_course_id
+                                                resolve_student_id, resolve_course_id, cur
                                             )
                                             if mid_records:
                                                 parsed_grades = mid_records
@@ -542,12 +688,15 @@ class SyncManager:
 
                 self.log(f"   Target student assessments to check: {len(target_students)}")
                 
-                # Fetch and parse 3rd term sheets in parallel
+                # Fetch and parse report sheets
                 assessment_tasks = []
                 for st in target_students:
                     adm = st['admission_number']
                     clean_adm = re.sub(r'[^A-Z0-9]', '', adm.upper()) if adm else ''
-                    portal_id = portal_students_map.get(clean_adm) or st['student_id']
+                    portal_id = self.portal_student_ids.get(st['student_id']) or portal_students_map.get(clean_adm)
+                    if not portal_id:
+                        continue
+                    portal_cid = self.portal_class_ids.get(st['student_id'])
                     
                     sec_id = None
                     for s_k, s_v in SESSIONS.items():
@@ -558,6 +707,7 @@ class SyncManager:
                         assessment_tasks.append({
                             'student_id': st['student_id'],
                             'portal_id': portal_id,
+                            'portal_cid': portal_cid,
                             'academic_session': st['academic_session'],
                             'academic_term': st['academic_term'],
                             'class_id': st['class_id'],
@@ -576,13 +726,25 @@ class SyncManager:
                 total_assess = len(assessment_tasks)
 
                 def sync_single_assessment(t):
-                    url = f"https://dlhsportal.org/sms/result/term3_main.php?id={t['portal_id']}&section={t['sec_id']}"
+                    term_code = 'term1' if '1' in t['academic_term'] else ('term2' if '2' in t['academic_term'] else 'term3')
+                    html = None
+                    # Priority 1: Terminal end-of-term main report card
                     try:
+                        url = f"https://dlhsportal.org/sms/result/{term_code}_main.php?id={t['portal_id']}&section={t['sec_id']}"
                         html = self.fetch_url(url, timeout=12)
-                        parsed = self.parse_assessment_html(html)
-                        return t, parsed
                     except Exception:
-                        return t, None
+                        pass
+                    parsed = self.parse_assessment_html(html) if html else None
+                    if not parsed or not parsed.get('has_data'):
+                        # Priority 2: Mid-term sheet fallback
+                        cls_p = f"&cls={t.get('portal_cid', '')}" if t.get('portal_cid') else ""
+                        try:
+                            url_mid = f"https://dlhsportal.org/sms/result/{term_code}_mid.php?id={t['portal_id']}&section={t['sec_id']}{cls_p}"
+                            html_mid = self.fetch_url(url_mid, timeout=12)
+                            parsed = self.parse_assessment_html(html_mid)
+                        except Exception:
+                            pass
+                    return t, parsed
 
                 with ThreadPoolExecutor(max_workers=10) as executor:
                     futures = [executor.submit(sync_single_assessment, t) for t in assessment_tasks]
@@ -812,7 +974,7 @@ class SyncManager:
                     pass
         return records
 
-    def fetch_class_midterm_records(self, p_cid, class_name, sec_id, session_name, t_code, term_name, cat, target_class_id, resolve_student_id, resolve_course_id):
+    def fetch_class_midterm_records(self, p_cid, class_name, sec_id, session_name, t_code, term_name, cat, target_class_id, resolve_student_id, resolve_course_id, cur=None):
         grades = []
         list_url = f"https://dlhsportal.org/sms/admin/list_std_result.php?class_ID={p_cid}&sec={sec_id}&secname={session_name}&cat={cat}"
         try:
@@ -836,6 +998,9 @@ class SyncManager:
             uid = resolve_student_id(st_name, class_id=target_class_id)
             if not uid:
                 continue
+            self.portal_student_ids[uid] = p_sid
+            self.portal_class_ids[uid] = p_cid
+
             mid_url = f"https://dlhsportal.org/sms/result/{term_prefix}_mid.php?id={p_sid}&section={sec_id}&cls={p_cid}"
             try:
                 mid_html = self.fetch_url(mid_url, timeout=12)
@@ -859,6 +1024,18 @@ class SyncManager:
                         'academic_session': session_name,
                         'academic_term': term_name
                     })
+
+                # Inline Comment & Assessment Syncing
+                if cur and ('assessments' in self.scope or 'scores' in self.scope):
+                    parsed_assess = self.parse_assessment_html(mid_html)
+                    if parsed_assess and parsed_assess.get('has_data'):
+                        self.upsert_assessment(cur, {
+                            'student_id': uid,
+                            'academic_term': term_name,
+                            'academic_session': session_name,
+                            'class_id': target_class_id
+                        }, parsed_assess)
+                        self.assessments_synced += 1
             except Exception:
                 pass
         return grades
@@ -883,10 +1060,16 @@ class SyncManager:
 
         # Comments
         m_tc = re.search(r'Class Teacher\'?s? Comment:?</th>\s*<td[^>]*>([\s\S]*?)</td>', html, re.I)
-        res['class_teacher_comment'] = re.sub(r'<[^>]+>', ' ', m_tc.group(1)).strip() if m_tc else None
+        tc_raw = re.sub(r'<[^>]+>', ' ', m_tc.group(1)).strip() if m_tc else None
+        if tc_raw and tc_raw.lower() in ['no comment', '', 'none', '-', 'nill', 'null']:
+            tc_raw = None
+        res['class_teacher_comment'] = tc_raw
 
         m_pr = re.search(r'Principal\'?s? Comment:?</th>\s*<td[^>]*>([\s\S]*?)</td>', html, re.I)
-        res['principal_remark'] = re.sub(r'<[^>]+>', ' ', m_pr.group(1)).strip() if m_pr else None
+        pr_raw = re.sub(r'<[^>]+>', ' ', m_pr.group(1)).strip() if m_pr else None
+        if pr_raw and pr_raw.lower() in ['no comment', '', 'none', '-', 'nill', 'null']:
+            pr_raw = None
+        res['principal_remark'] = pr_raw
 
         def get_pt(trait):
             m = re.search(rf'<td[^>]*>{trait}</td>\s*<td[^>]*>(\d+)</td>', html, re.I)
