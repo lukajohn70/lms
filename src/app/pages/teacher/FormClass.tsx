@@ -2,12 +2,32 @@ import { useState, useEffect, useRef } from "react";
 import { 
   Award, Heart, CalendarDays, FileText, Download, Upload, CheckCircle2, 
   AlertCircle, Edit2, Search, CheckSquare, X, RefreshCw, Star,
-  ChevronLeft, ChevronRight, ArrowLeft, Printer, GraduationCap
+  ChevronLeft, ChevronRight, ArrowLeft, Printer, GraduationCap, ShieldCheck
 } from "lucide-react";
 import { apiClient, API_BASE_URL } from "../../lib/apiClient";
 
+const DLHS = {
+  navy: "#293D7D",
+  navyDark: "#16234B",
+  crimson: "#DC137B",
+  crimsonHover: "#B80F66",
+  blue: "#0093DD",
+  gold: "#D4AF37",
+  periwinkle: "#BFD1FF",
+  slate: "#3A4244",
+};
+
 const Glass = ({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) => (
-  <div className={className} style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>
+  <div
+    className={className}
+    style={{
+      background: "var(--card)",
+      border: "1px solid var(--border)",
+      borderRadius: 14,
+      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+      ...style
+    }}
+  >
     {children}
   </div>
 );
@@ -110,7 +130,6 @@ export default function FormClass() {
         if (res.term) setCurrentTerm(res.term);
         if (res.session) setCurrentSession(res.session);
         if (studList.length > 0) {
-          // Keep current student if still in roster, otherwise select first
           setSelectedStudent((prev: any) => {
             if (prev) {
               const found = studList.find((s: any) => s.id === prev.id);
@@ -385,8 +404,9 @@ export default function FormClass() {
 
   if (loadingClasses) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 350, color: "var(--subtext)" }}>
-        Loading Form Teacher portal...
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 350, color: "var(--muted-foreground)" }}>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${DLHS.navy}`, borderTopColor: "transparent", margin: "0 auto 12px", animation: "spin 1s linear infinite" }} />
+        Loading Form Teacher Portal…
       </div>
     );
   }
@@ -394,25 +414,25 @@ export default function FormClass() {
   if (formClasses.length === 0) {
     return (
       <Glass style={{ padding: "50px 30px", textAlign: "center", maxWidth: 620, margin: "40px auto" }}>
-        <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(251,133,0,0.1)", color: "#FB8500", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px" }}>
+        <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(41, 61, 125, 0.1)", color: DLHS.navy, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px" }}>
           <Award size={32} />
         </div>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 10px" }}>
+        <h2 style={{ fontFamily: "'Raleway', sans-serif", fontSize: 20, fontWeight: 800, color: "var(--foreground)", margin: "0 0 10px" }}>
           Form Teacher Portal
         </h2>
-        <p style={{ fontSize: 13.5, color: "var(--subtext)", lineHeight: 1.6, margin: "0 0 20px" }}>
+        <p style={{ fontSize: 13.5, color: "var(--muted-foreground)", lineHeight: 1.6, margin: "0 0 20px" }}>
           You are currently not assigned as a <strong>Form Teacher</strong> for any class arm. 
-          Form teacher roles (up to 2 arms per teacher) are assigned by the school administrator in <strong>Academic Setup &gt; Classes &amp; Subjects</strong>.
+          Form teacher responsibilities (up to 2 arms per faculty member) are designated by the Academic Administrator in <strong>Academic Setup &gt; Classes &amp; Arms</strong>.
         </p>
-        <div style={{ fontSize: 12, color: "var(--subtext)", padding: "10px 16px", borderRadius: 8, background: "var(--muted)", display: "inline-block" }}>
-          Form Teachers manage student report remarks, character &amp; psychomotor domains, official attendance, awards, and student name edits.
+        <div style={{ fontSize: 12, color: "var(--muted-foreground)", padding: "10px 16px", borderRadius: 8, background: "var(--muted)", display: "inline-block" }}>
+          Form Teachers oversee term report remarks, character affective ratings, psychomotor capability assessments, term attendance records, and student awards.
         </div>
       </Glass>
     );
   }
 
   return (
-    <div>
+    <div style={{ paddingBottom: 32 }}>
       <style>{`
         .form-class-split {
           display: grid;
@@ -453,50 +473,7 @@ export default function FormClass() {
             display: block !important;
           }
           .form-mobile-switch-btn {
-            display: flex !important;
-          }
-          .form-class-header-wrap {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 12px !important;
-          }
-          .form-class-header-actions {
-            width: 100% !important;
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 8px !important;
-          }
-          .form-class-header-actions button {
-            width: 100% !important;
-            justify-content: center !important;
-            padding: 9px 8px !important;
-            font-size: 11.5px !important;
-          }
-          .responsive-grid-4.form-stats-grid {
-            grid-template-columns: 1fr 1fr !important;
-            gap: 8px !important;
-          }
-          .form-stats-card {
-            padding: 10px 12px !important;
-          }
-          .form-stats-val {
-            font-size: 18px !important;
-          }
-          .arm-switcher-pills {
-            width: 100% !important;
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-            white-space: nowrap !important;
-            padding: 4px !important;
-            box-sizing: border-box !important;
-          }
-        }
-        @media (max-width: 550px) {
-          .responsive-grid-3.attendance-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .responsive-grid-2.awards-grid {
-            grid-template-columns: 1fr !important;
+            display: block !important;
           }
           .form-class-header-actions {
             grid-template-columns: 1fr !important;
@@ -508,29 +485,29 @@ export default function FormClass() {
       <div className="form-class-header-wrap" style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Form Teacher Portal
+            <span style={{ fontSize: 11, fontWeight: 800, color: DLHS.navy, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Form Teacher Broadsheet
             </span>
-            <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: "rgba(251,133,0,0.15)", color: "#FB8500" }}>
-              {formClasses.length} {formClasses.length === 1 ? "Class Arm Assigned" : "Class Arms Assigned"}
+            <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: "rgba(41, 61, 125, 0.1)", color: DLHS.navy }}>
+              {formClasses.length} {formClasses.length === 1 ? "Class Stream Assigned" : "Class Streams Assigned"}
             </span>
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--heading)", margin: 0 }}>
+          <h1 style={{ fontFamily: "'Raleway', sans-serif", fontSize: 22, fontWeight: 800, color: "var(--foreground)", margin: 0 }}>
             {currentClass ? currentClass.name : "Form Class"}
-            {currentClass?.department && <span style={{ fontSize: 14, fontWeight: 500, color: "var(--subtext)", marginLeft: 8 }}>({currentClass.department})</span>}
+            {currentClass?.department && <span style={{ fontSize: 14, fontWeight: 500, color: "var(--muted-foreground)", marginLeft: 8 }}>({currentClass.department})</span>}
           </h1>
         </div>
 
-        {/* Action Buttons: Template Download & Upload */}
+        {/* Action Buttons: Batch Outputs & CSV Roster */}
         <div className="form-class-header-actions" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <button
             onClick={handlePrintBatchMidterm}
             style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9,
-              background: "rgba(217, 119, 6, 0.12)", border: "1px solid #d97706", color: "#d97706",
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8,
+              background: "rgba(0, 147, 221, 0.1)", border: `1px solid ${DLHS.blue}50`, color: DLHS.blue,
               fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s"
             }}
-            title="Print Mid-Term results for all students in this class arm at once"
+            title="Batch print mid-term results for this class arm"
           >
             <Printer size={14} /> Batch Mid-Terms
           </button>
@@ -538,11 +515,11 @@ export default function FormClass() {
           <button
             onClick={handlePrintBatchReportCards}
             style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9,
-              background: "linear-gradient(135deg, #6366f1, #4f46e5)", border: "none", color: "#fff",
-              fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(99,102,241,0.25)"
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8,
+              background: DLHS.crimson, border: "none", color: "#ffffff",
+              fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(220, 19, 123, 0.25)"
             }}
-            title="Print Official Report Cards for all students in this class arm at once"
+            title="Batch print official report cards for this class arm"
           >
             <Printer size={14} /> Batch Report Cards
           </button>
@@ -550,11 +527,11 @@ export default function FormClass() {
           <button
             onClick={handlePrintBatchTranscripts}
             style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9,
-              background: "linear-gradient(135deg, #8B5CF6, #6D28D9)", border: "none", color: "#fff",
-              fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(139,92,246,0.25)"
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8,
+              background: DLHS.navy, border: "none", color: "#ffffff",
+              fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(41, 61, 125, 0.25)"
             }}
-            title="Print Official Cumulative Transcripts for all students in this class arm at once"
+            title="Batch print official cumulative transcripts for this class arm"
           >
             <GraduationCap size={14} /> Batch Transcripts
           </button>
@@ -562,21 +539,21 @@ export default function FormClass() {
           <button
             onClick={handleDownloadCsv}
             style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9,
-              background: "rgba(33,158,188,0.12)", border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC",
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8,
+              background: "var(--card)", border: "1px solid var(--border)", color: "var(--foreground)",
               fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s"
             }}
-            title="Download CSV template pre-filled with this arm's student roster"
+            title="Download CSV roster template pre-filled with this arm's students"
           >
-            <Download size={14} /> Download Template (.csv)
+            <Download size={14} /> Roster Template (.csv)
           </button>
 
           <button
             onClick={() => { setShowCsvModal(true); setCsvFeedback(null); }}
             style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 9,
-              background: "linear-gradient(135deg, #FB8500, #E76F51)", border: "none", color: "#fff",
-              fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(251,133,0,0.25)"
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8,
+              background: "rgba(212, 175, 55, 0.15)", border: `1px solid ${DLHS.gold}80`, color: "#92400E",
+              fontSize: 12, fontWeight: 700, cursor: "pointer"
             }}
           >
             <Upload size={14} /> Upload Completed (.csv)
@@ -584,7 +561,7 @@ export default function FormClass() {
         </div>
       </div>
 
-      {/* Class Arm Switcher Pills (If assigned to multiple arms) */}
+      {/* Class Arm Switcher Pills */}
       {formClasses.length > 1 && (
         <div className="arm-switcher-pills" style={{ display: "flex", gap: 8, marginBottom: 18, background: "var(--muted)", padding: 4, borderRadius: 10, width: "fit-content" }}>
           {formClasses.map(c => {
@@ -595,12 +572,12 @@ export default function FormClass() {
                 onClick={() => setSelectedClassId(c.id)}
                 style={{
                   display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8,
-                  border: "none", background: active ? "#FB8500" : "transparent",
-                  color: active ? "#fff" : "var(--subtext)", fontSize: 12.5, fontWeight: 700, cursor: "pointer",
-                  transition: "all 0.2s"
+                  border: "none", background: active ? DLHS.navy : "transparent",
+                  color: active ? "#ffffff" : "var(--muted-foreground)", fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+                  transition: "all 0.15s ease"
                 }}
               >
-                <Award size={14} /> {c.name} ({c.student_count || 0} Students)
+                <Award size={14} /> {c.name} ({c.student_count || 0} Candidates)
               </button>
             );
           })}
@@ -608,42 +585,45 @@ export default function FormClass() {
       )}
 
       {/* Summary Stats Overview */}
-      <div className="responsive-grid-4 form-stats-grid" style={{ marginBottom: 20, gap: 12 }}>
-        <Glass className="form-stats-card" style={{ padding: "14px 18px" }}>
-          <div style={{ fontSize: 11, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 700 }}>Class Enrolment</div>
-          <div className="form-stats-val" style={{ fontSize: 22, fontWeight: 800, color: "#219EBC", marginTop: 4 }}>{totalCount}</div>
-          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>Students in arm</div>
+      <div className="responsive-grid-4 form-stats-grid" style={{ marginBottom: 20, gap: 14 }}>
+        <Glass className="form-stats-card" style={{ padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, color: "var(--muted-foreground)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>Class Enrolment</div>
+          <div className="form-stats-val" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 24, fontWeight: 800, color: DLHS.navy, marginTop: 4 }}>{totalCount}</div>
+          <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 2 }}>Registered candidates</div>
         </Glass>
 
-        <Glass className="form-stats-card" style={{ padding: "14px 18px" }}>
-          <div style={{ fontSize: 11, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 700 }}>Teacher Comments</div>
-          <div className="form-stats-val" style={{ fontSize: 22, fontWeight: 800, color: "#FFB703", marginTop: 4 }}>
-            {commentsCompleted} <span style={{ fontSize: 13, color: "var(--subtext)" }}>/ {totalCount}</span>
+        <Glass className="form-stats-card" style={{ padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, color: "var(--muted-foreground)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>Teacher Comments</div>
+          <div className="form-stats-val" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 24, fontWeight: 800, color: DLHS.blue, marginTop: 4 }}>
+            {commentsCompleted} <span style={{ fontSize: 13, color: "var(--muted-foreground)" }}>/ {totalCount}</span>
           </div>
-          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{Math.round((commentsCompleted / (totalCount || 1)) * 100)}% done</div>
+          <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 2 }}>{Math.round((commentsCompleted / (totalCount || 1)) * 100)}% finalized</div>
         </Glass>
 
-        <Glass className="form-stats-card" style={{ padding: "14px 18px" }}>
-          <div style={{ fontSize: 11, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 700 }}>Attendance Entered</div>
-          <div className="form-stats-val" style={{ fontSize: 22, fontWeight: 800, color: "#2a9d8f", marginTop: 4 }}>
-            {attendanceEntered} <span style={{ fontSize: 13, color: "var(--subtext)" }}>/ {totalCount}</span>
+        <Glass className="form-stats-card" style={{ padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, color: "var(--muted-foreground)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>Attendance Entered</div>
+          <div className="form-stats-val" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 24, fontWeight: 800, color: "#059669", marginTop: 4 }}>
+            {attendanceEntered} <span style={{ fontSize: 13, color: "var(--muted-foreground)" }}>/ {totalCount}</span>
           </div>
-          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>Term totals</div>
+          <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 2 }}>Term presence recorded</div>
         </Glass>
 
-        <Glass className="form-stats-card" style={{ padding: "14px 18px" }}>
-          <div style={{ fontSize: 11, color: "var(--subtext)", textTransform: "uppercase", fontWeight: 700 }}>Domains Evaluated</div>
-          <div className="form-stats-val" style={{ fontSize: 22, fontWeight: 800, color: "#FB8500", marginTop: 4 }}>
-            {affectiveCompleted} <span style={{ fontSize: 13, color: "var(--subtext)" }}>/ {totalCount}</span>
+        <Glass className="form-stats-card" style={{ padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, color: "var(--muted-foreground)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>Domains Evaluated</div>
+          <div className="form-stats-val" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 24, fontWeight: 800, color: DLHS.gold, marginTop: 4 }}>
+            {affectiveCompleted} <span style={{ fontSize: 13, color: "var(--muted-foreground)" }}>/ {totalCount}</span>
           </div>
-          <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>Traits &amp; Skills</div>
+          <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 2 }}>Affective &amp; Psychomotor</div>
         </Glass>
       </div>
 
       {loadingRoster ? (
-        <div style={{ padding: 60, textAlign: "center", color: "var(--subtext)" }}>Loading class roster...</div>
+        <div style={{ padding: 60, textAlign: "center", color: "var(--muted-foreground)" }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${DLHS.navy}`, borderTopColor: "transparent", margin: "0 auto 12px", animation: "spin 1s linear infinite" }} />
+          Loading class arm roster…
+        </div>
       ) : students.length === 0 ? (
-        <Glass style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>
+        <Glass style={{ padding: 40, textAlign: "center", color: "var(--muted-foreground)" }}>
           No students currently enrolled in this class arm.
         </Glass>
       ) : (
@@ -653,23 +633,23 @@ export default function FormClass() {
           {/* Left Panel: Student Roster with Search and Name-Edit Action */}
           <Glass className="form-class-roster-panel" style={{ padding: "14px 12px", height: "fit-content" }}>
             <div style={{ marginBottom: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
-                <Search size={13} style={{ color: "var(--subtext)" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--border)" }}>
+                <Search size={14} style={{ color: "var(--muted-foreground)" }} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search students..."
-                  style={{ background: "transparent", border: "none", outline: "none", fontSize: 12, color: "var(--heading)", width: "100%" }}
+                  placeholder="Search students…"
+                  style={{ background: "transparent", border: "none", outline: "none", fontSize: 12.5, color: "var(--foreground)", width: "100%", fontFamily: "'Lato', sans-serif" }}
                 />
               </div>
             </div>
 
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.05em", padding: "4px 6px 8px", borderBottom: "1px solid var(--glass-border)" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.05em", padding: "4px 6px 8px", borderBottom: "1px solid var(--border)" }}>
               {filteredStudents.length} Students {filteredStudents.length !== students.length && `(filtered from ${students.length})`}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: "calc(100vh - 360px)", overflowY: "auto", marginTop: 6 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: "calc(100vh - 360px)", overflowY: "auto", marginTop: 6 }}>
               {filteredStudents.map(s => {
                 const isSelected = selectedStudent && selectedStudent.id === s.id;
                 const hasComment = (s.class_teacher_comment || "").trim().length > 0;
@@ -680,38 +660,38 @@ export default function FormClass() {
                     key={s.id}
                     onClick={() => handleSelectStudent(s)}
                     style={{
-                      padding: "9px 10px", borderRadius: 9, cursor: "pointer",
-                      border: `1px solid ${isSelected ? "#FB8500" : "transparent"}`,
-                      background: isSelected ? "rgba(251,133,0,0.12)" : "transparent",
+                      padding: "10px 12px", borderRadius: 8, cursor: "pointer",
+                      border: `1px solid ${isSelected ? DLHS.navy : "transparent"}`,
+                      background: isSelected ? "rgba(41, 61, 125, 0.08)" : "transparent",
                       display: "flex", justifyContent: "space-between", alignItems: "center",
-                      transition: "all 0.15s"
+                      transition: "all 0.15s ease"
                     }}
                   >
                     <div style={{ minWidth: 0, flex: 1, paddingRight: 6 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 700, color: isSelected ? "#FB8500" : "var(--heading)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: isSelected ? DLHS.navy : "var(--foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {s.name}
                         </span>
                         {/* Form Teacher Name Edit Trigger */}
                         <button
                           type="button"
                           onClick={(e) => openNameEdit(e, s)}
-                          title="Form Teacher: Edit student name only"
-                          style={{ background: "none", border: "none", padding: 2, cursor: "pointer", color: "var(--subtext)", display: "flex", alignItems: "center" }}
+                          title="Form Teacher: Correct student name"
+                          style={{ background: "none", border: "none", padding: 2, cursor: "pointer", color: "var(--muted-foreground)", display: "flex", alignItems: "center" }}
                         >
                           <Edit2 size={11} />
                         </button>
                       </div>
-                      <div style={{ fontSize: 10, color: "var(--subtext)", marginTop: 2, display: "flex", gap: 6 }}>
+                      <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 2, display: "flex", gap: 6 }}>
                         <span>{s.admission_number}</span>
-                        {hasAtt && <span style={{ color: "#2a9d8f" }}>• Att</span>}
-                        {hasComment && <span style={{ color: "#FFB703" }}>• Note</span>}
+                        {hasAtt && <span style={{ color: "#059669" }}>• Att</span>}
+                        {hasComment && <span style={{ color: DLHS.blue }}>• Remark</span>}
                       </div>
                     </div>
 
                     {s.punctuality > 0 && (
-                      <span style={{ fontSize: 9.5, color: "#219EBC", fontWeight: 700, background: "rgba(33,158,188,0.12)", padding: "2px 5px", borderRadius: 6 }}>
-                        ✓ Rated
+                      <span style={{ fontSize: 10, color: DLHS.navy, fontWeight: 700, background: "rgba(41, 61, 125, 0.1)", padding: "2px 6px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                        <CheckCircle2 size={10} /> Rated
                       </span>
                     )}
                   </div>
@@ -726,11 +706,10 @@ export default function FormClass() {
                   type="button"
                   onClick={() => setMobileTab("workspace")}
                   style={{
-                    width: "100%", padding: "10px 14px", borderRadius: 10,
-                    background: "linear-gradient(135deg, #FB8500, #E76F51)", border: "none",
-                    color: "#fff", fontSize: 12.5, fontWeight: 700, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                    boxShadow: "0 4px 12px rgba(251,133,0,0.25)"
+                    width: "100%", padding: "10px 14px", borderRadius: 8,
+                    background: DLHS.navy, border: "none",
+                    color: "#ffffff", fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6
                   }}
                 >
                   Edit: {selectedStudent.name.split(" ")[0]} →
@@ -741,7 +720,7 @@ export default function FormClass() {
 
           {/* Right Panel: Student Assessment Workspace */}
           {selectedStudent ? (
-            <Glass className="form-class-workspace-panel" style={{ padding: "18px 16px" }}>
+            <Glass className="form-class-workspace-panel" style={{ padding: "20px 22px" }}>
               {/* Mobile Header with Back Button and Prev/Next Navigation */}
               <div className="form-mobile-nav" style={{ marginBottom: 14 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
@@ -749,9 +728,9 @@ export default function FormClass() {
                     type="button"
                     onClick={() => setMobileTab("roster")}
                     style={{
-                      display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 11px",
-                      borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)",
-                      color: "var(--heading)", fontSize: 12, fontWeight: 700, cursor: "pointer"
+                      display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px",
+                      borderRadius: 8, background: "var(--muted)", border: "1px solid var(--border)",
+                      color: "var(--foreground)", fontSize: 12, fontWeight: 700, cursor: "pointer"
                     }}
                   >
                     <ArrowLeft size={13} /> Roster ({filteredStudents.length})
@@ -764,14 +743,14 @@ export default function FormClass() {
                       onClick={handlePrevStudent}
                       style={{
                         display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32,
-                        borderRadius: 7, background: "var(--muted)", border: "1px solid var(--glass-border)",
-                        color: "var(--heading)", opacity: prevStudent ? 1 : 0.35, cursor: prevStudent ? "pointer" : "not-allowed"
+                        borderRadius: 6, background: "var(--muted)", border: "1px solid var(--border)",
+                        color: "var(--foreground)", opacity: prevStudent ? 1 : 0.35, cursor: prevStudent ? "pointer" : "not-allowed"
                       }}
                       title="Previous Student"
                     >
                       <ChevronLeft size={15} />
                     </button>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--subtext)", minWidth: 42, textAlign: "center" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", minWidth: 44, textAlign: "center" }}>
                       {currentIndex >= 0 ? `${currentIndex + 1} / ${filteredStudents.length}` : ""}
                     </span>
                     <button
@@ -780,8 +759,8 @@ export default function FormClass() {
                       onClick={handleNextStudent}
                       style={{
                         display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32,
-                        borderRadius: 7, background: "var(--muted)", border: "1px solid var(--glass-border)",
-                        color: "var(--heading)", opacity: nextStudent ? 1 : 0.35, cursor: nextStudent ? "pointer" : "not-allowed"
+                        borderRadius: 6, background: "var(--muted)", border: "1px solid var(--border)",
+                        color: "var(--foreground)", opacity: nextStudent ? 1 : 0.35, cursor: nextStudent ? "pointer" : "not-allowed"
                       }}
                       title="Next Student"
                     >
@@ -792,29 +771,29 @@ export default function FormClass() {
               </div>
 
               {/* Workspace Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: 12, marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", paddingBottom: 14, marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <h2 style={{ margin: 0, fontSize: 16.5, fontWeight: 800, color: "var(--heading)" }}>
+                    <h2 style={{ fontFamily: "'Raleway', sans-serif", margin: 0, fontSize: 17, fontWeight: 800, color: "var(--foreground)" }}>
                       {selectedStudent.name}
                     </h2>
                     <button
                       onClick={(e) => openNameEdit(e, selectedStudent)}
-                      style={{ background: "rgba(251,133,0,0.1)", border: "1px solid rgba(251,133,0,0.3)", borderRadius: 6, padding: "3px 7px", fontSize: 11, fontWeight: 600, color: "#FB8500", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                      style={{ background: "rgba(41, 61, 125, 0.08)", border: `1px solid ${DLHS.navy}40`, borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 700, color: DLHS.navy, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
                     >
-                      <Edit2 size={11} /> Edit Name
+                      <Edit2 size={11} /> Correct Name
                     </button>
                   </div>
-                  <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 3, display: "flex", gap: 8 }}>
+                  <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 4, display: "flex", gap: 8 }}>
                     <span>Admission No: <strong>{selectedStudent.admission_number}</strong></span>
                     <span>•</span>
-                    <span>Sex: <strong>{selectedStudent.gender || "MALE"}</strong></span>
+                    <span>Gender: <strong>{selectedStudent.gender || "MALE"}</strong></span>
                   </div>
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   {saveStatus && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#2a9d8f", background: "rgba(42,157,143,0.1)", padding: "4px 9px", borderRadius: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: DLHS.navy, background: "rgba(41, 61, 125, 0.08)", padding: "5px 10px", borderRadius: 6 }}>
                       <CheckCircle2 size={13} /> {saveStatus}
                     </div>
                   )}
@@ -822,12 +801,12 @@ export default function FormClass() {
                     onClick={handlePrintMidterm}
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 6,
-                      padding: "6px 12px", borderRadius: 8,
-                      border: "1px solid #d97706", background: "rgba(217, 119, 6, 0.12)",
-                      color: "#d97706", fontSize: 12, fontWeight: 700, cursor: "pointer",
-                      transition: "all 0.2s"
+                      padding: "7px 12px", borderRadius: 8,
+                      border: `1px solid ${DLHS.blue}50`, background: "rgba(0, 147, 221, 0.08)",
+                      color: DLHS.blue, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      transition: "all 0.15s"
                     }}
-                    title="Print Mid-Term Result for this student"
+                    title="Print Mid-Term Result for this candidate"
                   >
                     <Printer size={13} /> Mid-Term
                   </button>
@@ -835,12 +814,12 @@ export default function FormClass() {
                     onClick={handlePrintReportCard}
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 6,
-                      padding: "6px 12px", borderRadius: 8,
-                      border: "none", background: "var(--primary)",
-                      color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
-                      transition: "all 0.2s"
+                      padding: "7px 12px", borderRadius: 8,
+                      border: "none", background: DLHS.crimson,
+                      color: "#ffffff", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      transition: "all 0.15s"
                     }}
-                    title="Print Term Report Card for this student"
+                    title="Print Official Term Report Card for this candidate"
                   >
                     <Printer size={13} /> Report Card
                   </button>
@@ -848,25 +827,25 @@ export default function FormClass() {
                     onClick={handlePrintTranscript}
                     style={{
                       display: "inline-flex", alignItems: "center", gap: 6,
-                      padding: "6px 12px", borderRadius: 8,
-                      border: "none", background: "linear-gradient(135deg,#8B5CF6,#6D28D9)",
-                      color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
-                      transition: "all 0.2s"
+                      padding: "7px 12px", borderRadius: 8,
+                      border: "none", background: DLHS.navy,
+                      color: "#ffffff", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      transition: "all 0.15s"
                     }}
-                    title="Print Cumulative Academic Transcript for this student"
+                    title="Print Cumulative Academic Transcript for this candidate"
                   >
                     <GraduationCap size={13} /> Transcript
                   </button>
                 </div>
               </div>
 
-              {/* Workspace Navigation Tabs (Horizontal swipe on mobile) */}
-              <div className="form-workspace-tabs-scroller" style={{ display: "flex", gap: 6, borderBottom: "1px solid var(--glass-border)", paddingBottom: 8, marginBottom: 16 }}>
+              {/* Workspace Navigation Tabs */}
+              <div className="form-workspace-tabs-scroller" style={{ display: "flex", gap: 8, borderBottom: "1px solid var(--border)", paddingBottom: 10, marginBottom: 18 }}>
                 {[
-                  { id: "affective", label: "Affective Traits", icon: <Heart size={13} />, color: "#219EBC" },
-                  { id: "psychomotor", label: "Psychomotor Skills", icon: <Award size={13} />, color: "#FFB703" },
-                  { id: "attendance", label: "Attendance & Awards", icon: <CalendarDays size={13} />, color: "#2a9d8f" },
-                  { id: "comments", label: "Form Teacher Comments", icon: <FileText size={13} />, color: "#FB8500" },
+                  { id: "affective", label: "Affective Character Traits", icon: <Heart size={14} />, color: DLHS.navy },
+                  { id: "psychomotor", label: "Psychomotor Capabilities", icon: <Award size={14} />, color: DLHS.blue },
+                  { id: "attendance", label: "Attendance & Statutory Awards", icon: <CalendarDays size={14} />, color: DLHS.gold },
+                  { id: "comments", label: "Form Teacher Appraisal", icon: <FileText size={14} />, color: DLHS.crimson },
                 ].map(t => {
                   const active = activeTab === t.id;
                   return (
@@ -874,11 +853,11 @@ export default function FormClass() {
                       key={t.id}
                       onClick={() => setActiveTab(t.id as any)}
                       style={{
-                        display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8,
+                        display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8,
                         border: `1.5px solid ${active ? t.color : "transparent"}`,
                         background: active ? `${t.color}15` : "transparent",
-                        color: active ? t.color : "var(--subtext)",
-                        fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
+                        color: active ? t.color : "var(--muted-foreground)",
+                        fontSize: 12.5, fontWeight: 700, cursor: "pointer", transition: "all 0.15s ease",
                         whiteSpace: "nowrap", flexShrink: 0
                       }}
                     >
@@ -891,16 +870,16 @@ export default function FormClass() {
               {/* TAB 1: Affective / Behavioral Traits */}
               {activeTab === "affective" && (
                 <div>
-                  <div style={{ fontSize: 12, color: "var(--subtext)", marginBottom: 10 }}>
-                    Rate character development: <strong>1 (Poor)</strong> to <strong>5 (Excellent)</strong>:
+                  <div style={{ fontSize: 12.5, color: "var(--muted-foreground)", marginBottom: 12 }}>
+                    Standard DLHS behavioral rubric: <strong>1 (Unsatisfactory)</strong> to <strong>5 (Exemplary)</strong>:
                   </div>
                   <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 360 }}>
                       <thead>
-                        <tr style={{ borderBottom: "2px solid var(--glass-border)" }}>
-                          <th style={{ textAlign: "left", padding: "8px 8px", fontSize: 11, color: "var(--subtext)" }}>Behavioral Trait</th>
+                        <tr style={{ borderBottom: "2px solid var(--border)", background: "var(--muted)" }}>
+                          <th style={{ textAlign: "left", padding: "10px 12px", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase" }}>Behavioral Metric</th>
                           {[1, 2, 3, 4, 5].map(i => (
-                            <th key={i} style={{ width: 44, padding: "6px 2px", fontSize: 11, color: "var(--subtext)", textAlign: "center" }}>
+                            <th key={i} style={{ width: 44, padding: "8px 4px", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textAlign: "center" }}>
                               {i}
                             </th>
                           ))}
@@ -910,17 +889,17 @@ export default function FormClass() {
                         {characterTraits.map(t => {
                           const currentScore = (selectedStudent as any)[t.id] || 0;
                           return (
-                            <tr key={t.id} style={{ borderBottom: "1px solid var(--glass-border)" }}>
-                              <td style={{ padding: "8px 8px", fontSize: 12.5, fontWeight: 600, color: "var(--heading)", minWidth: 140 }}>{t.label}</td>
+                            <tr key={t.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                              <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 600, color: "var(--foreground)", minWidth: 150 }}>{t.label}</td>
                               {[1, 2, 3, 4, 5].map(v => (
                                 <td key={v} style={{ textAlign: "center", padding: "6px 2px" }}>
-                                  <label style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, cursor: "pointer", borderRadius: "50%", background: currentScore === v ? "rgba(33,158,188,0.15)" : "transparent" }}>
+                                  <label style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, cursor: "pointer", borderRadius: "50%", background: currentScore === v ? "rgba(41, 61, 125, 0.12)" : "transparent" }}>
                                     <input
                                       type="radio"
                                       name={`aff-${selectedStudent.id}-${t.id}`}
                                       checked={currentScore === v}
                                       onChange={() => updateMetric(t.id, v)}
-                                      style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#219EBC" }}
+                                      style={{ width: 16, height: 16, cursor: "pointer", accentColor: DLHS.navy }}
                                     />
                                   </label>
                                 </td>
@@ -937,16 +916,16 @@ export default function FormClass() {
               {/* TAB 2: Psychomotor Domain */}
               {activeTab === "psychomotor" && (
                 <div>
-                  <div style={{ fontSize: 12, color: "var(--subtext)", marginBottom: 12 }}>
-                    Rate student physical coordination and dexterity on a scale of <strong>1 (Poor)</strong> to <strong>5 (Excellent)</strong>:
+                  <div style={{ fontSize: 12.5, color: "var(--muted-foreground)", marginBottom: 12 }}>
+                    Evaluate physical coordination, artistic creativity and motor skills from <strong>1 (Rudimentary)</strong> to <strong>5 (Proficient)</strong>:
                   </div>
                   <div style={{ overflowX: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
-                        <tr style={{ borderBottom: "2px solid var(--glass-border)" }}>
-                          <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 11, color: "var(--subtext)" }}>Skill &amp; Capability</th>
+                        <tr style={{ borderBottom: "2px solid var(--border)", background: "var(--muted)" }}>
+                          <th style={{ textAlign: "left", padding: "10px 12px", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase" }}>Skill &amp; Capability</th>
                           {[1, 2, 3, 4, 5].map(i => (
-                            <th key={i} style={{ width: 50, padding: "8px", fontSize: 11, color: "var(--subtext)", textAlign: "center" }}>
+                            <th key={i} style={{ width: 48, padding: "8px", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textAlign: "center" }}>
                               {i}
                             </th>
                           ))}
@@ -956,8 +935,8 @@ export default function FormClass() {
                         {psychomotorSkills.map(s => {
                           const currentScore = (selectedStudent as any)[s.id] || 0;
                           return (
-                            <tr key={s.id} style={{ borderBottom: "1px solid var(--glass-border)" }}>
-                              <td style={{ padding: "8px 10px", fontSize: 12.5, fontWeight: 600, color: "var(--heading)" }}>{s.label}</td>
+                            <tr key={s.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                              <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 600, color: "var(--foreground)" }}>{s.label}</td>
                               {[1, 2, 3, 4, 5].map(v => (
                                 <td key={v} style={{ textAlign: "center", padding: "6px" }}>
                                   <input
@@ -965,7 +944,7 @@ export default function FormClass() {
                                     name={`psy-${selectedStudent.id}-${s.id}`}
                                     checked={currentScore === v}
                                     onChange={() => updateMetric(s.id, v)}
-                                    style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#FFB703" }}
+                                    style={{ width: 16, height: 16, cursor: "pointer", accentColor: DLHS.blue }}
                                   />
                                 </td>
                               ))}
@@ -981,21 +960,21 @@ export default function FormClass() {
               {/* TAB 3: Attendance & Awards */}
               {activeTab === "attendance" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                  <div style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                      <CalendarDays size={14} style={{ color: "#2a9d8f" }} /> Term Attendance for Report Card
+                  <div style={{ padding: 16, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--border)" }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--foreground)", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                      <CalendarDays size={16} style={{ color: DLHS.navy }} /> Official Term Attendance Register
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
-                      <div style={{ fontSize: 11.5, color: "var(--subtext)" }}>
+                      <div style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
                         Enter official attendance. Set <strong>Days School Opened</strong> first, enter <strong>Days Absent</strong>, and the system automatically calculates <strong>Days Present</strong>.
                       </div>
                       <button
                         type="button"
                         onClick={handleSetBulkTermDays}
                         style={{
-                          padding: "6px 12px", borderRadius: 8, background: "rgba(33,158,188,0.1)",
-                          border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 11.5,
-                          fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
+                          padding: "6px 14px", borderRadius: 8, background: "rgba(41, 61, 125, 0.08)",
+                          border: `1px solid ${DLHS.navy}40`, color: DLHS.navy, fontSize: 12,
+                          fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
                         }}
                       >
                         <CalendarDays size={13} /> Set Term Days for All Students
@@ -1003,9 +982,9 @@ export default function FormClass() {
                     </div>
 
                     <div className="responsive-grid-3" style={{ gap: 14 }}>
-                      {/* 1. Total Days (School Opened) FIRST */}
-                      <div style={{ padding: 12, borderRadius: 8, background: "var(--background)", border: "1px solid var(--glass-border)" }}>
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--heading)", textTransform: "uppercase", marginBottom: 4 }}>
+                      {/* 1. Total Days Opened */}
+                      <div style={{ padding: 14, borderRadius: 8, background: "var(--card)", border: "1px solid var(--border)" }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--foreground)", textTransform: "uppercase", marginBottom: 6 }}>
                           1. Days School Opened *
                         </label>
                         <input
@@ -1014,14 +993,14 @@ export default function FormClass() {
                           value={selectedStudent.total_days ?? ""}
                           onChange={e => updateMetric("total_days", e.target.value === "" ? null : parseInt(e.target.value))}
                           placeholder="e.g. 110"
-                          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1.5px solid rgba(33,158,188,0.4)", background: "var(--muted)", color: "var(--heading)", fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box" }}
+                          style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: `1.5px solid ${DLHS.blue}`, background: "var(--muted)", color: "var(--foreground)", fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box" }}
                         />
-                        <span style={{ fontSize: 10, color: "var(--subtext)", marginTop: 4, display: "block" }}>Total days class held in term</span>
+                        <span style={{ fontSize: 10.5, color: "var(--muted-foreground)", marginTop: 4, display: "block" }}>Total academic school sessions held</span>
                       </div>
 
-                      {/* 2. Days Absent SECOND (defaults to 0) */}
-                      <div style={{ padding: 12, borderRadius: 8, background: "var(--background)", border: "1px solid var(--glass-border)" }}>
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--heading)", textTransform: "uppercase", marginBottom: 4 }}>
+                      {/* 2. Days Absent */}
+                      <div style={{ padding: 14, borderRadius: 8, background: "var(--card)", border: "1px solid var(--border)" }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--foreground)", textTransform: "uppercase", marginBottom: 6 }}>
                           2. Days Absent (Default: 0)
                         </label>
                         <input
@@ -1030,40 +1009,40 @@ export default function FormClass() {
                           value={selectedStudent.days_absent ?? 0}
                           onChange={e => updateMetric("days_absent", e.target.value === "" ? 0 : parseInt(e.target.value))}
                           placeholder="0"
-                          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1.5px solid rgba(231,111,81,0.4)", background: "var(--muted)", color: "var(--heading)", fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box" }}
+                          style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: `1.5px solid ${DLHS.crimson}`, background: "var(--muted)", color: "var(--foreground)", fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box" }}
                         />
-                        <span style={{ fontSize: 10, color: "var(--subtext)", marginTop: 4, display: "block" }}>Number of days student missed</span>
+                        <span style={{ fontSize: 10.5, color: "var(--muted-foreground)", marginTop: 4, display: "block" }}>Recorded missed sessions</span>
                       </div>
 
                       {/* 3. Days Present AUTO-CALCULATED */}
-                      <div style={{ padding: 12, borderRadius: 8, background: "rgba(42,157,143,0.08)", border: "1px solid rgba(42,157,143,0.3)" }}>
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#2a9d8f", textTransform: "uppercase", marginBottom: 4 }}>
+                      <div style={{ padding: 14, borderRadius: 8, background: "rgba(41, 61, 125, 0.06)", border: `1px solid ${DLHS.navy}30` }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: DLHS.navy, textTransform: "uppercase", marginBottom: 6 }}>
                           3. Days Present (Calculated)
                         </label>
                         <div style={{
-                          padding: "8px 12px", borderRadius: 8, background: "var(--background)",
-                          fontSize: 16, fontWeight: 800, color: "#2a9d8f", display: "flex", alignItems: "center", justifyContent: "space-between"
+                          padding: "8px 12px", borderRadius: 6, background: "var(--card)",
+                          fontSize: 16, fontWeight: 800, color: DLHS.navy, display: "flex", alignItems: "center", justifyContent: "space-between"
                         }}>
                           <span>{selectedStudent.days_present ?? (selectedStudent.total_days ? Math.max(0, selectedStudent.total_days - (selectedStudent.days_absent || 0)) : "—")}</span>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(42,157,143,0.15)", color: "#2a9d8f" }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(41, 61, 125, 0.12)", color: DLHS.navy }}>
                             Auto
                           </span>
                         </div>
-                        <span style={{ fontSize: 10, color: "var(--subtext)", marginTop: 4, display: "block" }}>
+                        <span style={{ fontSize: 10.5, color: "var(--muted-foreground)", marginTop: 4, display: "block" }}>
                           = Days Opened ({selectedStudent.total_days || 0}) - Absent ({selectedStudent.days_absent ?? 0})
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                      <Award size={14} style={{ color: "#FB8500" }} /> Special Awards &amp; Commendations
+                  <div style={{ padding: 16, borderRadius: 10, background: "var(--muted)", border: "1px solid var(--border)" }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--foreground)", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                      <Award size={16} style={{ color: DLHS.gold }} /> Special Commendations &amp; Honours
                     </div>
 
-                    <div className="responsive-grid-2" style={{ gap: 12 }}>
+                    <div className="responsive-grid-2" style={{ gap: 14 }}>
                       <div>
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", marginBottom: 4 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 4 }}>
                           Award / Prize 1
                         </label>
                         <input
@@ -1071,20 +1050,20 @@ export default function FormClass() {
                           value={selectedStudent.award_1 ?? "NILL"}
                           onChange={e => updateMetric("award_1", e.target.value)}
                           placeholder="e.g. 1st in Mathematics or NILL"
-                          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--background)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                          style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                         />
                       </div>
 
                       <div>
-                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", marginBottom: 4 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 4 }}>
                           Award / Prize 2
                         </label>
                         <input
                           type="text"
                           value={selectedStudent.award_2 ?? "NILL"}
                           onChange={e => updateMetric("award_2", e.target.value)}
-                          placeholder="e.g. Best in Basketball or NILL"
-                          style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--background)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                          placeholder="e.g. Best in Debate or NILL"
+                          style={{ width: "100%", padding: "9px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                         />
                       </div>
                     </div>
@@ -1095,14 +1074,14 @@ export default function FormClass() {
               {/* TAB 4: Form Teacher Comments */}
               {activeTab === "comments" && (
                 <div>
-                  <div style={{ fontSize: 12, color: "var(--subtext)", marginBottom: 8 }}>
-                    Official Form Teacher appraisal for the term report card:
+                  <div style={{ fontSize: 12.5, color: "var(--muted-foreground)", marginBottom: 10 }}>
+                    Official Form Teacher appraisal inscribed on the student's statutory report card:
                   </div>
 
                   {/* Comment Presets */}
                   <div style={{ marginBottom: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", alignSelf: "center", marginRight: 4 }}>
-                      <FileText size={11} style={{ display: "inline", verticalAlign: "middle", marginRight: 2 }} /> Official Remarks:
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", alignSelf: "center", marginRight: 4 }}>
+                      <FileText size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: 3 }} /> Institutional Remarks:
                     </span>
                     {COMMENT_PRESETS.map((preset, idx) => (
                       <button
@@ -1110,14 +1089,14 @@ export default function FormClass() {
                         type="button"
                         onClick={() => updateMetric("class_teacher_comment", preset)}
                         style={{
-                          padding: "4px 9px", borderRadius: 6, border: "1px solid var(--glass-border)",
-                          background: "var(--muted)", color: "var(--heading)", fontSize: 11, cursor: "pointer",
-                          transition: "all 0.15s"
+                          padding: "5px 10px", borderRadius: 6, border: "1px solid var(--border)",
+                          background: "var(--muted)", color: "var(--foreground)", fontSize: 11.5, cursor: "pointer",
+                          transition: "all 0.15s ease"
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.borderColor = "#FB8500")}
-                        onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--glass-border)")}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = DLHS.navy)}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}
                       >
-                        {preset.slice(0, 32)}…
+                        {preset.slice(0, 34)}…
                       </button>
                     ))}
                   </div>
@@ -1125,19 +1104,19 @@ export default function FormClass() {
                   <textarea
                     value={selectedStudent.class_teacher_comment || ""}
                     onChange={e => updateMetric("class_teacher_comment", e.target.value)}
-                    placeholder="Write personalized comment on student conduct, class participation, and academic progress..."
+                    placeholder="Write detailed remarks on candidate conduct, moral leadership, academic dedication, and general disposition..."
                     style={{
-                      width: "100%", minHeight: 110, padding: "12px 14px", borderRadius: 10,
-                      border: "1px solid var(--glass-border)", background: "var(--muted)",
-                      color: "var(--heading)", fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box"
+                      width: "100%", minHeight: 120, padding: "12px 14px", borderRadius: 8,
+                      border: "1px solid var(--border)", background: "var(--muted)",
+                      color: "var(--foreground)", fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box", fontFamily: "'Lato', sans-serif"
                     }}
                   />
                 </div>
               )}
             </Glass>
           ) : (
-            <Glass style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>
-              Select a student from the roster to begin assessment.
+            <Glass style={{ padding: 48, textAlign: "center", color: "var(--muted-foreground)" }}>
+              Select a student candidate from the left roster to begin assessment.
             </Glass>
           )}
         </div>
@@ -1145,51 +1124,51 @@ export default function FormClass() {
 
       {/* MODAL 1: Form Teacher Edit Student Name ONLY */}
       {nameModalStudent && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ background: "var(--background)", border: "1px solid var(--glass-border)", borderRadius: 16, boxShadow: "0 12px 48px rgba(0,0,0,0.35)", padding: 24, width: "100%", maxWidth: 440 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(16, 25, 46, 0.65)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", padding: 26, width: "100%", maxWidth: 440 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Edit2 size={16} style={{ color: "#FB8500" }} />
-                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)" }}>Edit Student Name</span>
+                <Edit2 size={16} style={{ color: DLHS.navy }} />
+                <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 16, fontWeight: 800, color: "var(--foreground)" }}>Correct Student Name</span>
               </div>
-              <button onClick={() => setNameModalStudent(null)} style={{ background: "none", border: "none", color: "var(--subtext)", cursor: "pointer" }}>
+              <button onClick={() => setNameModalStudent(null)} style={{ background: "none", border: "none", color: "var(--muted-foreground)", cursor: "pointer" }}>
                 <X size={16} />
               </button>
             </div>
 
-            <div style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(251,133,0,0.08)", border: "1px solid rgba(251,133,0,0.25)", marginBottom: 14, fontSize: 11.5, color: "var(--subtext)", lineHeight: 1.5 }}>
-              <strong style={{ color: "#FB8500" }}>Form Teacher Privilege:</strong> You may edit the student's <strong>First Name</strong> and <strong>Last Name</strong> only. Admission numbers, class placements, and system credentials remain protected.
+            <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(41, 61, 125, 0.06)", border: `1px solid ${DLHS.navy}30`, marginBottom: 14, fontSize: 12, color: "var(--foreground)", lineHeight: 1.5 }}>
+              <strong style={{ color: DLHS.navy }}>Form Teacher Authority:</strong> You may correct typographical discrepancies in the candidate's <strong>First Name</strong> and <strong>Last Name</strong>. Admission numbers and institutional records remain secured.
             </div>
 
             {nameError && (
-              <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(231,111,81,0.15)", color: "#e76f51", fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
+              <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(220,19,123,0.08)", color: DLHS.crimson, fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
                 {nameError}
               </div>
             )}
 
             <form onSubmit={handleSaveStudentName}>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", marginBottom: 4 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 4 }}>
                   First Name
                 </label>
                 <input
                   type="text"
                   value={editFirstName}
                   onChange={e => setEditFirstName(e.target.value)}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--muted)", color: "var(--foreground)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                   autoFocus
                 />
               </div>
 
               <div style={{ marginBottom: 18 }}>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", marginBottom: 4 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 4 }}>
                   Last Name
                 </label>
                 <input
                   type="text"
                   value={editLastName}
                   onChange={e => setEditLastName(e.target.value)}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--muted)", color: "var(--foreground)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                 />
               </div>
 
@@ -1197,16 +1176,16 @@ export default function FormClass() {
                 <button
                   type="button"
                   onClick={() => setNameModalStudent(null)}
-                  style={{ flex: 1, padding: "10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--subtext)", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                  style={{ flex: 1, padding: "10px", borderRadius: 6, background: "var(--muted)", border: "1px solid var(--border)", color: "var(--muted-foreground)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingName}
-                  style={{ flex: 2, padding: "10px", borderRadius: 8, background: "linear-gradient(135deg, #FB8500, #E76F51)", border: "none", color: "#fff", fontSize: 12.5, fontWeight: 700, cursor: savingName ? "not-allowed" : "pointer" }}
+                  style={{ flex: 2, padding: "10px", borderRadius: 6, background: DLHS.navy, border: "none", color: "#ffffff", fontSize: 13, fontWeight: 700, cursor: savingName ? "not-allowed" : "pointer" }}
                 >
-                  {savingName ? "Saving Name…" : "Save Changes"}
+                  {savingName ? "Updating…" : "Commit Changes"}
                 </button>
               </div>
             </form>
@@ -1216,40 +1195,40 @@ export default function FormClass() {
 
       {/* MODAL 2: Bulk CSV Upload for Form Class Assessments */}
       {showCsvModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ background: "var(--background)", border: "1px solid var(--glass-border)", borderRadius: 16, boxShadow: "0 12px 48px rgba(0,0,0,0.35)", padding: 24, width: "100%", maxWidth: 500 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(16, 25, 46, 0.65)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.25)", padding: 26, width: "100%", maxWidth: 500 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Upload size={16} style={{ color: "#FB8500" }} />
-                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)" }}>
+                <Upload size={16} style={{ color: DLHS.navy }} />
+                <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 16, fontWeight: 800, color: "var(--foreground)" }}>
                   Import Assessment CSV — {currentClass?.name}
                 </span>
               </div>
-              <button onClick={() => setShowCsvModal(false)} style={{ background: "none", border: "none", color: "var(--subtext)", cursor: "pointer" }}>
+              <button onClick={() => setShowCsvModal(false)} style={{ background: "none", border: "none", color: "var(--muted-foreground)", cursor: "pointer" }}>
                 <X size={16} />
               </button>
             </div>
 
-            <p style={{ fontSize: 12.5, color: "var(--subtext)", lineHeight: 1.5, marginBottom: 16 }}>
+            <p style={{ fontSize: 12.5, color: "var(--muted-foreground)", lineHeight: 1.5, marginBottom: 16 }}>
               Upload your completed template. The system will update behavioral traits, psychomotor skills, attendance days, awards, and teacher remarks for matching students in this class arm.
             </p>
 
             {csvFeedback && (
               <div style={{
-                padding: "10px 14px", borderRadius: 9, marginBottom: 16, fontSize: 12, fontWeight: 600,
-                background: csvFeedback.success ? "rgba(42,157,143,0.12)" : "rgba(231,111,81,0.12)",
-                border: `1px solid ${csvFeedback.success ? "rgba(42,157,143,0.3)" : "rgba(231,111,81,0.3)"}`,
-                color: csvFeedback.success ? "#2a9d8f" : "#e76f51",
+                padding: "10px 14px", borderRadius: 8, marginBottom: 16, fontSize: 12.5, fontWeight: 600,
+                background: csvFeedback.success ? "rgba(41, 61, 125, 0.08)" : "rgba(220, 19, 123, 0.08)",
+                border: `1px solid ${csvFeedback.success ? DLHS.navy : DLHS.crimson}`,
+                color: csvFeedback.success ? DLHS.navy : DLHS.crimson,
                 display: "flex", alignItems: "center", gap: 8
               }}>
-                {csvFeedback.success ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
+                {csvFeedback.success ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
                 <span>{csvFeedback.message}</span>
               </div>
             )}
 
             <form onSubmit={handleImportCsv}>
               <div style={{
-                border: "2px dashed var(--glass-border)", borderRadius: 12, padding: "24px 16px",
+                border: "2px dashed var(--border)", borderRadius: 12, padding: "26px 16px",
                 textAlign: "center", marginBottom: 16, background: "var(--muted)", cursor: "pointer"
               }}
               onClick={() => document.getElementById("csv-file-input")?.click()}
@@ -1261,12 +1240,12 @@ export default function FormClass() {
                   onChange={e => setCsvFile(e.target.files?.[0] || null)}
                   style={{ display: "none" }}
                 />
-                <Upload size={24} style={{ color: "#FB8500", margin: "0 auto 8px" }} />
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)" }}>
-                  {csvFile ? csvFile.name : "Click to select CSV file"}
+                <Upload size={24} style={{ color: DLHS.navy, margin: "0 auto 8px" }} />
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--foreground)" }}>
+                  {csvFile ? csvFile.name : "Select CSV file"}
                 </div>
-                <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 4 }}>
-                  {csvFile ? `${(csvFile.size / 1024).toFixed(1)} KB` : "Supports UTF-8 .csv downloaded from this portal"}
+                <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 4 }}>
+                  {csvFile ? `${(csvFile.size / 1024).toFixed(1)} KB` : "Supports standard UTF-8 .csv downloaded from this portal"}
                 </div>
               </div>
 
@@ -1274,7 +1253,7 @@ export default function FormClass() {
                 <button
                   type="button"
                   onClick={() => setShowCsvModal(false)}
-                  style={{ flex: 1, padding: "10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--subtext)", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                  style={{ flex: 1, padding: "10px", borderRadius: 6, background: "var(--muted)", border: "1px solid var(--border)", color: "var(--muted-foreground)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
                 >
                   Close
                 </button>
@@ -1282,13 +1261,13 @@ export default function FormClass() {
                   type="submit"
                   disabled={!csvFile || importingCsv}
                   style={{
-                    flex: 2, padding: "10px", borderRadius: 8,
-                    background: (!csvFile || importingCsv) ? "var(--muted)" : "linear-gradient(135deg, #FB8500, #E76F51)",
-                    border: "none", color: (!csvFile || importingCsv) ? "var(--subtext)" : "#fff",
-                    fontSize: 12.5, fontWeight: 700, cursor: (!csvFile || importingCsv) ? "not-allowed" : "pointer"
+                    flex: 2, padding: "10px", borderRadius: 6,
+                    background: (!csvFile || importingCsv) ? "var(--muted)" : DLHS.navy,
+                    border: "none", color: (!csvFile || importingCsv) ? "var(--muted-foreground)" : "#ffffff",
+                    fontSize: 13, fontWeight: 700, cursor: (!csvFile || importingCsv) ? "not-allowed" : "pointer"
                   }}
                 >
-                  {importingCsv ? "Importing Roster Data…" : "Start Import"}
+                  {importingCsv ? "Processing CSV…" : "Execute Import"}
                 </button>
               </div>
             </form>

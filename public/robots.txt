@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /assets/
+Allow: /favicon.ico
+Allow: /logo.png
+Allow: /school_hero.png
+Disallow: /api/
+Disallow: /admin/
+Disallow: /teacher/
+Disallow: /student/
+Disallow: /*.php$
+
+Sitemap: https://lms.jlm.com.ng/sitemap.xml

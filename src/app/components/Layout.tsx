@@ -274,7 +274,7 @@ export function Layout({ children }: { children: ReactNode }) {
         />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 14.5, color: "#ffffff", letterSpacing: "0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Raleway',sans-serif" }}>{schoolFirst === 'DLHS' ? 'DLHS Kaduna' : schoolFirst}</div>
-          <div style={{ fontSize: 9.5, color: "#d4af37", letterSpacing: "0.08em", fontWeight: 700, textTransform: "uppercase" }}>{schoolRest}</div>
+          <div style={{ fontSize: 9.5, color: "#d4af37", letterSpacing: "0.08em", fontWeight: 700, textTransform: "uppercase" }}>Result Portal</div>
         </div>
         {/* Close button for mobile */}
         <button

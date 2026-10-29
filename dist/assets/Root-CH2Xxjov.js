@@ -1,0 +1,1 @@
+import{u as t,r as s,j as o,O as a}from"./index-3Zhz5KuE.js";function u(){const{theme:e}=t();return s.useEffect(()=>{e==="dark"?document.documentElement.classList.add("dark"):document.documentElement.classList.remove("dark")},[e]),o.jsx(a,{})}export{u as default};

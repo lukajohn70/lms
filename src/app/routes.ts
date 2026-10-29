@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter, redirect } from "react-router";
 import { lazy } from "react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
@@ -59,7 +59,7 @@ export const router = createBrowserRouter([
         ErrorBoundary: ErrorBoundary,
         children: [
           { index: true, Component: StudentDashboard },
-          { path: "cbt", Component: StudentCBT },
+          { path: "cbt", loader: () => redirect("/student/results") },
           { path: "courses", Component: StudentCourses },
           { path: "materials", Component: StudentMaterials },
           { path: "results", Component: StudentResults },
@@ -76,7 +76,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, Component: TeacherDashboard },
           { path: "classes", Component: TeacherClasses },
-          { path: "cbt", Component: TeacherCBT },
+          { path: "cbt", loader: () => redirect("/teacher/grades") },
           { path: "materials", Component: TeacherMaterials },
           { path: "attendance", Component: TeacherAttendance },
           { path: "grades", Component: TeacherGrades },
@@ -96,8 +96,8 @@ export const router = createBrowserRouter([
           { path: "users", Component: AdminUsers },
           { path: "classes", Component: AdminClasses },
           { path: "library", Component: AdminLibrary },
-          { path: "admissions", Component: AdminAdmissions },
-          { path: "cbt", Component: AdminCBT },
+          { path: "admissions", loader: () => redirect("/admin/reports") },
+          { path: "cbt", loader: () => redirect("/admin/reports") },
           { path: "fees", Component: AdminFees },
           { path: "reports", Component: AdminReports },
           { path: "portal-sync", Component: AdminPortalSync },

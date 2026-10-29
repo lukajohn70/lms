@@ -1,40 +1,51 @@
 Options -Indexes
 Options +FollowSymLinks
+DirectoryIndex index.html index.php
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Fix typo redirect for deploy_database.ph -> deploy_database.php
-    RewriteRule ^deploy_database\.ph$ %{REQUEST_URI}p [R=301,L]
-
-    # 1. Block access to hidden files and sensitive project configuration
+    # 1. Block access to hidden files and sensitive project configuration files
     RewriteRule ^(\.git|\.env|\.cpanel\.yml|composer\.|package(-lock)?\.json|tsconfig\.json|vite\.config\.ts) - [F,L]
 
-    # 2. Block direct HTTP access to scratch/debug scripts
-    <FilesMatch "^(scratch_.*|diagnose.*)\.php$">
-        Order Deny,Allow
-        Deny from all
+    # 2. Block direct HTTP access to scratch, diagnostic, migration, and setup utility scripts
+    <FilesMatch "^(scratch_.*|diagnose.*|check_db|deploy_database|setup_cpanel_db|fix_fees|migrate.*)\.php$">
+        <IfModule mod_authz_core.c>
+            Require all denied
+        </IfModule>
+        <IfModule !mod_authz_core.c>
+            Order Deny,Allow
+            Deny from all
+        </IfModule>
     </FilesMatch>
 
     # 3. Allow API requests to pass directly to the api directory
     RewriteRule ^api(/.*)?$ - [L]
 
-    # 4. If the requested file or directory exists in root, serve it directly
+    # 4. If index.html is directly requested, stop rewriting
+    RewriteRule ^index\.html$ - [L]
+
+    # 5. If the requested file or directory exists in web root, serve it directly
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # 5. Direct repo clone scenario: if dist/ exists and file exists inside dist, serve it
-    RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
+    # 6. Direct repo clone scenario: if dist/ exists and requested file exists inside dist, serve it
+    RewriteCond dist/%{REQUEST_URI} -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/dist/%{REQUEST_URI} -f
     RewriteRule ^(.*)$ dist/$1 [L]
 
-    # 6. Single Page Application (SPA) routing for React Router:
-    # If dist/index.html exists (direct repo clone), rewrite to dist/index.html
-    RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f
-    RewriteRule ^ dist/index.html [L]
+    # 7. Single Page Application (SPA) routing for React Router:
+    # If dist/index.html exists (direct repo clone), fallback to dist/index.html
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond dist/index.html -f
+    RewriteRule ^(.*)$ dist/index.html [L]
 
-    # Otherwise, fallback to root index.html (when extracted directly to web root)
-    RewriteRule ^ index.html [L]
+    # 8. Otherwise fallback to index.html (when dist/* was deployed directly to root via .cpanel.yml)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.html [L]
 </IfModule>
 
 # Security Headers
@@ -43,6 +54,7 @@ Options +FollowSymLinks
     Header set X-XSS-Protection "1; mode=block"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
 </IfModule>
 
 # Gzip compression for high performance

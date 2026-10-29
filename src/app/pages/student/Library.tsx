@@ -8,12 +8,12 @@ const Glass = ({ children, style }: { children: React.ReactNode; style?: React.C
 );
 
 const FAQS = [
-  { q: "How do I take a Computer Based Test (CBT)?", a: "Navigate to 'Academics & CBT' > 'Test Center (CBT)' in the sidebar. If there is an active exam scheduled for your class, click 'Start Exam'. Your timer will count down automatically and your answers are saved as you go." },
+  { q: "How are my term results calculated?", a: "Term results are computed from Continuous Assessment 1 (20%), Continuous Assessment 2 (20%), and Terminal Examination (60%), giving a cumulative total of 100% per subject with automated grade classification." },
   { q: "Where can I view my term results?", a: "Go to the 'Results & Transcripts' page. Select the session and term from the dropdown to view your compiled grade sheet. Click 'Print Report Card' to download a PDF transcript." },
   { q: "How do I access the study guide PDF?", a: "Click on the 'Study Guide' tab above the book shelf. The guide for your school level (Nursery, Primary, or Secondary) can be opened directly in the browser or downloaded." },
   { q: "What should I do if a score is incorrect?", a: "Contact your subject teacher through the 'Communication' portal and describe the issue. If unresolved, submit a support ticket via the Help & Support button at the bottom of the sidebar." },
   { q: "How do I pay my school fees?", a: "Go to 'Fees & Payments' in the sidebar. Click 'Make Payment' next to the outstanding fee invoice, enter the amount, and confirm. A receipt is generated automatically." },
-  { q: "Can I download lecture notes?", a: "Yes. Navigate to 'Lesson Materials' under 'Academics & CBT'. PDFs, slides, and documents uploaded by your teachers are listed there for download." },
+  { q: "Can I download lecture notes?", a: "Yes. Navigate to 'Lesson Materials' under 'Academics'. PDFs, slides, and documents uploaded by your teachers are listed there for download." },
 ];
 
 const GUIDE_BASES = [

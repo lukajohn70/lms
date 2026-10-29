@@ -1,11 +1,32 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router";
-import { CheckCircle, XCircle, Save, Users, Calendar, BookOpen } from "lucide-react";
+import { CheckCircle, XCircle, Save, Users, Calendar, BookOpen, CheckCircle2 } from "lucide-react";
 import { useApp } from "../../contexts/AppContext";
 import { apiClient } from "../../lib/apiClient";
 
+const DLHS = {
+  navy: "#293D7D",
+  navyDark: "#16234B",
+  crimson: "#DC137B",
+  crimsonHover: "#B80F66",
+  blue: "#0093DD",
+  gold: "#D4AF37",
+  periwinkle: "#BFD1FF",
+  slate: "#3A4244",
+};
+
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
-  <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>{children}</div>
+  <div
+    style={{
+      background: "var(--card)",
+      border: "1px solid var(--border)",
+      borderRadius: 14,
+      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+      ...style
+    }}
+  >
+    {children}
+  </div>
 );
 
 export default function Attendance() {
@@ -126,23 +147,27 @@ export default function Attendance() {
   };
 
   return (
-    <div>
+    <div style={{ paddingBottom: 32 }}>
       <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>Attendance Register</h1>
-          <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>Mark and track student attendance</p>
+          <h1 style={{ fontFamily: "'Raleway', sans-serif", fontSize: 22, fontWeight: 800, color: "var(--foreground)", margin: "0 0 4px" }}>
+            Daily Attendance Register
+          </h1>
+          <p style={{ fontSize: 12.5, color: "var(--muted-foreground)", margin: 0 }}>
+            Take statutory roll call and audit student candidate class presence
+          </p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           {/* Academic Session */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--muted)", border: "1px solid var(--glass-border)", borderRadius: 8, padding: "5px 10px" }}>
-            <Calendar size={13} style={{ color: "#219EBC" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px" }}>
+            <Calendar size={14} style={{ color: DLHS.navy }} />
             <select
               value={selectedSession}
               onChange={e => setSelectedSession(e.target.value)}
-              style={{ background: "transparent", border: "none", color: "var(--heading)", fontSize: 12, fontWeight: 600, outline: "none", cursor: "pointer" }}
+              style={{ background: "transparent", border: "none", color: "var(--foreground)", fontSize: 12.5, fontWeight: 700, outline: "none", cursor: "pointer", fontFamily: "'Lato', sans-serif" }}
             >
               {["2026/2027", "2025/2026", "2024/2025", "2023/2024"].map(sess => (
-                <option key={sess} value={sess} style={{ background: "var(--popover)", color: "var(--heading)" }}>{sess}</option>
+                <option key={sess} value={sess} style={{ background: "var(--card)", color: "var(--foreground)" }}>{sess}</option>
               ))}
             </select>
           </div>
@@ -152,7 +177,7 @@ export default function Attendance() {
             <select
               value={selectedCourseId || ""}
               onChange={e => setSelectedCourseId(parseInt(e.target.value))}
-              style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, color: "var(--heading)", outline: "none" }}
+              style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12.5, fontWeight: 600, color: "var(--foreground)", outline: "none" }}
             >
               {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -163,20 +188,20 @@ export default function Attendance() {
             <select
               value={selectedClassId || ""}
               onChange={e => setSelectedClassId(parseInt(e.target.value))}
-              style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, fontWeight: 600, color: "#219EBC", outline: "none" }}
+              style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12.5, fontWeight: 700, color: DLHS.navy, outline: "none" }}
             >
               {classes.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
             </select>
           )}
 
           {/* Date select */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--muted)", border: "1px solid var(--glass-border)", borderRadius: 8, padding: "3px 8px" }}>
-            <Calendar size={13} style={{ color: "var(--subtext)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "5px 10px" }}>
+            <Calendar size={14} style={{ color: "var(--muted-foreground)" }} />
             <input
               type="date"
               value={selectedDate}
               onChange={e => setSelectedDate(e.target.value)}
-              style={{ border: "none", background: "transparent", fontSize: 12, color: "var(--heading)", outline: "none", cursor: "pointer" }}
+              style={{ border: "none", background: "transparent", fontSize: 12.5, color: "var(--foreground)", outline: "none", cursor: "pointer", fontFamily: "'Lato', sans-serif" }}
             />
           </div>
 
@@ -187,49 +212,63 @@ export default function Attendance() {
             disabled={loading || students.length === 0}
             title={`Mark all students present on ${formatDateLabel(selectedDate)}`}
             style={{
-              display: "flex", alignItems: "center", gap: 5, padding: "7px 13px", borderRadius: 8,
-              background: "rgba(42,157,143,0.12)", border: "1px solid rgba(42,157,143,0.35)",
-              color: "#2a9d8f", fontSize: 12, fontWeight: 600,
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8,
+              background: "rgba(0, 147, 221, 0.1)", border: `1px solid ${DLHS.blue}40`,
+              color: DLHS.blue, fontSize: 12.5, fontWeight: 700,
               cursor: (loading || students.length === 0) ? "not-allowed" : "pointer",
               whiteSpace: "nowrap"
             }}
           >
-            <CheckCircle size={13} /> Mark All Present ({formatDateLabel(selectedDate)})
+            <CheckCircle size={14} /> Mark All Present ({formatDateLabel(selectedDate)})
           </button>
 
-          <button onClick={handleSave} disabled={loading || students.length === 0}
-            style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 16px", borderRadius: 9, background: saved ? "rgba(33,158,188,0.15)" : "linear-gradient(135deg,#219EBC,#1a8aaa)", border: saved ? "1px solid rgba(33,158,188,0.3)" : "none", cursor: (loading || students.length === 0) ? "not-allowed" : "pointer", fontSize: 12.5, fontWeight: 600, color: saved ? "#219EBC" : "#fff", opacity: (loading || students.length === 0) ? 0.6 : 1 }}>
-            {saved ? <><CheckCircle size={13}/> Saved!</> : <><Save size={13}/> Save</>}
+          <button
+            onClick={handleSave}
+            disabled={loading || students.length === 0}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 18px", borderRadius: 8,
+              background: saved ? "rgba(41, 61, 125, 0.12)" : DLHS.navy,
+              border: saved ? `1px solid ${DLHS.navy}` : "none",
+              cursor: (loading || students.length === 0) ? "not-allowed" : "pointer",
+              fontSize: 12.5, fontWeight: 700,
+              color: saved ? DLHS.navy : "#ffffff",
+              boxShadow: saved ? "none" : "0 4px 12px rgba(41, 61, 125, 0.25)"
+            }}
+          >
+            {saved ? <><CheckCircle size={14} /> Saved!</> : <><Save size={14} /> Save Register</>}
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ padding: 40, textContent: "center", color: "var(--subtext)", textAlign: "center" }}>Loading register...</div>
+        <div style={{ padding: 48, textAlign: "center", color: "var(--muted-foreground)" }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${DLHS.navy}`, borderTopColor: "transparent", margin: "0 auto 12px", animation: "spin 1s linear infinite" }} />
+          Loading attendance register…
+        </div>
       ) : students.length === 0 ? (
-        <Glass style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>
-          No students enrolled in this course.
+        <Glass style={{ padding: 48, textAlign: "center", color: "var(--muted-foreground)" }}>
+          No students enrolled in this course or class arm.
         </Glass>
       ) : (
         <Glass>
-          <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 8 }}>
-            <Users size={14} style={{ color: "#8ECAE6" }} />
-            <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--heading)" }}>
-              {courses.find(c => c.id === selectedCourseId)?.name || "Class"} — Attendance Register
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 10 }}>
+            <Users size={16} style={{ color: DLHS.navy }} />
+            <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, fontWeight: 700, color: "var(--foreground)" }}>
+              {courses.find(c => c.id === selectedCourseId)?.name || "Class"} — Roll Call Register
             </span>
-            <span style={{ fontSize: 11.5, color: "var(--subtext)", marginLeft: "auto" }}>
-              Week of {formatDateLabel(dates[0])} — {formatDateLabel(dates[dates.length - 1])}
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted-foreground)", marginLeft: "auto" }}>
+              Period: {formatDateLabel(dates[0])} — {formatDateLabel(dates[dates.length - 1])}
             </span>
           </div>
 
           <div className="table-responsive-wrapper">
-            <div style={{ minWidth: 620 }}>
+            <div style={{ minWidth: 640 }}>
               {/* Header row */}
-              <div style={{ display: "grid", gridTemplateColumns: `1fr repeat(${dates.length},85px) 80px`, padding: "8px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
-                <span style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textTransform: "uppercase" }}>Student</span>
+              <div style={{ display: "grid", gridTemplateColumns: `1.4fr repeat(${dates.length},90px) 90px`, padding: "10px 20px", borderBottom: "1px solid var(--border)", background: "var(--muted)", alignItems: "center" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.04em" }}>Candidate Name</span>
                 {dates.map(d => (
-                  <div key={d} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textAlign: "center", textTransform: "uppercase" }}>
+                  <div key={d} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--foreground)", textAlign: "center" }}>
                       {formatDateLabel(d)}
                     </span>
                     <button
@@ -237,33 +276,45 @@ export default function Attendance() {
                       onClick={() => markAllPresent(d)}
                       title={`Mark all students present on ${formatDateLabel(d)}`}
                       style={{
-                        background: "rgba(42,157,143,0.12)", border: "1px solid rgba(42,157,143,0.3)",
-                        color: "#2a9d8f", fontSize: 9, fontWeight: 700,
-                        cursor: "pointer", padding: "1px 5px", borderRadius: 4, display: "flex", alignItems: "center", gap: 2
+                        background: "rgba(0, 147, 221, 0.1)", border: `1px solid ${DLHS.blue}30`,
+                        color: DLHS.blue, fontSize: 10, fontWeight: 700,
+                        cursor: "pointer", padding: "1px 6px", borderRadius: 4, display: "flex", alignItems: "center", gap: 3
                       }}
                     >
-                      <CheckCircle size={9} /> all
+                      <CheckCircle size={10} /> all
                     </button>
                   </div>
                 ))}
-                <span style={{ fontSize: 10, fontWeight: 600, color: "var(--subtext)", textAlign: "center", textTransform: "uppercase" }}>Rate</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.04em" }}>Rate</span>
               </div>
 
               {students.map((s) => {
                 const rate = getRate(s);
                 return (
-                  <div key={s.id} style={{ display: "grid", gridTemplateColumns: `1fr repeat(${dates.length},85px) 80px`, padding: "9px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
-                    <span style={{ fontSize: 12.5, color: "var(--heading)", fontWeight: 500, overflow: "hidden", textTargetContent: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
-                    {dates.map(d => (
-                      <div key={d} style={{ display: "flex", justifyContent: "center" }}>
-                        <button onClick={() => toggle(s.id, d)}
-                          style={{ width: 28, height: 28, borderRadius: 8, border: "none", background: (s.attendance[d]) ? "rgba(33,158,188,0.15)" : "rgba(251,133,0,0.1)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {(s.attendance[d]) ? <CheckCircle size={16} style={{ color: "#219EBC" }} /> : <XCircle size={16} style={{ color: "#FB8500" }} />}
-                        </button>
-                      </div>
-                    ))}
+                  <div key={s.id} style={{ display: "grid", gridTemplateColumns: `1.4fr repeat(${dates.length},90px) 90px`, padding: "10px 20px", borderBottom: "1px solid var(--border)", alignItems: "center" }}>
+                    <span style={{ fontSize: 13, color: "var(--foreground)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
+                    {dates.map(d => {
+                      const isPres = !!s.attendance[d];
+                      return (
+                        <div key={d} style={{ display: "flex", justifyContent: "center" }}>
+                          <button
+                            onClick={() => toggle(s.id, d)}
+                            style={{
+                              width: 30, height: 30, borderRadius: 6, border: "none",
+                              background: isPres ? "rgba(5, 150, 105, 0.12)" : "rgba(220, 19, 123, 0.1)",
+                              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                              transition: "all 0.15s ease"
+                            }}
+                          >
+                            {isPres ? <CheckCircle size={17} style={{ color: "#059669" }} /> : <XCircle size={17} style={{ color: DLHS.crimson }} />}
+                          </button>
+                        </div>
+                      );
+                    })}
                     <div style={{ textAlign: "center" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: rate < 80 ? "#FFB703" : "#219EBC" }}>{rate}%</span>
+                      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, fontWeight: 800, color: rate < 80 ? DLHS.crimson : DLHS.navy }}>
+                        {rate}%
+                      </span>
                     </div>
                   </div>
                 );

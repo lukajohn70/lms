@@ -246,16 +246,22 @@ export default function UsersPage() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resettingUser || !resetPasswordVal.trim()) return;
+    if (resetPasswordVal.trim().length < 6) {
+      alert("Password must be at least 6 characters long.");
+      return;
+    }
     setAdminActionLoading(true);
     try {
-      await apiClient.post("/admin/users/reset-password", {
+      const res = await apiClient.post("/admin/users/reset-password", {
+        user_id: resettingUser.id,
         id: resettingUser.id,
+        new_password: resetPasswordVal.trim(),
         password: resetPasswordVal.trim()
       });
-      setSavedMessage(`Password reset successfully for ${resettingUser.first_name}!`);
+      setSavedMessage(res?.message || `Password reset successfully for ${resettingUser.first_name}!`);
       setResettingUser(null);
       setResetPasswordVal("");
-      setTimeout(() => setSavedMessage(""), 2500);
+      setTimeout(() => setSavedMessage(""), 3500);
     } catch (e: any) {
       alert(e.message || "Failed to reset password");
     } finally {
@@ -565,10 +571,24 @@ export default function UsersPage() {
                         </>
                       )}
                       {u.role.toLowerCase() === "student" && (
-                        <button onClick={() => { setAssigningClassUser(u); setSelectedClassId(String(u.class_id || "")); }}
+                        <>
+                          <button onClick={() => { setAssigningClassUser(u); setSelectedClassId(String(u.class_id || "")); }}
+                            style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(220,19,123,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
+                            title="Assign Class">
+                            <BookOpen size={12} style={{ color: "#dc137b" }} />
+                          </button>
+                          <button onClick={() => { setResettingUser(u); setResetPasswordVal(""); }}
+                            style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(220,19,123,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
+                            title="Reset Student Password">
+                            <Key size={12} style={{ color: "#dc137b" }} />
+                          </button>
+                        </>
+                      )}
+                      {u.role.toLowerCase() === "parent" && (
+                        <button onClick={() => { setResettingUser(u); setResetPasswordVal(""); }}
                           style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(220,19,123,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
-                          title="Assign Class">
-                          <BookOpen size={12} style={{ color: "#dc137b" }} />
+                          title="Reset Parent Password">
+                          <Key size={12} style={{ color: "#dc137b" }} />
                         </button>
                       )}
                       <button 
@@ -660,8 +680,18 @@ export default function UsersPage() {
                         </>
                       )}
                       {u.role.toLowerCase() === "student" && (
-                        <button onClick={() => { setAssigningClassUser(u); setSelectedClassId(String(u.class_id || "")); }} style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.25)", color: "#dc137b", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-                          <BookOpen size={11} /> Class
+                        <>
+                          <button onClick={() => { setAssigningClassUser(u); setSelectedClassId(String(u.class_id || "")); }} style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.25)", color: "#dc137b", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                            <BookOpen size={11} /> Class
+                          </button>
+                          <button onClick={() => { setResettingUser(u); setResetPasswordVal(""); }} style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.25)", color: "#dc137b", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }} title="Reset Password">
+                            <Key size={11} /> Pass
+                          </button>
+                        </>
+                      )}
+                      {u.role.toLowerCase() === "parent" && (
+                        <button onClick={() => { setResettingUser(u); setResetPasswordVal(""); }} style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.25)", color: "#dc137b", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }} title="Reset Password">
+                          <Key size={11} /> Pass
                         </button>
                       )}
                       <button 
@@ -935,9 +965,23 @@ export default function UsersPage() {
             </p>
             <form onSubmit={handleResetPassword} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--subtext)", marginBottom: 4 }}>New Password *</label>
-                <input required type="text" value={resetPasswordVal} onChange={e => setResetPasswordVal(e.target.value)} placeholder="Enter new password"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "var(--subtext)" }}>New Password *</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$";
+                      let pwd = "";
+                      for (let i = 0; i < 10; i++) pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+                      setResetPasswordVal(pwd);
+                    }}
+                    style={{ background: "none", border: "none", color: "#0093dd", fontSize: 11, fontWeight: 700, cursor: "pointer", padding: 0 }}
+                  >
+                    Generate Random
+                  </button>
+                </div>
+                <input required minLength={6} type="text" value={resetPasswordVal} onChange={e => setResetPasswordVal(e.target.value)} placeholder="Minimum 6 characters"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box", fontSize: 13, fontFamily: "monospace" }} />
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button type="button" onClick={() => setResettingUser(null)} style={{ flex: 1, padding: "10px", borderRadius: 6, background: "var(--muted)", border: "1px solid var(--border)", color: "var(--heading)", cursor: "pointer", fontFamily: "'Raleway', sans-serif", fontWeight: 700 }}>Cancel</button>

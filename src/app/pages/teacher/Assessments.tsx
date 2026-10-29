@@ -4,8 +4,29 @@ import { UserCheck, CheckSquare, Heart, ShieldAlert, Award, FileText, CheckCircl
 import { useApp } from "../../contexts/AppContext";
 import { apiClient } from "../../lib/apiClient";
 
+const DLHS = {
+  navy: "#293D7D",
+  navyDark: "#16234B",
+  crimson: "#DC137B",
+  crimsonHover: "#B80F66",
+  blue: "#0093DD",
+  gold: "#D4AF37",
+  periwinkle: "#BFD1FF",
+  slate: "#3A4244",
+};
+
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
-  <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>{children}</div>
+  <div
+    style={{
+      background: "var(--card)",
+      border: "1px solid var(--border)",
+      borderRadius: 14,
+      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+      ...style
+    }}
+  >
+    {children}
+  </div>
 );
 
 const characterTraits = [
@@ -93,7 +114,7 @@ export default function TeacherAssessments() {
     setStudents(prev => prev.map(s => s.id === selectedStudent.id ? updated : s));
 
     // Auto-save logic
-    setSaveStatus("Saving changes...");
+    setSaveStatus("Saving changes…");
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
 
     autoSaveTimer.current = setTimeout(() => {
@@ -116,28 +137,31 @@ export default function TeacherAssessments() {
   };
 
   const isEntered = (s: any) => {
-    // True if any ratings are recorded
-    return s.punctuality > 0 || s.handwriting > 0 || s.class_teacher_comment !== "";
+    return s.punctuality > 0 || s.handwriting > 0 || (s.class_teacher_comment && s.class_teacher_comment !== "");
   };
 
   return (
-    <div>
+    <div style={{ paddingBottom: 32 }}>
       <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>Behavior &amp; Skills Assessment</h1>
-          <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>Evaluate student behavioral traits and psychomotor capabilities</p>
+          <h1 style={{ fontFamily: "'Raleway', sans-serif", fontSize: 22, fontWeight: 800, color: "var(--foreground)", margin: "0 0 4px" }}>
+            Behavior &amp; Domain Assessments
+          </h1>
+          <p style={{ fontSize: 12.5, color: "var(--muted-foreground)", margin: 0 }}>
+            Evaluate candidate behavioral traits, psychomotor dexterity, and extracurricular profile
+          </p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           {/* Academic Session */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--muted)", border: "1px solid var(--glass-border)", borderRadius: 8, padding: "5px 10px" }}>
-            <Calendar size={13} style={{ color: "#219EBC" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "6px 12px" }}>
+            <Calendar size={14} style={{ color: DLHS.navy }} />
             <select
               value={selectedSession}
               onChange={e => setSelectedSession(e.target.value)}
-              style={{ background: "transparent", border: "none", color: "var(--heading)", fontSize: 12, fontWeight: 600, outline: "none", cursor: "pointer" }}
+              style={{ background: "transparent", border: "none", color: "var(--foreground)", fontSize: 12.5, fontWeight: 700, outline: "none", cursor: "pointer", fontFamily: "'Lato', sans-serif" }}
             >
               {["2026/2027", "2025/2026", "2024/2025", "2023/2024"].map(sess => (
-                <option key={sess} value={sess} style={{ background: "var(--popover)", color: "var(--heading)" }}>{sess}</option>
+                <option key={sess} value={sess} style={{ background: "var(--card)", color: "var(--foreground)" }}>{sess}</option>
               ))}
             </select>
           </div>
@@ -147,7 +171,7 @@ export default function TeacherAssessments() {
             <select 
               value={selectedCourseId || ""} 
               onChange={e => setSelectedCourseId(parseInt(e.target.value))} 
-              style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, color: "var(--heading)", outline: "none" }}
+              style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12.5, fontWeight: 600, color: "var(--foreground)", outline: "none" }}
             >
               {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -158,7 +182,7 @@ export default function TeacherAssessments() {
             <select 
               value={selectedClassId || ""} 
               onChange={e => setSelectedClassId(parseInt(e.target.value))} 
-              style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, fontWeight: 600, color: "#219EBC", outline: "none" }}
+              style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12.5, fontWeight: 700, color: DLHS.navy, outline: "none" }}
             >
               {classes.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
             </select>
@@ -167,17 +191,22 @@ export default function TeacherAssessments() {
       </div>
 
       {loading ? (
-        <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>Loading assessment roster...</div>
+        <div style={{ padding: 48, textAlign: "center", color: "var(--muted-foreground)" }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${DLHS.navy}`, borderTopColor: "transparent", margin: "0 auto 12px", animation: "spin 1s linear infinite" }} />
+          Loading assessment roster…
+        </div>
       ) : students.length === 0 ? (
-        <Glass style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>
-          No enrolled students found.
+        <Glass style={{ padding: 48, textAlign: "center", color: "var(--muted-foreground)" }}>
+          No enrolled students found in this course stream.
         </Glass>
       ) : (
-        <div className="cbt-layout" style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 20, alignItems: "start" }}>
+        <div className="cbt-layout" style={{ display: "grid", gridTemplateColumns: "290px 1fr", gap: 18, alignItems: "start" }}>
           {/* Left panel: student lists */}
           <Glass style={{ padding: "16px 14px", height: "fit-content" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12, borderBottom: "1px solid var(--glass-border)", paddingBottom: 6 }}>Class List</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12, borderBottom: "1px solid var(--border)", paddingBottom: 6 }}>
+              Candidate Cohort ({students.length})
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {students.map(s => {
                 const active = selectedStudent && selectedStudent.id === s.id;
                 const entered = isEntered(s);
@@ -191,22 +220,24 @@ export default function TeacherAssessments() {
                     }}
                     style={{
                       padding: "10px 12px",
-                      borderRadius: 10,
+                      borderRadius: 8,
                       cursor: "pointer",
-                      border: `1px solid ${active ? "#219EBC" : "transparent"}`,
-                      background: active ? "rgba(33,158,188,0.12)" : "transparent",
+                      border: `1px solid ${active ? DLHS.navy : "transparent"}`,
+                      background: active ? "rgba(41, 61, 125, 0.08)" : "transparent",
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      transition: "all 0.15s"
+                      transition: "all 0.15s ease"
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: active ? "#e8f4f8" : "var(--heading)" }}>{s.name}</div>
-                      <div style={{ fontSize: 10, color: "var(--subtext)", marginTop: 2 }}>{s.student_number}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: active ? DLHS.navy : "var(--foreground)" }}>{s.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 2 }}>{s.student_number}</div>
                     </div>
                     {entered && (
-                      <span style={{ fontSize: 9, fontWeight: 700, color: "#219EBC", background: "rgba(33,158,188,0.12)", padding: "2px 6px", borderRadius: 10 }}>✓ Entry</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: DLHS.navy, background: "rgba(41, 61, 125, 0.1)", padding: "2px 6px", borderRadius: 10, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                        <CheckCircle2 size={10} /> Entry
+                      </span>
                     )}
                   </div>
                 );
@@ -216,16 +247,20 @@ export default function TeacherAssessments() {
 
           {/* Right panel: Assessment sheet */}
           {selectedStudent ? (
-            <Glass style={{ padding: 24 }}>
+            <Glass style={{ padding: "22px 24px" }}>
               {/* Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid var(--glass-border)", paddingBottom: 15, marginBottom: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", paddingBottom: 14, marginBottom: 18, flexWrap: "wrap", gap: 10 }}>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--heading)" }}>{selectedStudent.name}</h2>
-                  <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>Evaluate learning domains · scale: 5 (Ex) to 1 (Poor)</div>
+                  <h2 style={{ fontFamily: "'Raleway', sans-serif", margin: 0, fontSize: 17, fontWeight: 800, color: "var(--foreground)" }}>
+                    {selectedStudent.name}
+                  </h2>
+                  <div style={{ fontSize: 11.5, color: "var(--muted-foreground)", marginTop: 2 }}>
+                    Standard DLHS Rubric: 5 (Exemplary) down to 1 (Unsatisfactory)
+                  </div>
                 </div>
                 <div>
                   {saveStatus && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#219EBC", fontWeight: 600 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: DLHS.navy, fontWeight: 700, background: "rgba(41, 61, 125, 0.08)", padding: "4px 10px", borderRadius: 6 }}>
                       <CheckCircle2 size={13} /> {saveStatus}
                     </div>
                   )}
@@ -233,63 +268,63 @@ export default function TeacherAssessments() {
               </div>
 
               {/* Student Report Card Bio & Awards */}
-              <div style={{ marginBottom: 24, padding: 14, background: "var(--muted)", borderRadius: 10, border: "1px solid var(--glass-border)" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", marginBottom: 12, textTransform: "uppercase" }}>
-                  Report Card Profile &amp; Awards
+              <div style={{ marginBottom: 22, padding: 16, background: "var(--muted)", borderRadius: 10, border: "1px solid var(--border)" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--foreground)", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Report Card Profile &amp; House Details
                 </div>
                 <div className="responsive-grid-3" style={{ gap: 12, marginBottom: 12 }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Sex / Gender</label>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 4 }}>Gender</label>
                     <select
                       value={selectedStudent.gender || "MALE"}
                       onChange={e => updateMetric("gender", e.target.value)}
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--popover)", color: "var(--heading)", fontSize: 12.5, outline: "none" }}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 12.5, outline: "none" }}
                     >
                       <option value="MALE">MALE</option>
                       <option value="FEMALE">FEMALE</option>
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>House</label>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 4 }}>House Placement</label>
                     <input
                       type="text"
                       value={selectedStudent.house || "FAITH"}
                       onChange={e => updateMetric("house", e.target.value)}
                       placeholder="e.g. FAITH, BLUE, WISDOM"
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--popover)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Sport Activities</label>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 4 }}>Sport Activities</label>
                     <input
                       type="text"
                       value={selectedStudent.sport_activities || "BASKETBALL"}
                       onChange={e => updateMetric("sport_activities", e.target.value)}
                       placeholder="e.g. BASKETBALL, ATHLETICS"
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--popover)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
                 </div>
 
                 <div className="responsive-grid-2" style={{ gap: 12 }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Award / Prize 1</label>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 4 }}>Award / Prize 1</label>
                     <input
                       type="text"
                       value={selectedStudent.award_1 ?? "NILL"}
                       onChange={e => updateMetric("award_1", e.target.value)}
                       placeholder="e.g. 1st in Mathematics or NILL"
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--popover)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--subtext)", marginBottom: 4 }}>Award / Prize 2</label>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 4 }}>Award / Prize 2</label>
                     <input
                       type="text"
                       value={selectedStudent.award_2 ?? "NILL"}
                       onChange={e => updateMetric("award_2", e.target.value)}
-                      placeholder="e.g. Best in Basketball or NILL"
-                      style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--popover)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                      placeholder="e.g. Best in Debate or NILL"
+                      style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
                 </div>
@@ -297,15 +332,15 @@ export default function TeacherAssessments() {
 
               {/* Character Development Matrix */}
               <div style={{ marginBottom: 24 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 700, color: "#219EBC", textTransform: "uppercase", marginBottom: 12 }}>
-                  <Heart size={14} /> Affective Traits Assessment
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 800, color: DLHS.navy, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 12 }}>
+                  <Heart size={15} /> Affective Character Traits
                 </div>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr>
-                      <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 10, color: "var(--subtext)", borderBottom: "2px solid var(--glass-border)" }}>Behavior Trait</th>
+                    <tr style={{ background: "var(--muted)" }}>
+                      <th style={{ textAlign: "left", padding: "10px 12px", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", borderBottom: "1px solid var(--border)" }}>Behavior Trait</th>
                       {[1, 2, 3, 4, 5].map(i => (
-                        <th key={i} style={{ width: 60, padding: "8px 10px", fontSize: 10, color: "var(--subtext)", borderBottom: "2px solid var(--glass-border)" }}>{i}</th>
+                        <th key={i} style={{ width: 50, padding: "8px 10px", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", borderBottom: "1px solid var(--border)", textAlign: "center" }}>{i}</th>
                       ))}
                     </tr>
                   </thead>
@@ -313,16 +348,16 @@ export default function TeacherAssessments() {
                     {characterTraits.map(t => {
                       const score = (selectedStudent as any)[t.id] || 0;
                       return (
-                        <tr key={t.id} style={{ borderBottom: "1px solid var(--glass-border)" }}>
-                          <td style={{ padding: "10px", fontSize: 12.5, fontWeight: 600, color: "var(--heading)" }}>{t.label}</td>
+                        <tr key={t.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 600, color: "var(--foreground)" }}>{t.label}</td>
                           {[1, 2, 3, 4, 5].map(v => (
-                            <td key={v} style={{ textAlign: "center", padding: "10px" }}>
+                            <td key={v} style={{ textAlign: "center", padding: "8px" }}>
                               <input 
                                 type="radio" 
                                 name={`${selectedStudent.id}-${t.id}`}
                                 checked={score === v}
                                 onChange={() => updateMetric(t.id, v)}
-                                style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#219EBC" }}
+                                style={{ width: 16, height: 16, cursor: "pointer", accentColor: DLHS.navy }}
                               />
                             </td>
                           ))}
@@ -335,15 +370,15 @@ export default function TeacherAssessments() {
 
               {/* Psychomotor Domain Matrix */}
               <div style={{ marginBottom: 24 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 700, color: "#FFB703", textTransform: "uppercase", marginBottom: 12 }}>
-                  <Award size={14} style={{ color: "#FFB703" }} /> Psychomotor Skills Matrix
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 800, color: DLHS.blue, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 12 }}>
+                  <Award size={15} /> Psychomotor Dexterity Matrix
                 </div>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr>
-                      <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 10, color: "var(--subtext)", borderBottom: "2px solid var(--glass-border)" }}>Performance Skill</th>
+                    <tr style={{ background: "var(--muted)" }}>
+                      <th style={{ textAlign: "left", padding: "10px 12px", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", borderBottom: "1px solid var(--border)" }}>Performance Capability</th>
                       {[1, 2, 3, 4, 5].map(i => (
-                        <th key={i} style={{ width: 60, padding: "8px 10px", fontSize: 10, color: "var(--subtext)", borderBottom: "2px solid var(--glass-border)" }}>{i}</th>
+                        <th key={i} style={{ width: 50, padding: "8px 10px", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", borderBottom: "1px solid var(--border)", textAlign: "center" }}>{i}</th>
                       ))}
                     </tr>
                   </thead>
@@ -351,16 +386,16 @@ export default function TeacherAssessments() {
                     {psychomotorSkills.map(s => {
                       const score = (selectedStudent as any)[s.id] || 0;
                       return (
-                        <tr key={s.id} style={{ borderBottom: "1px solid var(--glass-border)" }}>
-                          <td style={{ padding: "10px", fontSize: 12.5, fontWeight: 600, color: "var(--heading)" }}>{s.label}</td>
+                        <tr key={s.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 600, color: "var(--foreground)" }}>{s.label}</td>
                           {[1, 2, 3, 4, 5].map(v => (
-                            <td key={v} style={{ textAlign: "center", padding: "10px" }}>
+                            <td key={v} style={{ textAlign: "center", padding: "8px" }}>
                               <input 
                                 type="radio" 
                                 name={`${selectedStudent.id}-${s.id}`}
                                 checked={score === v}
                                 onChange={() => updateMetric(s.id, v)}
-                                style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#FFB703" }}
+                                style={{ width: 16, height: 16, cursor: "pointer", accentColor: DLHS.blue }}
                               />
                             </td>
                           ))}
@@ -373,34 +408,34 @@ export default function TeacherAssessments() {
 
               {/* Descriptive Comments */}
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 700, color: "#FB8500", textTransform: "uppercase", marginBottom: 12 }}>
-                  <FileText size={14} style={{ color: "#FB8500" }} /> Qualitative Comments
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 800, color: DLHS.crimson, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 12 }}>
+                  <FileText size={15} /> Institutional Remarks
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6 }}>Class Teacher Comment</label>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 6 }}>Class Teacher Appraisal</label>
                     <textarea 
                       value={selectedStudent.class_teacher_comment || ""} 
                       onChange={e => updateMetric("class_teacher_comment", e.target.value)}
-                      placeholder="Comment on student conduct, class participation, and areas of improvement..."
-                      style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box", minHeight: 80, resize: "vertical" }}
+                      placeholder="Comment on candidate conduct, academic participation, and areas of growth..."
+                      style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid var(--border)", background: "var(--muted)", color: "var(--foreground)", fontSize: 13, outline: "none", boxSizing: "border-box", minHeight: 80, resize: "vertical", fontFamily: "'Lato', sans-serif" }}
                     />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--subtext)", marginBottom: 6 }}>Principal Remarks</label>
+                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 6 }}>Principal's Recommendation</label>
                     <textarea 
                       value={selectedStudent.principal_remark || ""} 
                       onChange={e => updateMetric("principal_remark", e.target.value)}
                       placeholder="Principal's administrative comments and term recommendations..."
-                      style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box", minHeight: 80, resize: "vertical" }}
+                      style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid var(--border)", background: "var(--muted)", color: "var(--foreground)", fontSize: 13, outline: "none", boxSizing: "border-box", minHeight: 80, resize: "vertical", fontFamily: "'Lato', sans-serif" }}
                     />
                   </div>
                 </div>
               </div>
             </Glass>
           ) : (
-            <Glass style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>
-              Please select a student from the sidebar roster.
+            <Glass style={{ padding: 48, textAlign: "center", color: "var(--muted-foreground)" }}>
+              Please select a student from the cohort roster.
             </Glass>
           )}
         </div>

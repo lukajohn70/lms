@@ -422,19 +422,20 @@ class UserController {
         }
     }
 
-    // Admin: Reset password for any account
+    // Admin: Reset password for any account (Student, Teacher, Admin, Parent)
     public function resetPassword() {
         Auth::requireRole(['admin']);
         $data = json_decode(file_get_contents("php://input"), true);
 
-        if (!$data || empty($data['user_id']) || empty($data['new_password'])) {
+        $userId = intval($data['user_id'] ?? $data['id'] ?? 0);
+        $newPassword = trim($data['new_password'] ?? $data['password'] ?? '');
+
+        if ($userId <= 0 || empty($newPassword)) {
             http_response_code(400);
             echo json_encode(["error" => "User ID and new password are required."]);
             return;
         }
 
-        $userId = intval($data['user_id']);
-        $newPassword = trim($data['new_password']);
         if (strlen($newPassword) < 6) {
             http_response_code(400);
             echo json_encode(["error" => "New password must be at least 6 characters."]);
@@ -442,14 +443,29 @@ class UserController {
         }
 
         try {
+            // Verify user exists
+            $checkStmt = $this->conn->prepare("SELECT id, email, first_name, last_name FROM users WHERE id = :id LIMIT 1");
+            $checkStmt->execute([':id' => $userId]);
+            $targetUser = $checkStmt->fetch();
+
+            if (!$targetUser) {
+                http_response_code(404);
+                echo json_encode(["error" => "User account not found."]);
+                return;
+            }
+
             $pwdHash = password_hash($newPassword, PASSWORD_DEFAULT);
             $stmt = $this->conn->prepare("UPDATE users SET password_hash = :pwd WHERE id = :id");
             $stmt->execute([':pwd' => $pwdHash, ':id' => $userId]);
 
-            echo json_encode(["success" => true, "message" => "Password reset successfully."]);
+            echo json_encode([
+                "success" => true,
+                "message" => "Password for {$targetUser['first_name']} {$targetUser['last_name']} ({$targetUser['email']}) reset successfully."
+            ]);
         } catch (Exception $e) {
+            error_log("Failed to reset password: " . $e->getMessage());
             http_response_code(500);
-            echo json_encode(["error" => "Failed to reset password: " . $e->getMessage()]);
+            echo json_encode(["error" => "An error occurred while resetting the password."]);
         }
     }
 

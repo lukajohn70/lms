@@ -59,16 +59,6 @@ export default function RoleSelect() {
     }
   };
 
-  const autofill = (role: string) => {
-    const map: Record<string, { email: string; pass: string }> = {
-      student: { email: "kolade@student.dlhs.edu.ng", pass: "password123" },
-      teacher: { email: "lukajohn_kaduna@deeperlifehighschool.org", pass: "4321" },
-      admin: { email: "admin@aroura.com", pass: "rr" },
-    };
-    setEmail(map[role]?.email || "");
-    setPassword(map[role]?.pass || "password123");
-  };
-
   return (
     <>
       <style>{`
@@ -120,7 +110,7 @@ export default function RoleSelect() {
                 padding: "5px 14px", borderRadius: 100, marginBottom: 18
               }}>
                 <ShieldCheck size={13} style={{ color: "#dc137b" }} />
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: "#ffffff", letterSpacing: "0.04em", fontFamily: "'Raleway', sans-serif" }}>Official Academic &amp; CBT Portal</span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: "#ffffff", letterSpacing: "0.04em", fontFamily: "'Raleway', sans-serif" }}>Official Academic &amp; Result Portal</span>
               </div>
 
               <h2 style={{ color: "#ffffff", fontSize: 34, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.15, fontFamily: "'Raleway', sans-serif" }}>
@@ -189,8 +179,8 @@ export default function RoleSelect() {
                   <Mail size={16} style={{ position: "absolute", left: 14, top: 13, color: theme === "dark" ? "#94a3b8" : "#64748b", opacity: 0.8, pointerEvents: "none" }} />
                   <input
                     className="login-input"
-                    type="email" value={email} onChange={e => setEmail(e.target.value)}
-                    placeholder="e.g. kolade@student.dlhs.edu.ng" required
+                    type="text" value={email} onChange={e => setEmail(e.target.value)}
+                    placeholder="Institutional Email or Admission ID" required
                     style={{
                       width: "100%", padding: "11px 14px 11px 38px", borderRadius: 8,
                       background: theme === "dark" ? "#142038" : "#ffffff",
@@ -240,27 +230,10 @@ export default function RoleSelect() {
               </button>
             </form>
 
-            {/* Bottom Demo Selector & Attribution */}
-            <div style={{ marginTop: 32, borderTop: `1px solid ${theme === "dark" ? "rgba(191,209,255,0.1)" : "rgba(41,61,125,0.1)"}`, paddingTop: 22 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: theme === "dark" ? "#94a3b8" : "#64748b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10, textAlign: "center", fontFamily: "'Raleway', sans-serif" }}>
-                Quick Role Autofill (Evaluation Demo)
-              </div>
-              <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 20 }}>
-                {["Student", "Teacher", "Admin"].map(role => (
-                  <button key={role} onClick={() => autofill(role.toLowerCase())} className="shortcut-btn"
-                    style={{
-                      background: theme === "dark" ? "rgba(191,209,255,0.05)" : "rgba(41,61,125,0.05)",
-                      border: `1px solid ${theme === "dark" ? "rgba(191,209,255,0.18)" : "rgba(41,61,125,0.18)"}`,
-                      color: theme === "dark" ? "#bfd1ff" : "#293d7d",
-                      borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 700,
-                      cursor: "pointer", transition: "all 0.2s", fontFamily: "'Raleway', sans-serif"
-                    }}
-                  >{role} Portal</button>
-                ))}
-              </div>
-
-              <p style={{ fontSize: 12, color: theme === "dark" ? "rgba(191,209,255,0.5)" : "rgba(41,61,125,0.6)", textAlign: "center", margin: 0 }}>
-                Deeper Life High School Academic Management System · Powered by JLM
+            {/* Bottom Institutional Attribution */}
+            <div style={{ marginTop: 36, borderTop: `1px solid ${theme === "dark" ? "rgba(191,209,255,0.1)" : "rgba(41,61,125,0.1)"}`, paddingTop: 20 }}>
+              <p style={{ fontSize: 12, color: theme === "dark" ? "rgba(191,209,255,0.6)" : "rgba(41,61,125,0.7)", textAlign: "center", margin: 0, lineHeight: 1.5 }}>
+                Deeper Life High School Academic &amp; Result Management System · Kaduna Campus
               </p>
             </div>
           </div>

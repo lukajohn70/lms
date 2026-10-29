@@ -111,7 +111,7 @@ export default function AdminDashboard() {
   ];
 
   // Derive system governance alerts
-  const totalActionItems = (stats.pendingCbts || 0) + (stats.reopenRequests || 0) + (stats.pendingAdmissions || 0);
+  const totalActionItems = (stats.reopenRequests || 0);
 
   const CustomChartTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -224,7 +224,7 @@ export default function AdminDashboard() {
             </button>
 
             <button
-              onClick={() => navigate("/admin/admissions")}
+              onClick={() => navigate("/admin/reports?tab=approvals")}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -241,8 +241,8 @@ export default function AdminDashboard() {
                 boxShadow: "0 2px 8px rgba(220,19,123,0.25)"
               }}
             >
-              <Users size={14} />
-              <span>Admissions Desk</span>
+              <ShieldCheck size={14} />
+              <span>Result Approvals Hub</span>
             </button>
 
             <button
@@ -432,7 +432,7 @@ export default function AdminDashboard() {
 
         {/* Card 6: Governance Approvals Queue */}
         <div
-          onClick={() => navigate(stats.reopenRequests > 0 ? "/admin/reports?tab=approvals" : stats.pendingCbts > 0 ? "/admin/cbt-approvals" : "/admin/admissions")}
+          onClick={() => navigate("/admin/reports?tab=approvals")}
           style={{
             background: totalActionItems > 0 ? "rgba(220,19,123,0.04)" : "var(--card)",
             border: `1.5px solid ${totalActionItems > 0 ? "rgba(220,19,123,0.3)" : "var(--border)"}`,
@@ -618,18 +618,18 @@ export default function AdminDashboard() {
                 to: "/admin/reports"
               },
               {
-                title: "Admissions & Entrance Exam",
-                desc: "Candidate applications, exam scheduling & admissions letters",
-                icon: <Award size={16} />,
+                title: "Academic Setup & Arms",
+                desc: "Class arms, subject combinations & teacher assignments",
+                icon: <BookOpen size={16} />,
                 color: "#d4af37",
-                to: "/admin/admissions"
+                to: "/admin/classes"
               },
               {
-                title: "CBT Exam Authorizations",
-                desc: "Review questions, approve schedules & exam timers",
-                icon: <Clock size={16} />,
+                title: "Result Approvals & Locking",
+                desc: "Review grade submissions, approve results & lock terms",
+                icon: <ShieldCheck size={16} />,
                 color: "#293d7d",
-                to: "/admin/cbt-approvals"
+                to: "/admin/reports?tab=approvals"
               },
               {
                 title: "System & Result Settings",
@@ -740,77 +740,77 @@ export default function AdminDashboard() {
                 </span>
               </div>
 
-              {/* Alert item 2: CBT Approvals */}
+              {/* Alert item 2: Result Approvals */}
               <div
-                onClick={() => navigate("/admin/cbt-approvals")}
+                onClick={() => navigate("/admin/reports?tab=approvals")}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   padding: "12px 14px",
                   borderRadius: 8,
-                  background: stats.pendingCbts > 0 ? "rgba(212,175,55,0.08)" : "rgba(41,61,125,0.03)",
-                  border: `1px solid ${stats.pendingCbts > 0 ? "rgba(212,175,55,0.25)" : "var(--border)"}`,
+                  background: stats.reopenRequests > 0 ? "rgba(212,175,55,0.08)" : "rgba(41,61,125,0.03)",
+                  border: `1px solid ${stats.reopenRequests > 0 ? "rgba(212,175,55,0.25)" : "var(--border)"}`,
                   cursor: "pointer"
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Clock size={16} style={{ color: stats.pendingCbts > 0 ? "#d4af37" : "#293d7d" }} />
+                  <ShieldCheck size={16} style={{ color: stats.reopenRequests > 0 ? "#d4af37" : "#293d7d" }} />
                   <div>
                     <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--heading)", fontFamily: "'Raleway', sans-serif" }}>
-                      CBT Test Authorizations
+                      Result Approvals &amp; Sign-offs
                     </div>
                     <div style={{ fontSize: 11, color: "var(--subtext)" }}>
-                      Examination papers awaiting administrator approval
+                      Class arm result broadsheets awaiting principal ratification
                     </div>
                   </div>
                 </div>
                 <span style={{
                   fontSize: 11,
                   fontWeight: 800,
-                  color: stats.pendingCbts > 0 ? "#d4af37" : "#293d7d",
-                  background: stats.pendingCbts > 0 ? "rgba(212,175,55,0.14)" : "rgba(41,61,125,0.08)",
+                  color: stats.reopenRequests > 0 ? "#d4af37" : "#293d7d",
+                  background: stats.reopenRequests > 0 ? "rgba(212,175,55,0.14)" : "rgba(41,61,125,0.08)",
                   padding: "3px 8px",
                   borderRadius: 4
                 }}>
-                  {stats.pendingCbts} Pending
+                  {stats.reopenRequests > 0 ? `${stats.reopenRequests} Action` : "Up to Date"}
                 </span>
               </div>
 
-              {/* Alert item 3: Admission candidate files */}
+              {/* Alert item 3: Master Broadsheet Print Center */}
               <div
-                onClick={() => navigate("/admin/admissions")}
+                onClick={() => navigate("/admin/reports?tab=broadsheet")}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   padding: "12px 14px",
                   borderRadius: 8,
-                  background: stats.pendingAdmissions > 0 ? "rgba(0,147,221,0.06)" : "rgba(41,61,125,0.03)",
-                  border: `1px solid ${stats.pendingAdmissions > 0 ? "rgba(0,147,221,0.25)" : "var(--border)"}`,
+                  background: "rgba(0,147,221,0.06)",
+                  border: "1px solid rgba(0,147,221,0.25)",
                   cursor: "pointer"
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Users size={16} style={{ color: stats.pendingAdmissions > 0 ? "#0093dd" : "#293d7d" }} />
+                  <Printer size={16} style={{ color: "#0093dd" }} />
                   <div>
                     <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--heading)", fontFamily: "'Raleway', sans-serif" }}>
-                      Candidate Admission Applications
+                      Master Broadsheet Print Engine
                     </div>
                     <div style={{ fontSize: 11, color: "var(--subtext)" }}>
-                      Prospective candidate files awaiting entrance evaluation
+                      Ready to generate certified class-by-class cumulative broadsheets
                     </div>
                   </div>
                 </div>
                 <span style={{
                   fontSize: 11,
                   fontWeight: 800,
-                  color: stats.pendingAdmissions > 0 ? "#0093dd" : "#293d7d",
-                  background: stats.pendingAdmissions > 0 ? "rgba(0,147,221,0.12)" : "rgba(41,61,125,0.08)",
+                  color: "#0093dd",
+                  background: "rgba(0,147,221,0.12)",
                   padding: "3px 8px",
                   borderRadius: 4
                 }}>
-                  {stats.pendingAdmissions} Pending
+                  Active
                 </span>
               </div>
             </div>
@@ -832,7 +832,7 @@ export default function AdminDashboard() {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--subtext)" }}>
               <CheckCircle2 size={13} style={{ color: "#293d7d" }} />
-              <span>CBT Platform: <strong>Operational</strong></span>
+              <span>Transcript Engine: <strong>Operational</strong></span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--subtext)" }}>
               <CheckCircle2 size={13} style={{ color: "#293d7d" }} />
@@ -887,7 +887,7 @@ export default function AdminDashboard() {
           {[
             { stage: "CA 1 Assessment", date: "Weeks 3-4", status: "Completed", color: "#10b981", active: false },
             { stage: "Mid-Term Broadsheet", date: "Week 7", status: "Certified", color: "#10b981", active: false },
-            { stage: "CA 2 & CBT Authorizations", date: "Weeks 8-9", status: "In Progress", color: "#dc137b", active: true },
+            { stage: "CA 2 Assessments", date: "Weeks 8-9", status: "In Progress", color: "#dc137b", active: true },
             { stage: "Terminal Examinations", date: "Weeks 11-12", status: "Scheduled", color: "#0093dd", active: false },
             { stage: "Broadsheet Ratification", date: "Week 13", status: "Pending", color: "var(--subtext)", active: false },
           ].map((m, idx) => (
@@ -978,17 +978,17 @@ export default function AdminDashboard() {
               tagColor: "#d4af37"
             },
             {
-              actor: "Admissions Secretariat",
-              action: `${stats.pendingAdmissions || 0} candidate entrance profiles submitted for DLHS National Entrance Evaluation`,
+              actor: "Exam Records Secretariat",
+              action: `Continuous Assessment 1 & 2 records compiled across JSS and SSS academic arms`,
               time: "Yesterday, 02:10 PM",
-              tag: "Admissions",
+              tag: "Results",
               tagColor: "#0093dd"
             },
             {
-              actor: "ICT Directorate",
-              action: "CBT portal examination bank synchronization completed with 100% paper integrity",
+              actor: "Academic Registry",
+              action: "Master transcript verification and term broadsheet synchronization completed with 100% grade integrity",
               time: "2 days ago",
-              tag: "CBT Platform",
+              tag: "Broadsheet Engine",
               tagColor: "#10b981"
             }
           ].map((log, i) => (

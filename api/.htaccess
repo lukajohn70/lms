@@ -8,8 +8,8 @@ SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
     RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>
 
-# ── Protect the .env file from direct web access ─────────────────────────────
-<Files ".env">
+# ── Protect all .env files from direct web access ───────────────────────────
+<FilesMatch "^\.env.*">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -17,7 +17,7 @@ SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
         Order Deny,Allow
         Deny from all
     </IfModule>
-</Files>
+</FilesMatch>
 
 # ── Block direct HTTP access to diagnostic and migration utility scripts ──────
 # These files should only be run from the command line (CLI), never via a browser.

@@ -9,8 +9,6 @@ deployment:
     - /bin/cp -R api $DEPLOYPATH/
     - /bin/cp -R uploads $DEPLOYPATH/ 2>/dev/null || true
     - /bin/cp .htaccess $DEPLOYPATH/
-    - /bin/cp check_db.php $DEPLOYPATH/ 2>/dev/null || true
-    - /bin/cp deploy_database.php $DEPLOYPATH/ 2>/dev/null || true
     - /bin/chmod 755 $DEPLOYPATH/api
     - /bin/chmod -R 777 $DEPLOYPATH/api/logs 2>/dev/null || true
     - /bin/chmod -R 777 $DEPLOYPATH/api/uploads 2>/dev/null || true

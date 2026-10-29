@@ -1,10 +1,30 @@
 import { useState, useEffect, useMemo } from "react";
-import { Award, BookOpen, Search, CheckCircle, UserCheck, AlertCircle, Shield, Users, RefreshCw } from "lucide-react";
+import { Award, BookOpen, Search, CheckCircle, UserCheck, AlertCircle, Shield, Users, RefreshCw, CheckCircle2 } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { useApp } from "../../contexts/AppContext";
 
+const DLHS = {
+  navy: "#293D7D",
+  navyDark: "#16234B",
+  crimson: "#DC137B",
+  crimsonHover: "#B80F66",
+  blue: "#0093DD",
+  gold: "#D4AF37",
+  periwinkle: "#BFD1FF",
+  slate: "#3A4244",
+};
+
 const Glass = ({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) => (
-  <div className={className} style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>
+  <div
+    className={className}
+    style={{
+      background: "var(--card)",
+      border: "1px solid var(--border)",
+      borderRadius: 14,
+      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+      ...style
+    }}
+  >
     {children}
   </div>
 );
@@ -51,7 +71,7 @@ export default function HodAllocations() {
     const key = `${courseId}-${classId}`;
     setSavingKey(key);
     try {
-      const res: any = await apiClient.post("/hod/assign-teacher", {
+      await apiClient.post("/hod/assign-teacher", {
         course_id: courseId,
         class_id: classId,
         teacher_id: teacherId ? parseInt(teacherId) : null
@@ -74,7 +94,7 @@ export default function HodAllocations() {
         return filtered;
       });
 
-      setStatusMessage("Teacher allocation updated successfully!");
+      setStatusMessage("Faculty subject allocation committed successfully!");
       setTimeout(() => setStatusMessage(""), 3000);
     } catch (e: any) {
       alert(e.message || "Failed to assign teacher.");
@@ -104,125 +124,126 @@ export default function HodAllocations() {
 
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>
-        Loading HOD Portal data...
+      <div style={{ padding: 48, textAlign: "center", color: "var(--muted-foreground)" }}>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${DLHS.navy}`, borderTopColor: "transparent", margin: "0 auto 12px", animation: "spin 1s linear infinite" }} />
+        Loading HOD departmental allocations…
       </div>
     );
   }
 
   if (!isHod) {
     return (
-      <Glass style={{ padding: 36, textAlign: "center", maxWidth: 600, margin: "40px auto" }}>
-        <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(251,133,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-          <Shield size={28} style={{ color: "#FB8500" }} />
+      <Glass style={{ padding: 40, textAlign: "center", maxWidth: 600, margin: "40px auto" }}>
+        <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(41, 61, 125, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <Shield size={28} style={{ color: DLHS.navy }} />
         </div>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 10px" }}>
-          HOD Portal Access Restricted
+        <h2 style={{ fontFamily: "'Raleway', sans-serif", fontSize: 20, fontWeight: 800, color: "var(--foreground)", margin: "0 0 10px" }}>
+          Head of Department Access Restricted
         </h2>
-        <p style={{ fontSize: 13.5, color: "var(--subtext)", lineHeight: 1.6, margin: "0 0 20px" }}>
-          You are currently logged in as a teacher, but you have not been appointed as a Head of Department (HOD). 
-          Only appointed HODs can assign subject teachers to class arms for their department.
+        <p style={{ fontSize: 13.5, color: "var(--muted-foreground)", lineHeight: 1.6, margin: "0 0 20px" }}>
+          Your user profile is designated as faculty, but does not currently hold an active Head of Department (HOD) appointment. 
+          Only designated departmental heads can assign subject instructors across class streams.
         </p>
-        <div style={{ fontSize: 12, color: "var(--subtext)", padding: "10px 16px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "inline-block" }}>
-          Please contact the School Administrator if you need Head of Department privileges.
+        <div style={{ fontSize: 12, color: "var(--muted-foreground)", padding: "10px 16px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--border)", display: "inline-block" }}>
+          Please liaise with the School Administrator or Academic Director if you require HOD departmental privileges.
         </div>
       </Glass>
     );
   }
 
   return (
-    <div>
+    <div style={{ paddingBottom: 32 }}>
       {/* Header */}
       <div style={{ marginBottom: 22, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14 }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", padding: "3px 8px", borderRadius: 6, background: "rgba(131,56,236,0.15)", color: "#8338EC", border: "1px solid rgba(131,56,236,0.3)" }}>
-              HOD Portal
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", padding: "3px 8px", borderRadius: 6, background: "rgba(220, 19, 123, 0.12)", color: DLHS.crimson, border: `1px solid ${DLHS.crimson}30` }}>
+              HOD Departmental Command
             </span>
-            <span style={{ fontSize: 12, color: "var(--subtext)" }}>
-              Department of {department || "General"}
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted-foreground)" }}>
+              Department of {department || "General Studies"}
             </span>
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>
-            Subject Teacher Allocations
+          <h1 style={{ fontFamily: "'Raleway', sans-serif", fontSize: 22, fontWeight: 800, color: "var(--foreground)", margin: "0 0 4px" }}>
+            Faculty Subject Allocations
           </h1>
-          <p style={{ fontSize: 13, color: "var(--subtext)", margin: 0 }}>
-            Assign specialist subject teachers to class arms for all subjects in your department.
+          <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>
+            Assign subject specialists to respective class streams for all curricula in your academic department
           </p>
         </div>
 
         <button
           onClick={fetchAllocations}
           style={{
-            display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9,
-            background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)",
-            fontSize: 12, fontWeight: 600, cursor: "pointer"
+            display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8,
+            background: "var(--card)", border: "1px solid var(--border)", color: "var(--foreground)",
+            fontSize: 12.5, fontWeight: 700, cursor: "pointer"
           }}
         >
-          <RefreshCw size={13} /> Refresh
+          <RefreshCw size={13} /> Refresh Roster
         </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="responsive-grid-3" style={{ marginBottom: 20 }}>
+      <div className="responsive-grid-3" style={{ marginBottom: 20, gap: 14 }}>
         <Glass style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(131,56,236,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Award size={20} style={{ color: "#8338EC" }} />
+          <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(220, 19, 123, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: DLHS.crimson }}>
+            <Award size={20} />
           </div>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#8338EC" }}>{courses.length}</div>
-            <div style={{ fontSize: 11.5, color: "var(--subtext)" }}>Department Subjects</div>
+            <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 24, fontWeight: 800, color: DLHS.crimson }}>{courses.length}</div>
+            <div style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Departmental Subjects</div>
           </div>
         </Glass>
 
         <Glass style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(33,158,188,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <BookOpen size={20} style={{ color: "#219EBC" }} />
+          <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(41, 61, 125, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: DLHS.navy }}>
+            <BookOpen size={20} />
           </div>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#219EBC" }}>{classes.length}</div>
-            <div style={{ fontSize: 11.5, color: "var(--subtext)" }}>Total Class Arms</div>
+            <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 24, fontWeight: 800, color: DLHS.navy }}>{classes.length}</div>
+            <div style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Academic Class Streams</div>
           </div>
         </Glass>
 
         <Glass style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(42,157,143,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <UserCheck size={20} style={{ color: "#2a9d8f" }} />
+          <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(0, 147, 221, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: DLHS.blue }}>
+            <UserCheck size={20} />
           </div>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#2a9d8f" }}>{totalAllocated}</div>
-            <div style={{ fontSize: 11.5, color: "var(--subtext)" }}>Active Teacher Allocations</div>
+            <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 24, fontWeight: 800, color: DLHS.blue }}>{totalAllocated}</div>
+            <div style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Assigned Stream Allocations</div>
           </div>
         </Glass>
       </div>
 
       {statusMessage && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 9, background: "rgba(42,157,143,0.1)", border: "1px solid rgba(42,157,143,0.25)", marginBottom: 16 }}>
-          <CheckCircle size={15} style={{ color: "#2a9d8f" }} />
-          <span style={{ fontSize: 13, color: "#2a9d8f", fontWeight: 600 }}>{statusMessage}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", borderRadius: 8, background: "rgba(41, 61, 125, 0.08)", border: `1px solid ${DLHS.navy}40`, marginBottom: 16 }}>
+          <CheckCircle size={16} style={{ color: DLHS.navy }} />
+          <span style={{ fontSize: 13, color: DLHS.navy, fontWeight: 600 }}>{statusMessage}</span>
         </div>
       )}
 
       {/* Main Workspace Layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 20 }} className="desktop-layout-split">
+      <div style={{ display: "grid", gridTemplateColumns: "290px 1fr", gap: 18 }} className="desktop-layout-split">
         {/* Left Column: Department Subjects List */}
         <Glass style={{ padding: 18, height: "fit-content" }}>
           <div style={{ position: "relative", marginBottom: 14 }}>
-            <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--subtext)" }} />
+            <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--muted-foreground)" }} />
             <input
               type="text"
-              placeholder="Search subjects..."
+              placeholder="Search subjects…"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{
-                width: "100%", padding: "7px 10px 7px 30px", borderRadius: 8,
-                background: "var(--muted)", border: "1px solid var(--glass-border)",
-                color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box"
+                width: "100%", padding: "8px 12px 8px 32px", borderRadius: 8,
+                background: "var(--muted)", border: "1px solid var(--border)",
+                color: "var(--foreground)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontFamily: "'Lato', sans-serif"
               }}
             />
           </div>
 
-          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.06em" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.05em" }}>
             Department Subjects ({filteredCourses.length})
           </div>
 
@@ -236,26 +257,26 @@ export default function HodAllocations() {
                   key={c.id}
                   onClick={() => setSelectedCourseId(c.id)}
                   style={{
-                    padding: "10px 12px", borderRadius: 9, cursor: "pointer",
-                    background: isSelected ? "rgba(131,56,236,0.12)" : "var(--muted)",
-                    border: `1.5px solid ${isSelected ? "#8338EC" : "var(--glass-border)"}`,
-                    transition: "all 0.15s"
+                    padding: "10px 12px", borderRadius: 8, cursor: "pointer",
+                    background: isSelected ? "rgba(41, 61, 125, 0.08)" : "var(--muted)",
+                    border: `1.5px solid ${isSelected ? DLHS.navy : "var(--border)"}`,
+                    transition: "all 0.15s ease"
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? "#8338EC" : "var(--heading)" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? DLHS.navy : "var(--foreground)" }}>
                       {c.name}
                     </div>
                     <span style={{
-                      fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 5,
-                      background: courseAllocCount > 0 ? "rgba(42,157,143,0.15)" : "rgba(251,133,0,0.15)",
-                      color: courseAllocCount > 0 ? "#2a9d8f" : "#FB8500"
+                      fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4,
+                      background: courseAllocCount > 0 ? "rgba(41, 61, 125, 0.1)" : "rgba(220, 19, 123, 0.1)",
+                      color: courseAllocCount > 0 ? DLHS.navy : DLHS.crimson
                     }}>
                       {courseAllocCount} / {classes.length}
                     </span>
                   </div>
                   {c.description && (
-                    <div style={{ fontSize: 11, color: "var(--subtext)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div style={{ fontSize: 11, color: "var(--muted-foreground)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {c.description}
                     </div>
                   )}
@@ -263,7 +284,7 @@ export default function HodAllocations() {
               );
             })}
             {filteredCourses.length === 0 && (
-              <div style={{ padding: 20, textAlign: "center", color: "var(--subtext)", fontSize: 12 }}>
+              <div style={{ padding: 20, textAlign: "center", color: "var(--muted-foreground)", fontSize: 12 }}>
                 No subjects found in this department.
               </div>
             )}
@@ -273,18 +294,18 @@ export default function HodAllocations() {
         {/* Right Column: Class Arms Allocations for Active Subject */}
         {activeCourse ? (
           <Glass style={{ padding: 22 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, borderBottom: "1px solid var(--glass-border)", paddingBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, borderBottom: "1px solid var(--border)", paddingBottom: 14 }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--heading)", margin: 0 }}>
+                  <h2 style={{ fontFamily: "'Raleway', sans-serif", fontSize: 18, fontWeight: 800, color: "var(--foreground)", margin: 0 }}>
                     {activeCourse.name}
                   </h2>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: "rgba(131,56,236,0.15)", color: "#8338EC" }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 7px", borderRadius: 4, background: "rgba(220, 19, 123, 0.12)", color: DLHS.crimson }}>
                     {activeCourse.department || department}
                   </span>
                 </div>
-                <p style={{ fontSize: 12, color: "var(--subtext)", margin: 0 }}>
-                  Assign teachers for {activeCourse.name} across all academic classes and arms.
+                <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>
+                  Designate accredited teachers for {activeCourse.name} across all academic class streams
                 </p>
               </div>
             </div>
@@ -300,23 +321,23 @@ export default function HodAllocations() {
                   <div
                     key={cls.id}
                     style={{
-                      padding: "14px 18px", borderRadius: 10, background: "var(--muted)",
-                      border: "1px solid var(--glass-border)", display: "flex", alignItems: "center",
+                      padding: "14px 18px", borderRadius: 8, background: "var(--muted)",
+                      border: "1px solid var(--border)", display: "flex", alignItems: "center",
                       justifyContent: "space-between", gap: 16, flexWrap: "wrap"
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--foreground)" }}>
                         {cls.name} {cls.department ? `(${cls.department})` : ''}
                       </div>
-                      <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>
+                      <div style={{ fontSize: 11.5, color: "var(--muted-foreground)", marginTop: 2 }}>
                         {assignedTeacherId ? (
-                          <span style={{ color: "#2a9d8f", fontWeight: 600 }}>
-                            ✔ Teacher: {currentAlloc.first_name} {currentAlloc.last_name}
+                          <span style={{ color: DLHS.navy, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            <CheckCircle2 size={13} /> Instructor: {currentAlloc.first_name} {currentAlloc.last_name}
                           </span>
                         ) : (
-                          <span style={{ color: "#FB8500", fontWeight: 600 }}>
-                            ⚠ No Teacher Assigned
+                          <span style={{ color: DLHS.crimson, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            <AlertCircle size={13} /> Unallocated Stream
                           </span>
                         )}
                       </div>
@@ -328,13 +349,13 @@ export default function HodAllocations() {
                         disabled={isSaving}
                         onChange={e => handleAssignTeacher(activeCourse.id, cls.id, e.target.value)}
                         style={{
-                          flex: 1, padding: "8px 12px", borderRadius: 8, fontSize: 12.5,
-                          background: "var(--background)", border: "1px solid var(--glass-border)",
-                          color: assignedTeacherId ? "var(--heading)" : "var(--subtext)",
-                          outline: "none", cursor: isSaving ? "wait" : "pointer"
+                          flex: 1, padding: "8px 12px", borderRadius: 6, fontSize: 12.5,
+                          background: "var(--card)", border: "1px solid var(--border)",
+                          color: assignedTeacherId ? "var(--foreground)" : "var(--muted-foreground)",
+                          outline: "none", cursor: isSaving ? "wait" : "pointer", fontFamily: "'Lato', sans-serif"
                         }}
                       >
-                        <option value="">-- Assign Teacher --</option>
+                        <option value="">-- Assign Instructor --</option>
                         {teachers.map(t => (
                           <option key={t.id} value={t.id}>
                             {t.first_name} {t.last_name} ({t.email})
@@ -343,8 +364,8 @@ export default function HodAllocations() {
                       </select>
 
                       {isSaving && (
-                        <span style={{ fontSize: 11, color: "var(--subtext)", fontStyle: "italic" }}>
-                          Saving...
+                        <span style={{ fontSize: 11, color: "var(--muted-foreground)", fontStyle: "italic" }}>
+                          Saving…
                         </span>
                       )}
                     </div>
@@ -354,8 +375,8 @@ export default function HodAllocations() {
             </div>
           </Glass>
         ) : (
-          <Glass style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>
-            Select a departmental subject to view and manage teacher allocations.
+          <Glass style={{ padding: 40, textAlign: "center", color: "var(--muted-foreground)" }}>
+            Select a departmental subject to view and configure faculty allocations.
           </Glass>
         )}
       </div>

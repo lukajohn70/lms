@@ -656,10 +656,10 @@ export default function LandingPage() {
                       Digital Literacy &amp; STEM Discovery
                     </h3>
                     <p style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.7, margin: "0 0 20px", color: theme === "dark" ? "#cbd5e1" : "#3a4244" }}>
-                      Cultivating analytical mindsets and practical ingenuity through hands-on science laboratories, introductory coding, computer-based testing (CBT) mastery, and robotics workshops designed to stimulate early innovation.
+                      Cultivating analytical mindsets and practical ingenuity through hands-on science laboratories, introductory coding, digital academic assessments, and robotics workshops designed to stimulate early innovation.
                     </p>
                     <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(191,209,255,0.1)" : "#e2e8f0"}`, paddingTop: 16, fontSize: 12.5, fontWeight: 600, color: theme === "dark" ? "#94a3b8" : "#64748b" }}>
-                      Modules: Algorithm Design · Science Practical Exhibitions · CBT Diagnostics · Logical Reasoning
+                      Modules: Algorithm Design · Science Practical Exhibitions · Digital Assessments · Logical Reasoning
                     </div>
                   </div>
                 </>
@@ -708,10 +708,10 @@ export default function LandingPage() {
             <div>
               <span style={{ fontSize: 12.5, fontWeight: 800, color: "#dc137b", textTransform: "uppercase", letterSpacing: "1.2px", fontFamily: "'Raleway', sans-serif" }}>Official Channels</span>
               <h2 className="web-heading" style={{ fontSize: "clamp(26px, 4vw, 36px)", fontWeight: 900, marginTop: 8, marginBottom: 18, color: theme === "dark" ? "#f8fafc" : "#16234b" }}>
-                Campus Inquiries &amp; Admissions
+                Campus Inquiries &amp; Registry
               </h2>
               <p style={{ opacity: 0.85, lineHeight: 1.7, marginBottom: 28, fontSize: 15, color: theme === "dark" ? "#cbd5e1" : "#3a4244" }}>
-                For inquiries regarding student results, admission verification, transcripts, or academic scheduling, please contact the campus registry below.
+                For inquiries regarding student results, transcript verification, broadsheets, or academic scheduling, please contact the campus registry below.
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -720,7 +720,7 @@ export default function LandingPage() {
                     <Phone size={20} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 11.5, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Admissions &amp; Registry</div>
+                    <div style={{ fontSize: 11.5, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Academic Registry</div>
                     <div style={{ fontSize: 14.5, fontWeight: 800, color: theme === "dark" ? "#f8fafc" : "#16234b" }}>+234 (0) 800 354 7466</div>
                   </div>
                 </div>
@@ -766,7 +766,7 @@ export default function LandingPage() {
 
                 <div>
                   <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: theme === "dark" ? "#cbd5e1" : "#16234b" }}>Inquiry Category</label>
-                  <input type="text" placeholder="e.g. Result Verification / Admissions Query" className="input-style" style={{ width: "100%", padding: "11px 14px", borderRadius: 6, fontSize: 13.5, boxSizing: "border-box" }} />
+                  <input type="text" placeholder="e.g. Result Verification / Transcript Query" className="input-style" style={{ width: "100%", padding: "11px 14px", borderRadius: 6, fontSize: 13.5, boxSizing: "border-box" }} />
                 </div>
 
                 <div>
@@ -813,12 +813,12 @@ export default function LandingPage() {
             </div>
 
             <div>
-              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 800, marginBottom: 16, color: "#d4af37", textTransform: "uppercase", letterSpacing: "1px" }}>Portal Portals</h4>
+              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 800, marginBottom: 16, color: "#d4af37", textTransform: "uppercase", letterSpacing: "1px" }}>Academic Portals</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 11, fontSize: 13.5 }}>
-                <span onClick={() => navigate("/login")} style={{ opacity: 0.8, cursor: "pointer" }}>Student Portal</span>
-                <span onClick={() => navigate("/login")} style={{ opacity: 0.8, cursor: "pointer" }}>Teacher Portal</span>
+                <span onClick={() => navigate("/login")} style={{ opacity: 0.8, cursor: "pointer" }}>Student Result Portal</span>
+                <span onClick={() => navigate("/login")} style={{ opacity: 0.8, cursor: "pointer" }}>Teacher Grading Portal</span>
                 <span onClick={() => navigate("/login")} style={{ opacity: 0.8, cursor: "pointer" }}>Administrator Portal</span>
-                <span onClick={() => navigate("/parent/admissions-login")} style={{ opacity: 0.8, cursor: "pointer" }}>Parent Admissions</span>
+                <span onClick={() => navigate("/login")} style={{ opacity: 0.8, cursor: "pointer" }}>Parent Portal</span>
               </div>
             </div>
 

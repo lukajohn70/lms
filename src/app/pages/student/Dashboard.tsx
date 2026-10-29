@@ -323,8 +323,8 @@ export default function StudentDashboard() {
             <CardHeader icon={<CalendarDays size={15}/>} color="#219EBC" title="Upcoming Events" sub="Next 30 days" />
             <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 9 }}>
               {[
-                { date: "Jun 13", label: "Physics CBT Exam", c: "#FFB703" },
-                { date: "Jun 15", label: "CS CBT — SQL Design", c: "#FFB703" },
+                { date: "Jun 13", label: "Continuous Assessment 2", c: "#FFB703" },
+                { date: "Jun 15", label: "Terminal Evaluation Papers", c: "#FFB703" },
                 { date: "Jun 20", label: "PTA Meeting", c: "#219EBC" },
                 { date: "Jun 25", label: "Mid-Term Break", c: "#8ECAE6" },
               ].map((e) => (

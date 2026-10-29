@@ -25,11 +25,10 @@ const navItems: NavItem[] = [
   { icon: <LayoutDashboard size={17} />, label: "Dashboard Overview", active: true },
   {
     icon: <GraduationCap size={17} />,
-    label: "Academics & CBT Center",
+    label: "Academics",
     children: [
       { icon: <BookOpen size={15} />, label: "My Courses" },
       { icon: <FlaskConical size={15} />, label: "Lesson Materials" },
-      { icon: <ClipboardList size={15} />, label: "Test Center" },
     ],
   },
   { icon: <FileText size={17} />, label: "Results & Transcripts" },
@@ -54,10 +53,10 @@ export function Sidebar() {
         <img src="/logo.png" alt="DLHS" className="w-10 h-10 rounded-lg object-contain" />
         <div>
           <div style={{ fontFamily: "'Raleway',sans-serif", fontWeight: 800, fontSize: "14.5px", color: "#ffffff", letterSpacing: "0.01em" }}>
-            Deeper Life
+            DLHS Kaduna
           </div>
           <div style={{ fontFamily: "'Raleway',sans-serif", fontWeight: 700, fontSize: "10.5px", color: "#d4af37", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            High School
+            Result Portal
           </div>
         </div>
       </div>
@@ -83,7 +82,7 @@ export function Sidebar() {
       {/* Nav items */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {navItems.map((item) => {
-          const isAcademics = item.label === "Academics & CBT Center";
+          const isAcademics = item.label === "Academics";
           return (
             <div key={item.label} className="mb-1">
               <button

@@ -1,14 +1,33 @@
 import { useState, useEffect } from "react";
 import {
   User, KeyRound, Eye, EyeOff, Check, AlertCircle,
-  Camera, Shield, BookOpen, Mail, CheckCircle
+  Camera, Shield, BookOpen, Mail, CheckCircle, CheckCircle2, Clock
 } from "lucide-react";
 import { useApp } from "../../contexts/AppContext";
 import { apiClient, API_BASE_URL } from "../../lib/apiClient";
 import PasswordStrengthMeter from "../../components/PasswordStrengthMeter";
 
+const DLHS = {
+  navy: "#293D7D",
+  navyDark: "#16234B",
+  crimson: "#DC137B",
+  crimsonHover: "#B80F66",
+  blue: "#0093DD",
+  gold: "#D4AF37",
+  periwinkle: "#BFD1FF",
+  slate: "#3A4244",
+};
+
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
-  <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>
+  <div
+    style={{
+      background: "var(--card)",
+      border: "1px solid var(--border)",
+      borderRadius: 14,
+      boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+      ...style
+    }}
+  >
     {children}
   </div>
 );
@@ -111,14 +130,14 @@ export default function TeacherSettings() {
   const pwMatch  = confirmPw.length > 0 && confirmPw !== newPw;
 
   return (
-    <div>
+    <div style={{ paddingBottom: 32 }}>
       {/* ── Page Header ── */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>
-          Account Settings
+        <h1 style={{ fontFamily: "'Raleway', sans-serif", fontSize: 22, fontWeight: 800, color: "var(--foreground)", margin: "0 0 4px" }}>
+          Faculty Profile &amp; Portal Security
         </h1>
-        <p style={{ fontSize: 13, color: "var(--subtext)", margin: 0 }}>
-          Update your profile photo and portal security password
+        <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: 0 }}>
+          Manage your faculty credentials, profile portrait, and academic portal authentication
         </p>
       </div>
 
@@ -127,33 +146,33 @@ export default function TeacherSettings() {
         <Glass style={{ padding: 0, overflow: "hidden" }}>
           {/* Card header strip */}
           <div style={{
-            background: "linear-gradient(135deg, rgba(33,158,188,0.15), rgba(2,48,71,0.25))",
+            background: `linear-gradient(135deg, ${DLHS.navyDark} 0%, ${DLHS.navy} 100%)`,
             padding: "24px 24px 56px",
-            borderBottom: "1px solid var(--glass-border)",
+            borderBottom: "1px solid var(--border)",
             position: "relative"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(33,158,188,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
-                <User size={16} />
+              <div style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff" }}>
+                <User size={18} />
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Educator Profile</div>
-                <div style={{ fontSize: 11, color: "var(--subtext)" }}>Faculty identity & assigned classes</div>
+                <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, fontWeight: 800, color: "#ffffff" }}>Educator Profile</div>
+                <div style={{ fontSize: 11.5, color: DLHS.periwinkle }}>Faculty identity &amp; assigned streams</div>
               </div>
             </div>
           </div>
 
           {/* Avatar floating above strip */}
-          <div style={{ paddingInline: 18, marginTop: -40, marginBottom: 16, display: "flex", alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
+          <div style={{ paddingInline: 22, marginTop: -40, marginBottom: 16, display: "flex", alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
               <div style={{
                 width: 80, height: 80, borderRadius: "50%",
-                background: "linear-gradient(135deg, #219EBC, #023047)",
+                background: DLHS.navy,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 26, fontWeight: 800, color: "#fff",
+                fontSize: 26, fontWeight: 800, color: "#ffffff",
                 overflow: "hidden",
-                border: "3px solid var(--glass-bg)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.3)"
+                border: "3px solid var(--card)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2)"
               }}>
                 {avatarPreview
                   ? <img src={avatarPreview} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -163,9 +182,10 @@ export default function TeacherSettings() {
               <label style={{
                 position: "absolute", bottom: 1, right: 1,
                 width: 26, height: 26, borderRadius: "50%",
-                background: "#219EBC", color: "#fff",
+                background: DLHS.navy, color: "#ffffff",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
+                cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                border: "2px solid var(--card)",
                 transition: "background 0.2s"
               }}>
                 <Camera size={13} />
@@ -174,65 +194,74 @@ export default function TeacherSettings() {
             </div>
 
             <div style={{ paddingBottom: 4, minWidth: 0 }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--heading)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 17, fontWeight: 800, color: "var(--foreground)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {user?.first_name} {user?.last_name}
               </div>
-              <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>
-                {avatarUploading
-                  ? "⏳ Uploading photo…"
-                  : avatarSuccess
-                    ? <span style={{ color: "#2a9d8f" }}>✓ Photo updated!</span>
-                    : "Click the camera icon to change photo"
-                }
+              <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 2 }}>
+                {avatarUploading ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: DLHS.blue }}>
+                    <Clock size={12} /> Uploading portrait…
+                  </span>
+                ) : avatarSuccess ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: DLHS.navy, fontWeight: 700 }}>
+                    <CheckCircle2 size={12} /> Portrait updated!
+                  </span>
+                ) : (
+                  "Select camera icon to update portrait"
+                )}
               </div>
             </div>
           </div>
 
           <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", gap: 10 }}>
             {/* Email */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
-              <Mail size={14} style={{ color: "#219EBC", flexShrink: 0 }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--border)" }}>
+              <Mail size={15} style={{ color: DLHS.navy, flexShrink: 0 }} />
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 10, color: "var(--subtext)", fontWeight: 600, textTransform: "uppercase", marginBottom: 1 }}>Email</div>
-                <div style={{ fontSize: 13, color: "var(--heading)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+                <div style={{ fontSize: 10, color: "var(--muted-foreground)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 1 }}>Institutional Email</div>
+                <div style={{ fontSize: 13, color: "var(--foreground)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
               </div>
             </div>
 
             {/* Role */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
-              <Shield size={14} style={{ color: "#FFB703", flexShrink: 0 }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--border)" }}>
+              <Shield size={15} style={{ color: DLHS.gold, flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: 10, color: "var(--subtext)", fontWeight: 600, textTransform: "uppercase", marginBottom: 1 }}>Role</div>
-                <div style={{ fontSize: 13, color: "var(--heading)", fontWeight: 500 }}>Faculty / Teacher</div>
+                <div style={{ fontSize: 10, color: "var(--muted-foreground)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 1 }}>Designation</div>
+                <div style={{ fontSize: 13, color: "var(--foreground)", fontWeight: 600 }}>Academic Faculty / Subject Specialist</div>
               </div>
             </div>
 
             {/* Assigned Courses */}
-            <div style={{ padding: "12px 14px", borderRadius: 10, background: "var(--muted)", border: "1px solid var(--glass-border)" }}>
+            <div style={{ padding: "12px 14px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--border)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                <BookOpen size={14} style={{ color: "#8ECAE6", flexShrink: 0 }} />
-                <div style={{ fontSize: 10, color: "var(--subtext)", fontWeight: 600, textTransform: "uppercase" }}>Assigned Courses</div>
+                <BookOpen size={15} style={{ color: DLHS.blue, flexShrink: 0 }} />
+                <div style={{ fontSize: 10, color: "var(--muted-foreground)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>Allocated Subject Streams</div>
               </div>
-              {assignedCourses.length === 0
-                ? <div style={{ fontSize: 12, color: "var(--subtext)", fontStyle: "italic" }}>No courses assigned yet</div>
-                : <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {assignedCourses.map(c => (
-                      <span key={c.id} style={{
-                        fontSize: 11.5, fontWeight: 700, color: "#219EBC",
-                        background: "rgba(33,158,188,0.12)",
-                        padding: "4px 10px", borderRadius: 8,
-                        border: "1px solid rgba(33,158,188,0.25)"
-                      }}>
-                        {c.name}
-                      </span>
-                    ))}
-                  </div>
-              }
+              {assignedCourses.length === 0 ? (
+                <div style={{ fontSize: 12, color: "var(--muted-foreground)", fontStyle: "italic" }}>No courses assigned yet</div>
+              ) : (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {assignedCourses.map(c => (
+                    <span key={c.id} style={{
+                      fontSize: 11.5, fontWeight: 700, color: DLHS.navy,
+                      background: "rgba(41, 61, 125, 0.08)",
+                      padding: "4px 10px", borderRadius: 6,
+                      border: `1px solid ${DLHS.navy}30`
+                    }}>
+                      {c.name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <p style={{ fontSize: 11, color: "var(--subtext)", margin: "4px 0 0", lineHeight: 1.5 }}>
-              ⚠️ Profile details (name, email, role) are managed by the administrator. Contact admin for changes.
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 6, background: "rgba(41, 61, 125, 0.04)", border: "1px solid var(--border)", marginTop: 4 }}>
+              <AlertCircle size={14} style={{ color: DLHS.navy, flexShrink: 0 }} />
+              <span style={{ fontSize: 11.5, color: "var(--muted-foreground)", lineHeight: 1.45 }}>
+                Statutory faculty details (name, subject appointments) are managed centrally by the Academic Administrator.
+              </span>
+            </div>
           </div>
         </Glass>
 
@@ -240,17 +269,17 @@ export default function TeacherSettings() {
         <Glass style={{ padding: 0, overflow: "hidden" }}>
           {/* Card header strip */}
           <div style={{
-            background: "linear-gradient(135deg, rgba(251,133,0,0.12), rgba(230,118,0,0.18))",
-            padding: "24px",
-            borderBottom: "1px solid var(--glass-border)"
+            background: "var(--muted)",
+            padding: "20px 24px",
+            borderBottom: "1px solid var(--border)"
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(251,133,0,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FB8500" }}>
-                <KeyRound size={16} />
+              <div style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(41, 61, 125, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: DLHS.navy }}>
+                <KeyRound size={17} />
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Change Password</div>
-                <div style={{ fontSize: 11, color: "var(--subtext)" }}>Keep your account secure</div>
+                <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, fontWeight: 800, color: "var(--foreground)" }}>Authentication Security</div>
+                <div style={{ fontSize: 11.5, color: "var(--muted-foreground)" }}>Update portal access password</div>
               </div>
             </div>
           </div>
@@ -259,21 +288,21 @@ export default function TeacherSettings() {
             {/* Info banner */}
             <div style={{
               display: "flex", alignItems: "flex-start", gap: 10,
-              padding: "12px 14px", borderRadius: 10,
-              background: "rgba(33,158,188,0.06)",
-              border: "1px solid rgba(33,158,188,0.2)",
+              padding: "12px 14px", borderRadius: 8,
+              background: "rgba(41, 61, 125, 0.05)",
+              border: `1px solid ${DLHS.navy}25`,
               marginBottom: 20
             }}>
-              <Shield size={15} style={{ color: "#219EBC", flexShrink: 0, marginTop: 1 }} />
-              <p style={{ fontSize: 12, color: "var(--subtext)", margin: 0, lineHeight: 1.55 }}>
-                Choose a strong password with at least <strong style={{ color: "var(--heading)" }}>8 characters</strong>, including uppercase, lowercase, numbers, and symbols.
+              <Shield size={16} style={{ color: DLHS.navy, flexShrink: 0, marginTop: 1 }} />
+              <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.55 }}>
+                Ensure institutional passwords contain at least <strong style={{ color: "var(--foreground)" }}>8 characters</strong>, combining uppercase, lowercase, numbers, and symbols.
               </p>
             </div>
 
             <form onSubmit={handlePasswordSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {/* Current Password */}
               <div>
-                <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
                   Current Password
                 </label>
                 <div style={{ position: "relative" }}>
@@ -283,10 +312,10 @@ export default function TeacherSettings() {
                     value={currentPw}
                     onChange={e => setCurrentPw(e.target.value)}
                     placeholder="Enter current password"
-                    style={{ width: "100%", padding: "10px 42px 10px 14px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
+                    style={{ width: "100%", padding: "10px 42px 10px 14px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--border)", color: "var(--foreground)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                   />
                   <button type="button" onClick={() => setShowCurrent(!showCurrent)}
-                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--subtext)", padding: 0 }}>
+                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)", padding: 0 }}>
                     {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
@@ -294,7 +323,7 @@ export default function TeacherSettings() {
 
               {/* New Password */}
               <div>
-                <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
                   New Password
                 </label>
                 <div style={{ position: "relative" }}>
@@ -304,20 +333,19 @@ export default function TeacherSettings() {
                     value={newPw}
                     onChange={e => setNewPw(e.target.value)}
                     placeholder="Minimum 8 characters"
-                    style={{ width: "100%", padding: "10px 42px 10px 14px", borderRadius: 9, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "10px 42px 10px 14px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--border)", color: "var(--foreground)", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                   />
                   <button type="button" onClick={() => setShowNew(!showNew)}
-                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--subtext)", padding: 0 }}>
+                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--muted-foreground)", padding: 0 }}>
                     {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                {/* Password Strength Meter & Realtime Criteria Compliance */}
                 <PasswordStrengthMeter password={newPw} confirmPassword={confirmPw} minCharCount={8} />
               </div>
 
               {/* Confirm Password */}
               <div>
-                <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
                   Confirm New Password
                 </label>
                 <input
@@ -327,25 +355,25 @@ export default function TeacherSettings() {
                   onChange={e => setConfirmPw(e.target.value)}
                   placeholder="Re-enter new password"
                   style={{
-                    width: "100%", padding: "10px 14px", borderRadius: 9,
+                    width: "100%", padding: "10px 14px", borderRadius: 8,
                     background: "var(--muted)",
-                    border: `1px solid ${pwMatch ? "rgba(231,111,81,0.5)" : confirmPw && confirmPw === newPw ? "rgba(42,157,143,0.5)" : "var(--glass-border)"}`,
-                    color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box"
+                    border: `1px solid ${pwMatch ? DLHS.crimson : confirmPw && confirmPw === newPw ? DLHS.navy : "var(--border)"}`,
+                    color: "var(--foreground)", fontSize: 13, outline: "none", boxSizing: "border-box"
                   }}
                 />
               </div>
 
               {/* Error */}
               {pwError && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 9, background: "rgba(231,111,81,0.1)", color: "#e76f51", fontSize: 12.5, border: "1px solid rgba(231,111,81,0.25)" }}>
-                  <AlertCircle size={14} /> {pwError}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "rgba(220, 19, 123, 0.08)", color: DLHS.crimson, fontSize: 12.5, border: `1px solid ${DLHS.crimson}30` }}>
+                  <AlertCircle size={15} /> {pwError}
                 </div>
               )}
 
               {/* Success */}
               {pwSuccess && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 9, background: "rgba(42,157,143,0.1)", color: "#2a9d8f", fontSize: 12.5, fontWeight: 600, border: "1px solid rgba(42,157,143,0.25)" }}>
-                  <CheckCircle size={14} /> Password changed successfully!
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8, background: "rgba(41, 61, 125, 0.08)", color: DLHS.navy, fontSize: 12.5, fontWeight: 600, border: `1px solid ${DLHS.navy}30` }}>
+                  <CheckCircle size={15} /> Authentication password updated successfully!
                 </div>
               )}
 
@@ -353,23 +381,24 @@ export default function TeacherSettings() {
                 type="submit"
                 disabled={pwLoading || pwMatch || !currentPw || !newPw || !confirmPw}
                 style={{
-                  padding: "12px 20px", borderRadius: 10, marginTop: 4,
+                  padding: "12px 20px", borderRadius: 8, marginTop: 4,
                   background: (pwLoading || pwMatch || !currentPw || !newPw || !confirmPw)
                     ? "var(--muted)"
-                    : "linear-gradient(135deg, #FB8500, #e67600)",
+                    : DLHS.navy,
                   border: "none",
-                  color: (pwLoading || pwMatch || !currentPw || !newPw || !confirmPw) ? "var(--subtext)" : "#fff",
-                  fontSize: 14, fontWeight: 700,
+                  color: (pwLoading || pwMatch || !currentPw || !newPw || !confirmPw) ? "var(--muted-foreground)" : "#ffffff",
+                  fontSize: 13.5, fontWeight: 700,
                   cursor: (pwLoading || pwMatch || !currentPw || !newPw || !confirmPw) ? "not-allowed" : "pointer",
-                  boxShadow: (pwLoading || pwMatch || !currentPw || !newPw || !confirmPw) ? "none" : "0 4px 16px rgba(251,133,0,0.3)",
+                  boxShadow: (pwLoading || pwMatch || !currentPw || !newPw || !confirmPw) ? "none" : "0 4px 12px rgba(41, 61, 125, 0.25)",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  transition: "all 0.2s"
+                  transition: "all 0.15s ease"
                 }}
               >
-                {pwLoading
-                  ? <><span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} /> Updating…</>
-                  : <><Check size={16} /> Update Password</>
-                }
+                {pwLoading ? (
+                  <><span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} /> Updating Credentials…</>
+                ) : (
+                  <><Check size={16} /> Update Password</>
+                )}
               </button>
             </form>
           </div>
