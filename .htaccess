@@ -4,6 +4,9 @@ Options +FollowSymLinks
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Fix typo redirect for deploy_database.ph -> deploy_database.php
+    RewriteRule ^deploy_database\.ph$ %{REQUEST_URI}p [R=301,L]
+
     # 1. Block access to hidden files and sensitive project configuration
     RewriteRule ^(\.git|\.env|\.cpanel\.yml|composer\.|package(-lock)?\.json|tsconfig\.json|vite\.config\.ts) - [F,L]
 
