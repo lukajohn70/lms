@@ -134,7 +134,7 @@ export default function Reports() {
     try {
       await apiClient.post("/admin/settings/save", { [key]: val });
       setSavedReleaseDate(val || null);
-      setActionSuccess(val ? `Result release date set to ${new Date(releaseDate).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })} for ${selectedTerm}.` : `Release date cleared for ${selectedTerm} — results visible immediately.`);
+      setActionSuccess(val ? `Result release date set to ${new Date(releaseDate).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", hour12: true })} for ${selectedTerm}.` : `Release date cleared for ${selectedTerm} — results visible immediately.`);
       setTimeout(() => setActionSuccess(""), 5000);
     } catch (err: any) {
       alert(err.message || "Failed to save release date");
@@ -254,9 +254,9 @@ export default function Reports() {
                     fontSize: 11.5, fontWeight: 600
                   }}>
                     {new Date(savedReleaseDate) > new Date() ? (
-                      <><CalendarClock size={12} /> Scheduled: {new Date(savedReleaseDate).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</>
+                      <><CalendarClock size={12} /> Scheduled: {new Date(savedReleaseDate).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", hour12: true })}</>
                     ) : (
-                      <><CheckCircle size={12} /> Released: {new Date(savedReleaseDate).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</>
+                      <><CheckCircle size={12} /> Released: {new Date(savedReleaseDate).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", hour12: true })}</>
                     )}
                   </div>
                 )}

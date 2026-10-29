@@ -78,7 +78,7 @@ class PortalSyncEngine {
     }
 
     private function log(string $msg, string $level = 'INFO'): void {
-        $ts = date('H:i:s');
+        $ts = gmdate('Y-m-d\TH:i:s\Z');
         $entry = "[{$ts}] [{$level}] {$msg}";
         $this->recentLogs[] = $entry;
         if (count($this->recentLogs) > 120) {
@@ -115,7 +115,7 @@ class PortalSyncEngine {
             'photos_synced'      => $this->photosSynced,
             'errors_count'       => $this->errorsCount,
             'elapsed_seconds'    => round(microtime(true) - $this->startTime, 1),
-            'updated_at'         => date('Y-m-d H:i:s'),
+            'updated_at'         => gmdate('Y-m-d\TH:i:s\Z'),
             'recent_logs'        => $this->recentLogs
         ];
         $tmp = $this->statusFile . '.tmp';
@@ -471,7 +471,7 @@ class PortalSyncEngine {
         }
 
         // Finalize
-        $now = date('Y-m-d H:i:s');
+        $now = gmdate('Y-m-d\TH:i:s\Z');
         $this->pdo->prepare("
             INSERT INTO system_settings (setting_key, setting_value) 
             VALUES ('last_portal_sync', :now) 

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import { useApp } from "../../contexts/AppContext";
+import { formatDeviceDateTime, formatLogTimestamp } from "../../lib/dateTime";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
   <div
@@ -399,7 +400,9 @@ export default function PortalSync() {
               <Clock size={18} />
             </div>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)", marginTop: 6 }}>{metrics.last_sync || "Never"}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)", marginTop: 6 }}>
+            {formatDeviceDateTime(metrics.last_sync)}
+          </div>
           <div style={{ fontSize: 11, color: "#10b981", marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
             <ShieldCheck size={13} /> Verified Source of Truth
           </div>
@@ -765,7 +768,8 @@ export default function PortalSync() {
               }}
             >
               {syncStatus.recent_logs && syncStatus.recent_logs.length > 0 ? (
-                syncStatus.recent_logs.map((log: string, idx: number) => {
+                syncStatus.recent_logs.map((rawLog: string, idx: number) => {
+                  const log = formatLogTimestamp(rawLog);
                   let color = "#e2e8f0";
                   if (log.includes("[ERROR]") || log.includes("❌")) color = "#f87171";
                   else if (log.includes("[WARN]") || log.includes("⚠")) color = "#facc15";

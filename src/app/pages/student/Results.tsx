@@ -160,7 +160,7 @@ export default function Results() {
           </div>
           {meta.result_release_date && (
             <div style={{ margin: "10px auto", display: "inline-block", padding: "8px 20px", borderRadius: 10, background: "rgba(255,183,3,0.1)", border: "1px solid rgba(255,183,3,0.3)", color: "#FFB703", fontWeight: 800, fontSize: 14 }}>
-              📅 {new Date(meta.result_release_date).toLocaleString("en-GB", { dateStyle: "full", timeStyle: "short" })}
+              📅 {new Date(meta.result_release_date).toLocaleString(undefined, { dateStyle: "full", timeStyle: "short", hour12: true })}
             </div>
           )}
           <div style={{ fontSize: 12, color: "var(--subtext)", marginTop: 10 }}>
