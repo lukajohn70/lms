@@ -20,7 +20,7 @@ $targetPort     = 3306;    // Default MySQL port is 3306
 $targetDbName   = '';      // e.g. "cpaneluser_dlhs"
 $targetUser     = '';      // e.g. "cpaneluser_dbuser"
 $targetPassword = '';      // e.g. "YourSecurePassword123!"
-$appDomain      = '';      // e.g. "https://portal.yourdomain.com" (used for CORS_ORIGIN)
+$appDomain      = 'https://lms.jlm.com.ng'; // Production domain for CORS_ORIGIN
 $isProductionOnCpanel = true; // Set DB_HOST=localhost in .env for production cPanel app execution
 
 // Increase execution time & memory for database export/import
@@ -94,9 +94,9 @@ if ($isCli) {
     }
 
     if (empty($appDomain)) {
-        echo "Enter your cPanel Website URL [e.g. https://portal.yourdomain.com]: ";
+        echo "Enter your cPanel Website URL [https://lms.jlm.com.ng]: ";
         $input = trim(fgets(STDIN));
-        $appDomain = $input ?: 'https://yourdomain.com';
+        $appDomain = $input ?: 'https://lms.jlm.com.ng';
     }
 
     echo "\nStarting process...\n\n";

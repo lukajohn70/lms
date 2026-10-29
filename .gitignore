@@ -39,6 +39,10 @@ api/.env
 api/.env.*
 !api/.env.example
 
+# Temporary and archive files
+*.zip
+lms_jlm_deploy.zip
+
 # Temporary and upload directories
 api/uploads/*
 !api/uploads/.gitkeep

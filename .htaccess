@@ -33,8 +33,7 @@ Options +FollowSymLinks
     RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f
     RewriteRule ^ dist/index.html [L]
 
-    # Otherwise, fallback to root index.html (when dist/* was deployed to root via .cpanel.yml)
-    RewriteCond %{DOCUMENT_ROOT}/index.html -f
+    # Otherwise, fallback to root index.html (when extracted directly to web root)
     RewriteRule ^ index.html [L]
 </IfModule>
 
