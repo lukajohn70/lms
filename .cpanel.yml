@@ -1,16 +1,17 @@
 ---
 # cPanel Git™ Version Control Automated Deployment Configuration
-# Update DEPLOYPATH below to your cPanel document root:
-# For main domain: /home/<your-cpanel-username>/public_html/
-# For subdomain:   /home/<your-cpanel-username>/portal.yourdomain.com/
+# DLHS Academic Management System — lms.jlm.com.ng
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/username/public_html/
+    - if [ -d "/home/gwylvxeo/lms.jlm.com.ng" ]; then export DEPLOYPATH=/home/gwylvxeo/lms.jlm.com.ng; elif [ -d "/home/gwylvxeo/public_html/lms" ]; then export DEPLOYPATH=/home/gwylvxeo/public_html/lms; else export DEPLOYPATH=/home/gwylvxeo/lms.jlm.com.ng; fi
     - /bin/mkdir -p $DEPLOYPATH
-    - /bin/cp -R dist/* $DEPLOYPATH
-    - /bin/cp -R api $DEPLOYPATH
-    - /bin/cp -R uploads $DEPLOYPATH 2>/dev/null || true
-    - /bin/cp .htaccess $DEPLOYPATH
+    - /bin/cp -R dist/* $DEPLOYPATH/
+    - /bin/cp -R api $DEPLOYPATH/
+    - /bin/cp -R uploads $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp .htaccess $DEPLOYPATH/
+    - /bin/cp check_db.php $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp deploy_database.php $DEPLOYPATH/ 2>/dev/null || true
     - /bin/chmod 755 $DEPLOYPATH/api
     - /bin/chmod -R 777 $DEPLOYPATH/api/logs 2>/dev/null || true
     - /bin/chmod -R 777 $DEPLOYPATH/api/uploads 2>/dev/null || true
+
