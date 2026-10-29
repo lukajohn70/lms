@@ -203,109 +203,46 @@ class PortalSyncController {
     /**
      * POST /admin/portal-sync/trigger
      */
+    /**
+     * POST /admin/portal-sync/trigger
+     */
     public function triggerSync() {
         Auth::requireRole(['admin']);
         header('Content-Type: application/json');
 
-        if (!function_exists('exec')) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error' => 'Background crawling is not supported on shared cPanel hosting (exec() disabled). All 51,800+ records are already prepared in database/aroura_export_latest.sql.'
-            ]);
-            return;
-        }
-
-        $disabled = array_map('trim', explode(',', ini_get('disable_functions') ?: ''));
-        if (in_array('exec', $disabled)) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error' => 'Background crawling is not supported on shared cPanel hosting (exec() restricted). All 51,800+ records are already prepared in database/aroura_export_latest.sql.'
-            ]);
-            return;
-        }
-
-        $scriptPath = realpath(__DIR__ . '/../../database/run_portal_sync.py');
-        if (!$scriptPath || !file_exists($scriptPath)) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error' => 'Portal sync python script not found on server. All 51,800+ records are already compiled in database/aroura_export_latest.sql.'
-            ]);
-            return;
-        }
-
-        if ($this->isProcessRunning()) {
-            http_response_code(409);
-            echo json_encode([
-                'success' => false,
-                'error' => 'A portal synchronization process is already actively running.'
-            ]);
-            return;
-        }
-
         $input = json_decode(file_get_contents('php://input'), true) ?: [];
-        $session = escapeshellarg($input['session'] ?? 'all');
-        $term    = escapeshellarg($input['term'] ?? 'all');
+        $session = $input['session'] ?? 'all';
+        $term    = $input['term'] ?? 'all';
         
         $scopeArr = [];
         if (!empty($input['sync_ca_scores'])) $scopeArr[] = 'ca_scores';
         if (!empty($input['sync_exam_scores'])) $scopeArr[] = 'exam_scores';
         if (!empty($input['sync_broadsheet'])) $scopeArr[] = 'broadsheet';
-        // Backward compatibility
-        if (!empty($input['sync_scores']) && !in_array('ca_scores', $scopeArr)) {
-            $scopeArr[] = 'scores';
-        }
         if (!empty($input['sync_assessments'])) $scopeArr[] = 'assessments';
         if (!empty($input['sync_photos'])) $scopeArr[] = 'photos';
         if (!empty($input['sync_allocations'])) $scopeArr[] = 'allocations';
         if (empty($scopeArr)) {
             $scopeArr = ['ca_scores', 'broadsheet', 'assessments', 'photos', 'allocations'];
         }
-        $scope = escapeshellarg(implode(',', $scopeArr));
 
-        $scriptPath = realpath(__DIR__ . '/../../database/run_portal_sync.py');
-        $statusPath = escapeshellarg($this->statusFile);
-        $logPath    = escapeshellarg($this->logFile);
+        require_once __DIR__ . '/../lib/PortalSyncEngine.php';
+        $engine = new PortalSyncEngine($this->conn, $this->statusFile, $this->logFile);
 
-        // Reset status file
-        $initialStatus = [
-            'is_syncing' => true,
-            'state' => 'starting',
-            'progress' => 2,
-            'step' => 'Starting DLHS portal background worker...',
-            'scores_synced' => 0,
-            'assessments_synced' => 0,
-            'photos_synced' => 0,
-            'errors_count' => 0,
-            'elapsed_seconds' => 0,
-            'updated_at' => date('Y-m-d H:M:S'),
-            'recent_logs' => ["[INFO] Launching portal sync worker..."]
-        ];
-        @file_put_contents($this->statusFile, json_encode($initialStatus, JSON_PRETTY_PRINT));
-
-        // Resolve python executable path
-        $pythonBin = 'python3';
-        if (file_exists('/usr/local/opt/python@3.15/bin/python3.15')) {
-            $pythonBin = '/usr/local/opt/python@3.15/bin/python3.15';
-        } elseif (file_exists('/usr/local/bin/python3')) {
-            $pythonBin = '/usr/local/bin/python3';
-        } elseif (file_exists('/opt/homebrew/bin/python3')) {
-            $pythonBin = '/opt/homebrew/bin/python3';
+        // If fastcgi_finish_request is supported, flush response to browser and run worker in background
+        if (function_exists('fastcgi_finish_request')) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Portal synchronization started in background.'
+            ]);
+            @fastcgi_finish_request();
+            $engine->runSync($session, $term, $scopeArr);
+            exit;
+        } else {
+            // Direct synchronous execution
+            $res = $engine->runSync($session, $term, $scopeArr);
+            echo json_encode($res);
+            exit;
         }
-
-        // Launch in background
-        $cmd = "export PATH=\"/usr/local/bin:/usr/local/opt/python@3.15/bin:/usr/bin:/bin:\$PATH\"; {$pythonBin} {$scriptPath} --session {$session} --term {$term} --scope {$scope} --status-file {$statusPath} --log-file {$logPath} > /dev/null 2>&1 &";
-        exec($cmd);
-
-        echo json_encode([
-            'success' => true,
-            'message' => 'Portal synchronization launched in background.',
-            'session' => $input['session'] ?? 'all',
-            'term'    => $input['term'] ?? 'all',
-            'scope'   => $scopeArr
-        ]);
     }
 
     /**
