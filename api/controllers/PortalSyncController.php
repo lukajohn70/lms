@@ -34,9 +34,17 @@ class PortalSyncController {
     }
 
     private function isProcessRunning() {
-        $cmd = "ps aux | grep '[r]un_portal_sync.py'";
-        exec($cmd, $output);
-        return !empty($output);
+        if (!function_exists('exec')) return false;
+        $disabled = array_map('trim', explode(',', ini_get('disable_functions') ?: ''));
+        if (in_array('exec', $disabled)) return false;
+        try {
+            $cmd = "ps aux | grep '[r]un_portal_sync.py'";
+            $output = [];
+            @exec($cmd, $output);
+            return !empty($output);
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
@@ -82,10 +90,18 @@ class PortalSyncController {
             $statusData['step'] = 'Sync finished.';
         }
 
-        // Fetch live database statistics
-        $studentCount = intval($this->conn->query("SELECT COUNT(*) FROM users WHERE role = 'student'")->fetchColumn() ?: 0);
-        $gradeCount = intval($this->conn->query("SELECT COUNT(*) FROM grades WHERE score > 0")->fetchColumn() ?: 0);
-        $assessmentCount = intval($this->conn->query("SELECT COUNT(*) FROM student_assessments")->fetchColumn() ?: 0);
+        // Fetch live database statistics safely
+        try {
+            $studentCount = intval($this->conn->query("SELECT COUNT(*) FROM users WHERE role = 'student'")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) { $studentCount = 0; }
+
+        try {
+            $gradeCount = intval($this->conn->query("SELECT COUNT(*) FROM grades WHERE score > 0")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) { $gradeCount = 0; }
+
+        try {
+            $assessmentCount = intval($this->conn->query("SELECT COUNT(*) FROM student_assessments")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) { $assessmentCount = 0; }
         
         $passportDir = __DIR__ . '/../../public/kaduna';
         $photoCount = 0;
@@ -191,6 +207,35 @@ class PortalSyncController {
         Auth::requireRole(['admin']);
         header('Content-Type: application/json');
 
+        if (!function_exists('exec')) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Background crawling is not supported on shared cPanel hosting (exec() disabled). All 51,800+ records are already prepared in database/aroura_export_latest.sql.'
+            ]);
+            return;
+        }
+
+        $disabled = array_map('trim', explode(',', ini_get('disable_functions') ?: ''));
+        if (in_array('exec', $disabled)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Background crawling is not supported on shared cPanel hosting (exec() restricted). All 51,800+ records are already prepared in database/aroura_export_latest.sql.'
+            ]);
+            return;
+        }
+
+        $scriptPath = realpath(__DIR__ . '/../../database/run_portal_sync.py');
+        if (!$scriptPath || !file_exists($scriptPath)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Portal sync python script not found on server. All 51,800+ records are already compiled in database/aroura_export_latest.sql.'
+            ]);
+            return;
+        }
+
         if ($this->isProcessRunning()) {
             http_response_code(409);
             echo json_encode([
@@ -270,8 +315,13 @@ class PortalSyncController {
         Auth::requireRole(['admin']);
         header('Content-Type: application/json');
 
-        // Kill running process
-        exec("pkill -f 'run_portal_sync.py'");
+        // Kill running process safely
+        if (function_exists('exec')) {
+            $disabled = array_map('trim', explode(',', ini_get('disable_functions') ?: ''));
+            if (!in_array('exec', $disabled)) {
+                @exec("pkill -f 'run_portal_sync.py'");
+            }
+        }
 
         if (file_exists($this->statusFile)) {
             $status = json_decode(@file_get_contents($this->statusFile), true) ?: [];
