@@ -17,53 +17,137 @@ class AssessmentController {
         return $val !== false ? $val : $default;
     }
 
-    // Teacher: Get assessments list of students in the course
+    private function resolveImageSrc($relPath, $apiBase) {
+        if (!$relPath) return '';
+        $candidates = [
+            __DIR__ . '/../../' . ltrim($relPath, '/'),
+            __DIR__ . '/../' . ltrim($relPath, '/'),
+            ($_SERVER['DOCUMENT_ROOT'] ?? '') . '/lms/' . ltrim($relPath, '/'),
+            ($_SERVER['DOCUMENT_ROOT'] ?? '') . '/' . ltrim($relPath, '/')
+        ];
+        foreach ($candidates as $c) {
+            if (file_exists($c) && is_file($c)) {
+                $ext = strtolower(pathinfo($c, PATHINFO_EXTENSION));
+                $mime = ($ext === 'webp') ? 'image/webp' : (($ext === 'png') ? 'image/png' : (($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'application/octet-stream'));
+                return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($c));
+            }
+        }
+        return "$apiBase/$relPath";
+    }
+
+    // Teacher: Get assessments list of students in the course and class arm
     public function getTeacherAssessments() {
         $teacher = Auth::requireRole(['teacher']);
         
         $courseId = isset($_GET['course_id']) ? intval($_GET['course_id']) : null;
-        $term = $this->getSetting('current_term', '2nd Term');
-        $session = $this->getSetting('academic_session', '2026/2027');
+        $classId  = isset($_GET['class_id']) ? intval($_GET['class_id']) : null;
+        $session  = isset($_GET['session']) && !empty($_GET['session']) ? trim($_GET['session']) : $this->getSetting('academic_session', '2026/2027');
+        $term     = isset($_GET['term']) && !empty($_GET['term']) ? trim($_GET['term']) : $this->getSetting('current_term', '2nd Term');
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+        $isCurr = ($session === $currentSession ? 1 : 0);
 
-        // 1. Get courses taught by teacher (directly or via class subject allocation)
+        // 1. Get courses taught by teacher for this session
         $coursesQuery = "
             SELECT DISTINCT c.id, c.name FROM courses c 
-            WHERE c.teacher_id = :tid 
-               OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)
+            WHERE c.id IN (
+                SELECT DISTINCT course_id FROM teacher_allocations 
+                WHERE teacher_id = :tid AND academic_session = :session
+                UNION
+                SELECT DISTINCT course_id FROM class_subjects 
+                WHERE teacher_id = :tid2 AND :is_curr = 1
+            )
             ORDER BY c.name
         ";
         $coursesStmt = $this->conn->prepare($coursesQuery);
-        $coursesStmt->execute([':tid' => $teacher['id'], ':tid2' => $teacher['id']]);
+        $coursesStmt->execute([
+            ':tid' => $teacher['id'],
+            ':session' => $session,
+            ':tid2' => $teacher['id'],
+            ':is_curr' => $isCurr
+        ]);
         $courses = $coursesStmt->fetchAll();
         
         if (empty($courses)) {
-            echo json_encode(["courses" => [], "students" => []]);
+            echo json_encode([
+                "courses" => [],
+                "classes" => [],
+                "selected_course_id" => null,
+                "selected_class_id" => null,
+                "academic_term" => $term,
+                "academic_session" => $session,
+                "students" => []
+            ]);
             return;
         }
         
-        if (!$courseId) {
+        $courseIds = array_column($courses, 'id');
+        if (!$courseId || !in_array($courseId, $courseIds)) {
             $courseId = $courses[0]['id'];
         }
+
+        // 2. Classes assigned to teacher for this course and session
+        $classesStmt = $this->conn->prepare("
+            SELECT DISTINCT cl.id, cl.name 
+            FROM classes cl
+            WHERE cl.id IN (
+                SELECT DISTINCT class_id FROM teacher_allocations 
+                WHERE teacher_id = :tid AND course_id = :cid AND academic_session = :session
+                UNION
+                SELECT DISTINCT class_id FROM class_subjects 
+                WHERE teacher_id = :tid2 AND course_id = :cid2 AND :is_curr = 1
+            )
+            ORDER BY cl.name ASC
+        ");
+        $classesStmt->execute([
+            ':tid' => $teacher['id'],
+            ':cid' => $courseId,
+            ':session' => $session,
+            ':tid2' => $teacher['id'],
+            ':cid2' => $courseId,
+            ':is_curr' => $isCurr
+        ]);
+        $availableClasses = $classesStmt->fetchAll();
+
+        if (empty($availableClasses)) {
+            echo json_encode([
+                "courses" => $courses,
+                "classes" => [],
+                "selected_course_id" => $courseId,
+                "selected_class_id" => null,
+                "academic_term" => $term,
+                "academic_session" => $session,
+                "students" => []
+            ]);
+            return;
+        }
+
+        $allowedClassIds = array_column($availableClasses, 'id');
+        if (!$classId || !in_array($classId, $allowedClassIds)) {
+            $classId = $availableClasses[0]['id'];
+        }
         
-        // 2. Fetch enrolled students and their assessments (if any exist)
+        // 3. Fetch enrolled students belonging strictly to the selected class arm
         $assessmentsQuery = "
             SELECT 
                 u.id, 
                 CONCAT(u.first_name, ' ', u.last_name) as name,
+                cl.name as class_name,
                 u.email, u.gender, u.house, u.sport_activities,
                 sa.punctuality, sa.neatness, sa.politeness, sa.honesty, sa.team_spirit, sa.leadership, sa.helping_others, sa.emotional_stability, sa.health, sa.attitude_to_work, sa.attentiveness, sa.perseverance, sa.spoken_english,
                 sa.handwriting, sa.verbal_fluency, sa.sports, sa.handling_tools, sa.musical, sa.drawing_painting,
                 sa.class_teacher_comment, sa.principal_remark, sa.award_1, sa.award_2
             FROM users u
             JOIN enrollments e ON u.id = e.student_id
+            JOIN classes cl ON u.class_id = cl.id
             LEFT JOIN student_assessments sa ON (u.id = sa.student_id AND sa.academic_term = :term AND sa.academic_session = :session)
-            WHERE e.course_id = :cid
+            WHERE e.course_id = :cid AND u.class_id = :clid
             ORDER BY u.first_name, u.last_name
         ";
         
         $stmt = $this->conn->prepare($assessmentsQuery);
         $stmt->execute([
             ':cid' => $courseId,
+            ':clid' => $classId,
             ':term' => $term,
             ':session' => $session
         ]);
@@ -75,6 +159,7 @@ class AssessmentController {
             $formattedStudents[] = [
                 "id" => $s['id'],
                 "name" => $s['name'],
+                "class_name" => $s['class_name'],
                 "student_number" => "STU/" . str_pad($s['id'], 3, '0', STR_PAD_LEFT),
                 "gender" => $s['gender'] ?: "MALE",
                 "house" => $s['house'] ?: "FAITH",
@@ -108,10 +193,11 @@ class AssessmentController {
             ];
         }
 
-        
         echo json_encode([
             "courses" => $courses,
+            "classes" => $availableClasses,
             "selected_course_id" => $courseId,
+            "selected_class_id" => $classId,
             "academic_term" => $term,
             "academic_session" => $session,
             "students" => $formattedStudents
@@ -120,7 +206,7 @@ class AssessmentController {
 
     // Teacher: Save/Update assessments
     public function saveAssessment() {
-        Auth::requireRole(['teacher', 'admin']);
+        $currentUser = Auth::requireRole(['teacher', 'admin']);
         
         $data = json_decode(file_get_contents("php://input"), true);
         if (!$data || !isset($data['student_id'])) {
@@ -130,8 +216,42 @@ class AssessmentController {
         }
 
         $studentId = intval($data['student_id']);
-        $term = $this->getSetting('current_term', '2nd Term');
-        $session = $this->getSetting('academic_session', '2026/2027');
+        $term = !empty($data['academic_term']) ? trim($data['academic_term']) : (!empty($data['term']) ? trim($data['term']) : $this->getSetting('current_term', '2nd Term'));
+        $session = !empty($data['academic_session']) ? trim($data['academic_session']) : (!empty($data['session']) ? trim($data['session']) : $this->getSetting('academic_session', '2026/2027'));
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+        $isCurr = ($session === $currentSession ? 1 : 0);
+
+        // Security check for teachers: verify student belongs to a class allocated to this teacher
+        if ($currentUser['role'] === 'teacher') {
+            $authStmt = $this->conn->prepare("
+                SELECT 1 FROM users u
+                WHERE u.id = :sid AND (
+                    u.class_id IN (
+                        SELECT class_id FROM teacher_allocations 
+                        WHERE teacher_id = :tid AND academic_session = :session
+                        UNION
+                        SELECT class_id FROM class_subjects 
+                        WHERE teacher_id = :tid2 AND :is_curr = 1
+                    )
+                    OR u.class_id IN (
+                        SELECT id FROM classes WHERE form_teacher_id = :tid3
+                    )
+                ) LIMIT 1
+            ");
+            $authStmt->execute([
+                ':sid' => $studentId,
+                ':tid' => $currentUser['id'],
+                ':session' => $session,
+                ':tid2' => $currentUser['id'],
+                ':is_curr' => $isCurr,
+                ':tid3' => $currentUser['id']
+            ]);
+            if (!$authStmt->fetchColumn()) {
+                http_response_code(403);
+                echo json_encode(["error" => "Access Denied: You are not assigned to assess students in this class for session $session."]);
+                return;
+            }
+        }
 
         try {
             $query = "
@@ -267,6 +387,10 @@ class AssessmentController {
         $studentId  = isset($_GET['student_id']) ? intval($_GET['student_id']) : 0;
         $classParam = $_GET['class_id'] ?? '';
 
+        $termRaw  = $_GET['term']    ?? $this->getSetting('current_term','3rd Term');
+        $term     = ($termRaw==='1st'||$termRaw==='1st Term')?'1st Term':(($termRaw==='2nd'||$termRaw==='2nd Term')?'2nd Term':'3rd Term');
+        $session  = $_GET['session'] ?? $this->getSetting('academic_session','2026/2027');
+
         $cumulParam = $_GET['cumulative'] ?? '1';
         $isCumulative = !($cumulParam === '0' || $cumulParam === 'false' || $cumulParam === 'no');
 
@@ -280,31 +404,88 @@ class AssessmentController {
             if (substr($classParam, 0, 9) === 'combined:') {
                 $cohort = substr($classParam, 9);
                 $batchClassName = $cohort;
-                $stmt = $this->conn->prepare("
-                    SELECT u.id FROM users u
-                    JOIN classes c ON u.class_id = c.id
-                    WHERE c.name LIKE :cohort AND u.role = 'student'
-                    ORDER BY c.name ASC, u.first_name ASC, u.last_name ASC
-                ");
-                $stmt->execute([':cohort' => $cohort . '%']);
-                $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                $cStmt = $this->conn->prepare("SELECT id FROM classes WHERE name LIKE :cohort");
+                $cStmt->execute([':cohort' => $cohort . '%']);
+                $cohortClassIds = $cStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                if (!empty($cohortClassIds)) {
+                    $inCids = implode(',', array_fill(0, count($cohortClassIds), '?'));
+                    $stmt = $this->conn->prepare("
+                        SELECT DISTINCT u.id, u.last_name, u.first_name, c.name as class_name
+                        FROM grades g
+                        JOIN users u ON g.student_id = u.id
+                        JOIN classes c ON g.class_id = c.id
+                        WHERE g.class_id IN ($inCids)
+                          AND g.academic_session = ?
+                          AND g.academic_term = ?
+                          AND u.role = 'student'
+                        ORDER BY c.name ASC, u.last_name ASC, u.first_name ASC
+                    ");
+                    $stmt->execute(array_merge($cohortClassIds, [$session, $term]));
+                    $studentIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+
+                    if (empty($studentIds) && $session === $this->getSetting('academic_session', '2026/2027')) {
+                        $stmt = $this->conn->prepare("
+                            SELECT DISTINCT u.id, u.last_name, u.first_name, c.name as class_name
+                            FROM users u
+                            JOIN classes c ON u.class_id = c.id
+                            WHERE c.id IN ($inCids) AND u.role = 'student'
+                            ORDER BY c.name ASC, u.last_name ASC, u.first_name ASC
+                        ");
+                        $stmt->execute();
+                        $studentIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+                    }
+                }
             } else {
                 $classId = intval($classParam);
                 $cn = $this->conn->prepare("SELECT name FROM classes WHERE id = :cid LIMIT 1");
                 $cn->execute([':cid' => $classId]);
                 $batchClassName = $cn->fetchColumn() ?: "CLASS $classId";
 
+                // Priority 1: Check grades table for students in this class, session, and term
                 $stmt = $this->conn->prepare("
-                    SELECT id FROM users 
-                    WHERE class_id = :cid AND role = 'student' 
-                    ORDER BY first_name ASC, last_name ASC
+                    SELECT DISTINCT u.id, u.last_name, u.first_name 
+                    FROM grades g
+                    JOIN users u ON g.student_id = u.id
+                    WHERE g.class_id = :cid 
+                      AND g.academic_session = :session 
+                      AND g.academic_term = :term 
+                      AND u.role = 'student'
+                    ORDER BY u.last_name ASC, u.first_name ASC
                 ");
-                $stmt->execute([':cid' => $classId]);
-                $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                $stmt->execute([':cid' => $classId, ':session' => $session, ':term' => $term]);
+                $studentIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+
+                // Priority 2: Check authentic student_class_history
+                if (empty($studentIds)) {
+                    $stmt = $this->conn->prepare("
+                        SELECT DISTINCT u.id, u.last_name, u.first_name 
+                        FROM student_class_history sch
+                        JOIN users u ON sch.student_id = u.id
+                        WHERE sch.class_id = :cid 
+                          AND sch.academic_session = :session 
+                          AND sch.academic_term = :term 
+                          AND u.role = 'student'
+                        ORDER BY u.last_name ASC, u.first_name ASC
+                    ");
+                    $stmt->execute([':cid' => $classId, ':session' => $session, ':term' => $term]);
+                    $studentIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+                }
+
+                // Priority 3: Fallback only if active session and no grades/history recorded yet
+                if (empty($studentIds) && $session === $this->getSetting('academic_session', '2026/2027')) {
+                    $stmt = $this->conn->prepare("
+                        SELECT id FROM users 
+                        WHERE class_id = :cid AND role = 'student' 
+                        ORDER BY last_name ASC, first_name ASC
+                    ");
+                    $stmt->execute([':cid' => $classId]);
+                    $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                }
             }
 
             if (empty($studentIds)) {
-                die("<p style='font-family:sans-serif;padding:40px'>No students found in this class arm.</p>");
+                die("<p style='font-family:sans-serif;padding:40px'>No student records found for {$batchClassName} in {$session} ({$term}).</p>");
             }
         } else {
             if (!$studentId) {
@@ -318,10 +499,6 @@ class AssessmentController {
             if (!$studentId) die("<p style='font-family:sans-serif;padding:40px'>Student ID or Class ID required.</p>");
             $studentIds = [$studentId];
         }
-
-        $termRaw  = $_GET['term']    ?? $this->getSetting('current_term','3rd Term');
-        $term     = ($termRaw==='1st'||$termRaw==='1st Term')?'1st Term':(($termRaw==='2nd'||$termRaw==='2nd Term')?'2nd Term':'3rd Term');
-        $session  = $_GET['session'] ?? $this->getSetting('academic_session','2020/2021');
 
         // School Settings
         $schoolName    = $this->getSetting('school_name', 'DEEPER LIFE HIGH SCHOOL');
@@ -429,17 +606,18 @@ class AssessmentController {
 
         $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
         $proto    = $isHttps ? 'https://' : 'http://';
-        $apiBase  = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
-        $logoSrc  = $logoPath ? "$apiBase/$logoPath" : '';
-        $signatureSrc = $signaturePath ? "$apiBase/$signaturePath" : '';
+        $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/api'), '/\\');
+        $apiBase  = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ($scriptDir ?: '/api');
+        $logoSrc  = $this->resolveImageSrc($logoPath, $apiBase);
+        $signatureSrc = $this->resolveImageSrc($signaturePath, $apiBase);
         ?>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title><?= count($studentIds) > 1 ? "Batch Report Cards - " . htmlspecialchars($batchClassName) : "Report Card" ?></title>
-<link rel="icon" type="image/x-icon" href="/lms/favicon.ico">
-<link rel="icon" type="image/png" href="<?= htmlspecialchars($logoSrc ?: '/lms/public/favicon.png') ?>">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" href="<?= htmlspecialchars($logoSrc ?: '/favicon.png') ?>">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -766,22 +944,48 @@ table.domain-table td.trait-name {
 /* Footer cards */
 .footer-row {
   display: flex;
+  align-items: stretch;
   gap: 7px;
   margin-top: 4px;
 }
 .footer-col-1 {
   flex: 0.95;
+  display: flex;
+  flex-direction: column;
 }
 .footer-col-2 {
   flex: 1.25;
+  display: flex;
+  flex-direction: column;
 }
 .footer-col-3 {
   flex: 0.8;
+  display: flex;
+  flex-direction: column;
 }
 
 .boxed-card {
   border: 1px solid #000;
   margin-bottom: 5px;
+}
+.footer-col-1 .boxed-card:last-child,
+.footer-col-2 .boxed-card:last-child,
+.footer-col-3 .boxed-card:last-child {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+.footer-col-1 .boxed-card:last-child table {
+  flex: 1;
+  height: 100%;
+}
+.footer-col-1 .boxed-card:last-child .boxed-card-body,
+.footer-col-2 .boxed-card:last-child .boxed-card-body,
+.footer-col-3 .boxed-card:last-child .boxed-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .boxed-card-title {
   background: #cbd5e1;
@@ -936,20 +1140,102 @@ foreach ($studentIds as $studentId):
     }
     $rankString = $this->formatOrdinal($pos);
 
-    // Fetch Student Grades
+    // Fetch Student Grades (scoped to class_subjects + any graded courses)
+    $csCheck = $this->conn->prepare("SELECT COUNT(*) FROM class_subjects WHERE class_id = :cid");
+    $csCheck->execute([':cid' => $histClassId]);
+    $hasClassSubjects = ($csCheck->fetchColumn() > 0);
+
+    // Subjects strictly unique to JSS (never in SS) and SS (never in JSS)
+    $jssOnlyCourseIds = [40, 41, 42, 24, 50, 55, 33, 154, 23]; // Basic Sci, Basic Tech, Bus Studies, CCA, Home Ec, Social Studies, PHE, Music, Hausa
+    $ssOnlyCourseIds  = [181, 182, 183, 26, 193, 188, 186, 185, 190, 144, 114, 191, 12, 108, 32, 122, 198, 197]; // Bio, Chem, Phys, FMath, Econ, Geog, Govt, Lit, Comm, FinAcct, DataProc, TechDraw, VisArt, AnimHusb, CatCraft, FoodNut, Garment, SolarPV
+
+    // Priority 1: Courses where the student has recorded grades in this specific term & session
     $gs = $this->conn->prepare("
-        SELECT c.id as course_id, c.name as subject,
-               CONCAT(t.first_name,' ',t.last_name) as teacher,
+        SELECT DISTINCT c.id as course_id, c.name as subject,
+               COALESCE(
+                   (SELECT CONCAT(tu.first_name, ' ', tu.last_name) 
+                    FROM teacher_allocations ta 
+                    JOIN users tu ON ta.teacher_id = tu.id 
+                    WHERE ta.course_id = g.course_id 
+                      AND ta.academic_session = g.academic_session 
+                      AND (ta.class_id = g.class_id OR (g.class_id IS NULL AND ta.class_id = :class_id_alloc))
+                    LIMIT 1),
+                   (SELECT CONCAT(gu.first_name, ' ', gu.last_name) 
+                    FROM users gu 
+                    WHERE gu.id = g.graded_by AND gu.role = 'teacher'),
+                   CONCAT(t.first_name, ' ', t.last_name)
+               ) as teacher,
                g.ca1, g.ca2, g.exam, g.score as total
-        FROM enrollments e
-        JOIN courses c ON e.course_id=c.id
-        LEFT JOIN users t ON c.teacher_id=t.id
-        LEFT JOIN grades g ON (e.student_id=g.student_id AND g.course_id=c.id
-            AND g.academic_term=:term AND g.academic_session=:session)
-        WHERE e.student_id=:sid ORDER BY c.name
+        FROM grades g
+        JOIN courses c ON g.course_id = c.id
+        LEFT JOIN users t ON c.teacher_id = t.id
+        WHERE g.student_id = :sid 
+          AND g.academic_term = :term 
+          AND g.academic_session = :session
+          AND (g.class_id = :class_id OR g.class_id IS NULL)
+        ORDER BY c.name
     ");
-    $gs->execute([':sid'=>$studentId, ':term'=>$term, ':session'=>$session]);
-    $grades = $gs->fetchAll();
+    $gs->execute([
+        ':sid' => $studentId, 
+        ':term' => $term, 
+        ':session' => $session, 
+        ':class_id' => $histClassId,
+        ':class_id_alloc' => $histClassId ?: 0
+    ]);
+    $rawGrades = $gs->fetchAll();
+
+    // Priority 2: If student has no recorded grades yet (e.g. active term before exams), fall back to class_subjects
+    if (empty($rawGrades)) {
+        if ($hasClassSubjects) {
+            $gs = $this->conn->prepare("
+                SELECT DISTINCT c.id as course_id, c.name as subject,
+                       COALESCE(
+                           (SELECT CONCAT(tu.first_name, ' ', tu.last_name) 
+                            FROM teacher_allocations ta 
+                            JOIN users tu ON ta.teacher_id = tu.id 
+                            WHERE ta.course_id = cs.course_id AND ta.class_id = cs.class_id AND ta.academic_session = :session_alloc 
+                            LIMIT 1),
+                           CONCAT(csu.first_name, ' ', csu.last_name),
+                           CONCAT(t.first_name, ' ', t.last_name)
+                       ) as teacher,
+                       NULL as ca1, NULL as ca2, NULL as exam, NULL as total
+                FROM class_subjects cs
+                JOIN courses c ON cs.course_id = c.id
+                LEFT JOIN users csu ON cs.teacher_id = csu.id
+                LEFT JOIN users t ON c.teacher_id = t.id
+                WHERE cs.class_id = :class_id
+                ORDER BY c.name
+            ");
+            $gs->execute([':class_id' => $histClassId, ':session_alloc' => $session]);
+            $rawGrades = $gs->fetchAll();
+        } else {
+            $gs = $this->conn->prepare("
+                SELECT c.id as course_id, c.name as subject,
+                       COALESCE(
+                           (SELECT CONCAT(tu.first_name, ' ', tu.last_name) 
+                            FROM teacher_allocations ta 
+                            JOIN users tu ON ta.teacher_id = tu.id 
+                            WHERE ta.course_id = c.id AND ta.class_id = :class_id_alloc2 AND ta.academic_session = :session_alloc2 
+                            LIMIT 1),
+                           CONCAT(t.first_name, ' ', t.last_name)
+                       ) as teacher,
+                       NULL as ca1, NULL as ca2, NULL as exam, NULL as total
+                FROM enrollments e
+                JOIN courses c ON e.course_id = c.id
+                LEFT JOIN users t ON c.teacher_id = t.id
+                WHERE e.student_id = :sid
+                ORDER BY c.name
+            ");
+            $gs->execute([':sid' => $studentId, ':class_id_alloc2' => $histClassId ?: 0, ':session_alloc2' => $session]);
+            $rawGrades = $gs->fetchAll();
+        }
+    }
+    $grades = array_values(array_filter($rawGrades, function($g) use ($isJunior, $jssOnlyCourseIds, $ssOnlyCourseIds) {
+        $cid = intval($g['course_id']);
+        if ($isJunior && in_array($cid, $ssOnlyCourseIds)) return false;
+        if (!$isJunior && in_array($cid, $jssOnlyCourseIds)) return false;
+        return true;
+    }));
 
     // Multi-term scores for this student
     $ms = $this->conn->prepare("SELECT course_id, academic_term, score FROM grades WHERE student_id=:sid AND academic_session=:session");
@@ -969,17 +1255,32 @@ foreach ($studentIds as $studentId):
     $gradedCount = 0;      // subjects that actually have a score entered
     $classAvgCount = 0;    // subjects that have a real class average
 
+    // Check if student has ANY recorded positive score across all subjects
+    $studentHasAnyScores = false;
+    foreach ($grades as $chkG) {
+        $chkCid   = $chkG['course_id'];
+        $chkTotal = floatval($chkG['total'] ?? 0);
+        $chkCa1   = floatval($chkG['ca1'] ?? 0);
+        $chkCa2   = floatval($chkG['ca2'] ?? 0);
+        $chkExam  = floatval($chkG['exam'] ?? 0);
+        $chkT1    = isset($termMatrix[$chkCid]['1st Term']) ? floatval($termMatrix[$chkCid]['1st Term']) : 0;
+        $chkT2    = isset($termMatrix[$chkCid]['2nd Term']) ? floatval($termMatrix[$chkCid]['2nd Term']) : 0;
+        $chkT3    = isset($termMatrix[$chkCid]['3rd Term']) ? floatval($termMatrix[$chkCid]['3rd Term']) : 0;
+        if ($chkTotal > 0 || $chkCa1 > 0 || $chkCa2 > 0 || $chkExam > 0 || $chkT1 > 0 || $chkT2 > 0 || $chkT3 > 0) {
+            $studentHasAnyScores = true;
+            break;
+        }
+    }
+
     foreach ($grades as $g) {
         $cid = $g['course_id'];
 
-        // Use real DB values; null means not yet entered
-        $hasScore = ($g['ca1'] !== null || $g['ca2'] !== null || $g['exam'] !== null || $g['total'] !== null);
-        $test1 = $g['ca1'] !== null ? floatval($g['ca1']) : null;
-        $test2 = $g['ca2'] !== null ? floatval($g['ca2']) : null;
-        $exam  = $g['exam'] !== null ? floatval($g['exam']) : null;
+        $test1 = ($g['ca1'] !== null && $g['ca1'] !== '') ? floatval($g['ca1']) : null;
+        $test2 = ($g['ca2'] !== null && $g['ca2'] !== '') ? floatval($g['ca2']) : null;
+        $exam  = ($g['exam'] !== null && $g['exam'] !== '') ? floatval($g['exam']) : null;
 
         // Current total: use stored score if available, else sum components
-        if ($g['total'] !== null) {
+        if ($g['total'] !== null && $g['total'] !== '') {
             $currentTotal = floatval($g['total']);
         } else {
             $currentTotal = ($test1 ?? 0) + ($test2 ?? 0) + ($exam ?? 0);
@@ -988,19 +1289,36 @@ foreach ($studentIds as $studentId):
         // Previous term scores — only real DB values, never fabricated
         $t1 = isset($termMatrix[$cid]['1st Term']) ? floatval($termMatrix[$cid]['1st Term']) : null;
         $t2 = isset($termMatrix[$cid]['2nd Term']) ? floatval($termMatrix[$cid]['2nd Term']) : null;
-        $t3 = $term === '3rd Term' ? ($g['total'] !== null ? floatval($g['total']) : ($hasScore ? $currentTotal : null)) : null;
+        $t3 = $term === '3rd Term' ? (($g['total'] !== null && $g['total'] !== '') ? floatval($g['total']) : (($test1 !== null || $test2 !== null || $exam !== null) ? $currentTotal : null)) : null;
+
+        $hasAnyScore = (
+            ($test1 !== null && $test1 > 0) ||
+            ($test2 !== null && $test2 > 0) ||
+            ($exam !== null && $exam > 0) ||
+            ($currentTotal > 0) ||
+            ($t1 !== null && $t1 > 0) ||
+            ($t2 !== null && $t2 > 0) ||
+            ($t3 !== null && $t3 > 0)
+        );
+
+        // Exclude subject with no score at all
+        if ($studentHasAnyScores && !$hasAnyScore) {
+            continue;
+        }
+
+        $hasScore = $hasAnyScore;
 
         if ($isCumulative) {
             if ($term === '3rd Term') {
-                $validParts = array_filter([$t1, $t2, $t3], fn($v) => $v !== null);
+                $validParts = array_filter([$t1, $t2, $t3], fn($v) => $v !== null && floatval($v) > 0);
                 $cummulative = count($validParts) > 0 ? round(array_sum($validParts), 2) : 0;
                 $studAvg     = count($validParts) > 0 ? round($cummulative / count($validParts), 2) : 0;
             } else if ($term === '2nd Term') {
-                $validParts = array_filter([$t1, $t2], fn($v) => $v !== null);
+                $validParts = array_filter([$t1, $t2], fn($v) => $v !== null && floatval($v) > 0);
                 $cummulative = count($validParts) > 0 ? round(array_sum($validParts), 2) : 0;
                 $studAvg     = count($validParts) > 0 ? round($cummulative / count($validParts), 2) : 0;
             } else {
-                $cummulative = $t1 !== null ? round($t1, 2) : 0;
+                $cummulative = ($t1 !== null && floatval($t1) > 0) ? round($t1, 2) : round($currentTotal, 2);
                 $studAvg     = $cummulative;
             }
         } else {
@@ -1147,7 +1465,7 @@ foreach ($studentIds as $studentId):
         ? $assessment['principal_remark']
         : '';
 
-    $photoSrc = $student['avatar_path'] ? "$apiBase/{$student['avatar_path']}" : '';
+    $photoSrc = $student['avatar_path'] ? $this->resolveImageSrc($student['avatar_path'], $apiBase) : '';
 ?>
 <div class="sheet">
 
@@ -1555,7 +1873,7 @@ foreach ($studentIds as $studentId):
       </div>
 
       <div class="boxed-card" style="margin-bottom: 0;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+        <table style="width: 100%; height: 100%; border-collapse: collapse; font-size: 9px;">
           <tr>
             <th style="background: #cbd5e1; border-bottom: 1px solid #000; padding: 2px 4px; text-align: left; font-weight: 900;">Overall Evaluation:</th>
             <th style="background: #cbd5e1; border-bottom: 1px solid #000; padding: 2px 4px; text-align: right; width: 35px; font-weight: 900;">%</th>
@@ -1591,14 +1909,14 @@ foreach ($studentIds as $studentId):
 
       <div class="boxed-card">
         <div class="boxed-card-title">Class Teacher's Comment:</div>
-        <div class="boxed-card-body" style="font-weight: 700; min-height: 28px;">
+        <div class="boxed-card-body" style="font-weight: 700; min-height: 24px; max-height: 38px; line-height: 1.3; overflow: hidden;">
           <?= $classTeacherComment ? htmlspecialchars($classTeacherComment) : '&mdash;' ?>
         </div>
       </div>
 
       <div class="boxed-card" style="margin-bottom: 0;">
         <div class="boxed-card-title">Principal's Remark</div>
-        <div class="boxed-card-body" style="font-weight: 700; min-height: 40px; line-height: 1.35;">
+        <div class="boxed-card-body" style="font-weight: 700; min-height: 36px; line-height: 1.35;">
           <?= $principalRemark ? htmlspecialchars($principalRemark) : '&mdash;' ?>
           <?php if ($term === '3rd Term' && $promotionText): ?>
             <span style="font-weight: 900; color: <?= $promotionColor ?>; display: inline; margin-left: 4px;">
@@ -1613,7 +1931,7 @@ foreach ($studentIds as $studentId):
     <div class="footer-col-3">
       <div class="boxed-card">
         <div class="boxed-card-title">AWARDS/PRIZES</div>
-        <div class="boxed-card-body" style="font-style: italic; min-height: 48px; font-weight: 700; line-height: 1.6;">
+        <div class="boxed-card-body" style="font-style: italic; min-height: 38px; font-weight: 700; line-height: 1.4;">
           <?php
             $aw1 = !empty($assessment['award_1']) && strtoupper(trim($assessment['award_1'])) !== 'NILL'
                    ? htmlspecialchars($assessment['award_1']) : 'NILL';
@@ -1627,11 +1945,11 @@ foreach ($studentIds as $studentId):
 
       <div class="boxed-card" style="margin-bottom: 0;">
         <div class="boxed-card-title" style="text-align: center;">Principal's Signature</div>
-        <div class="boxed-card-body" style="text-align: center; min-height: 48px; display: flex; align-items: center; justify-content: center; padding: 2px 4px;">
+        <div class="boxed-card-body" style="text-align: center; min-height: 36px; display: flex; align-items: center; justify-content: center; padding: 2px 4px;">
           <?php if ($signatureSrc): ?>
             <img src="<?= $signatureSrc ?>" alt="Principal's Signature" style="max-height: 44px; max-width: 130px; object-fit: contain;">
           <?php else: ?>
-            <div style="width: 120px; height: 38px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;">
+            <div style="width: 120px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;">
               <div style="width: 100%; border-bottom: 1px dashed #64748b; margin-bottom: 2px;"></div>
               <span style="font-size: 7.5px; color: #64748b; font-weight: 600;">Authorized Signatory</span>
             </div>
@@ -1654,6 +1972,10 @@ foreach ($studentIds as $studentId):
         $studentId  = isset($_GET['student_id']) ? intval($_GET['student_id']) : 0;
         $classParam = $_GET['class_id'] ?? '';
 
+        $termRaw = $_GET['term'] ?? $this->getSetting('current_term', '2nd Term');
+        $term    = ($termRaw==='1st'||$termRaw==='1st Term') ? '1st Term' : (($termRaw==='2nd'||$termRaw==='2nd Term') ? '2nd Term' : '3rd Term');
+        $session = $_GET['session'] ?? $this->getSetting('academic_session', '2026/2027');
+
         $studentIds = [];
         $batchClassName = '';
 
@@ -1664,31 +1986,88 @@ foreach ($studentIds as $studentId):
             if (substr($classParam, 0, 9) === 'combined:') {
                 $cohort = substr($classParam, 9);
                 $batchClassName = $cohort;
-                $stmt = $this->conn->prepare("
-                    SELECT u.id FROM users u
-                    JOIN classes c ON u.class_id = c.id
-                    WHERE c.name LIKE :cohort AND u.role = 'student'
-                    ORDER BY c.name ASC, u.first_name ASC, u.last_name ASC
-                ");
-                $stmt->execute([':cohort' => $cohort . '%']);
-                $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                $cStmt = $this->conn->prepare("SELECT id FROM classes WHERE name LIKE :cohort");
+                $cStmt->execute([':cohort' => $cohort . '%']);
+                $cohortClassIds = $cStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                if (!empty($cohortClassIds)) {
+                    $inCids = implode(',', array_fill(0, count($cohortClassIds), '?'));
+                    $stmt = $this->conn->prepare("
+                        SELECT DISTINCT u.id, u.last_name, u.first_name, c.name as class_name
+                        FROM grades g
+                        JOIN users u ON g.student_id = u.id
+                        JOIN classes c ON g.class_id = c.id
+                        WHERE g.class_id IN ($inCids)
+                          AND g.academic_session = ?
+                          AND g.academic_term = ?
+                          AND u.role = 'student'
+                        ORDER BY c.name ASC, u.last_name ASC, u.first_name ASC
+                    ");
+                    $stmt->execute(array_merge($cohortClassIds, [$session, $term]));
+                    $studentIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+
+                    if (empty($studentIds) && $session === $this->getSetting('academic_session', '2026/2027')) {
+                        $stmt = $this->conn->prepare("
+                            SELECT DISTINCT u.id, u.last_name, u.first_name, c.name as class_name
+                            FROM users u
+                            JOIN classes c ON u.class_id = c.id
+                            WHERE c.id IN ($inCids) AND u.role = 'student'
+                            ORDER BY c.name ASC, u.last_name ASC, u.first_name ASC
+                        ");
+                        $stmt->execute();
+                        $studentIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+                    }
+                }
             } else {
                 $classId = intval($classParam);
                 $cn = $this->conn->prepare("SELECT name FROM classes WHERE id = :cid LIMIT 1");
                 $cn->execute([':cid' => $classId]);
                 $batchClassName = $cn->fetchColumn() ?: "CLASS $classId";
 
+                // Priority 1: Check grades table for students in this class, session, and term
                 $stmt = $this->conn->prepare("
-                    SELECT id FROM users 
-                    WHERE class_id = :cid AND role = 'student' 
-                    ORDER BY first_name ASC, last_name ASC
+                    SELECT DISTINCT u.id, u.last_name, u.first_name 
+                    FROM grades g
+                    JOIN users u ON g.student_id = u.id
+                    WHERE g.class_id = :cid 
+                      AND g.academic_session = :session 
+                      AND g.academic_term = :term 
+                      AND u.role = 'student'
+                    ORDER BY u.last_name ASC, u.first_name ASC
                 ");
-                $stmt->execute([':cid' => $classId]);
-                $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                $stmt->execute([':cid' => $classId, ':session' => $session, ':term' => $term]);
+                $studentIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+
+                // Priority 2: Check authentic student_class_history
+                if (empty($studentIds)) {
+                    $stmt = $this->conn->prepare("
+                        SELECT DISTINCT u.id, u.last_name, u.first_name 
+                        FROM student_class_history sch
+                        JOIN users u ON sch.student_id = u.id
+                        WHERE sch.class_id = :cid 
+                          AND sch.academic_session = :session 
+                          AND sch.academic_term = :term 
+                          AND u.role = 'student'
+                        ORDER BY u.last_name ASC, u.first_name ASC
+                    ");
+                    $stmt->execute([':cid' => $classId, ':session' => $session, ':term' => $term]);
+                    $studentIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'id');
+                }
+
+                // Priority 3: Fallback only if active session and no grades/history recorded yet
+                if (empty($studentIds) && $session === $this->getSetting('academic_session', '2026/2027')) {
+                    $stmt = $this->conn->prepare("
+                        SELECT id FROM users 
+                        WHERE class_id = :cid AND role = 'student' 
+                        ORDER BY last_name ASC, first_name ASC
+                    ");
+                    $stmt->execute([':cid' => $classId]);
+                    $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                }
             }
 
             if (empty($studentIds)) {
-                die("<p style='font-family:sans-serif;padding:40px'>No students found in this class arm.</p>");
+                die("<p style='font-family:sans-serif;padding:40px'>No student records found for {$batchClassName} in {$session} ({$term}).</p>");
             }
         } else {
             if (!$studentId) {
@@ -1703,10 +2082,6 @@ foreach ($studentIds as $studentId):
             $studentIds = [$studentId];
         }
 
-        $termRaw = $_GET['term'] ?? $this->getSetting('current_term', '2nd Term');
-        $term    = ($termRaw==='1st'||$termRaw==='1st Term') ? '1st Term' : (($termRaw==='2nd'||$termRaw==='2nd Term') ? '2nd Term' : '3rd Term');
-        $session = $_GET['session'] ?? $this->getSetting('academic_session', '2023/2024');
-
         // School settings
         $schoolName   = $this->getSetting('school_name', 'DEEPER LIFE HIGH SCHOOL');
         $schoolCampus = $this->getSetting('school_campus', 'KADUNA CAMPUS');
@@ -1715,9 +2090,10 @@ foreach ($studentIds as $studentId):
         $signaturePath = $this->getSetting('principal_signature_path', '');
         $isHttps      = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
         $proto        = $isHttps ? 'https://' : 'http://';
-        $apiBase      = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
-        $logoSrc      = $logoPath ? "$apiBase/$logoPath" : '';
-        $signatureSrc = $signaturePath ? "$apiBase/$signaturePath" : '';
+        $scriptDir    = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/api'), '/\\');
+        $apiBase      = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ($scriptDir ?: '/api');
+        $logoSrc      = $this->resolveImageSrc($logoPath, $apiBase);
+        $signatureSrc = $this->resolveImageSrc($signaturePath, $apiBase);
 
         // Vacation & Resumption dates for Mid-Term Break
         $termNum = ($term === '1st Term') ? '1' : (($term === '2nd Term') ? '2' : '3');
@@ -1741,8 +2117,8 @@ foreach ($studentIds as $studentId):
 <head>
 <meta charset="UTF-8">
 <title><?= count($studentIds) > 1 ? "Batch Mid-Term Results — " . htmlspecialchars($batchClassName) : "Mid-Term Result" ?></title>
-<link rel="icon" type="image/x-icon" href="/lms/favicon.ico">
-<link rel="icon" type="image/png" href="<?= htmlspecialchars($logoSrc ?: '/lms/public/favicon.png') ?>">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" href="<?= htmlspecialchars($logoSrc ?: '/favicon.png') ?>">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1856,6 +2232,17 @@ foreach ($studentIds as $sid):
         if ($cn) $className = strtoupper($cn);
     }
 
+    // Detect Junior vs Senior secondary level
+    $isJunior = (
+        stripos($className, 'BASIC') !== false ||
+        stripos($className, 'JSS') !== false ||
+        stripos($className, 'JUNIOR') !== false ||
+        stripos($className, 'JS ') !== false ||
+        stripos($className, 'JS1') !== false ||
+        stripos($className, 'JS2') !== false ||
+        stripos($className, 'JS3') !== false
+    );
+
     // Assessment (for comments)
     $as = $this->conn->prepare("SELECT class_teacher_comment, principal_remark FROM student_assessments WHERE student_id=:sid AND academic_term=:term AND academic_session=:session LIMIT 1");
     $as->execute([':sid'=>$sid,':term'=>$term,':session'=>$session]);
@@ -1865,44 +2252,162 @@ foreach ($studentIds as $sid):
     $principalComment  = !empty($assessment['principal_remark'])      ? strtoupper($assessment['principal_remark'])      : '—';
 
     // Fetch midterm grades (assignment_score, project_score, mid_term_test)
+    // Resolve valid subjects: class_subjects for the student's class, plus any course with recorded grades
+    $csCheck = $this->conn->prepare("SELECT COUNT(*) FROM class_subjects WHERE class_id = :cid");
+    $csCheck->execute([':cid' => $histClassId]);
+    $hasClassSubjects = ($csCheck->fetchColumn() > 0);
+
+    // Subjects strictly unique to JSS (never in SS) and SS (never in JSS)
+    $jssOnlyCourseIds = [40, 41, 42, 24, 50, 55, 33, 154, 23]; // Basic Sci, Basic Tech, Bus Studies, CCA, Home Ec, Social Studies, PHE, Music, Hausa
+    $ssOnlyCourseIds  = [181, 182, 183, 26, 193, 188, 186, 185, 190, 144, 114, 191, 12, 108, 32, 122, 198, 197]; // Bio, Chem, Phys, FMath, Econ, Geog, Govt, Lit, Comm, FinAcct, DataProc, TechDraw, VisArt, AnimHusb, CatCraft, FoodNut, Garment, SolarPV
+
+    // Priority 1: Courses where the student has recorded grades in this specific term & session
     $gs = $this->conn->prepare("
-        SELECT c.name as subject,
-               g.assignment_score, g.project_score, g.mid_term_test
-        FROM enrollments e
-        JOIN courses c ON e.course_id = c.id
-        LEFT JOIN grades g ON (e.student_id = g.student_id AND g.course_id = c.id
-            AND g.academic_term = :term AND g.academic_session = :session)
-        WHERE e.student_id = :sid
+        SELECT DISTINCT c.id as course_id, c.name as subject,
+               g.assignment_score, g.project_score, g.mid_term_test, g.ca1
+        FROM grades g
+        JOIN courses c ON g.course_id = c.id
+        WHERE g.student_id = :sid 
+          AND g.academic_term = :term 
+          AND g.academic_session = :session
+          AND (g.class_id = :class_id OR g.class_id IS NULL)
         ORDER BY c.name
     ");
-    $gs->execute([':sid'=>$sid,':term'=>$term,':session'=>$session]);
-    $grades = $gs->fetchAll();
+    $gs->execute([':sid' => $sid, ':term' => $term, ':session' => $session, ':class_id' => $histClassId]);
+    $rawGrades = $gs->fetchAll();
 
-    // Compute totals
+    // Priority 2: If student has no recorded grades yet (e.g. active term before exams), fall back to class_subjects
+    if (empty($rawGrades)) {
+        if ($hasClassSubjects) {
+            $gs = $this->conn->prepare("
+                SELECT DISTINCT c.id as course_id, c.name as subject,
+                       NULL as assignment_score, NULL as project_score, NULL as mid_term_test, NULL as ca1
+                FROM class_subjects cs
+                JOIN courses c ON cs.course_id = c.id
+                WHERE cs.class_id = :class_id
+                ORDER BY c.name
+            ");
+            $gs->execute([':class_id' => $histClassId]);
+            $rawGrades = $gs->fetchAll();
+        } else {
+            $gs = $this->conn->prepare("
+                SELECT DISTINCT c.id as course_id, c.name as subject,
+                       NULL as assignment_score, NULL as project_score, NULL as mid_term_test, NULL as ca1
+                FROM enrollments e
+                JOIN courses c ON e.course_id = c.id
+                WHERE e.student_id = :sid
+                ORDER BY c.name
+            ");
+            $gs->execute([':sid' => $sid]);
+            $rawGrades = $gs->fetchAll();
+        }
+    }
+    $grades = array_values(array_filter($rawGrades, function($g) use ($isJunior, $jssOnlyCourseIds, $ssOnlyCourseIds) {
+        $cid = intval($g['course_id']);
+        if ($isJunior && in_array($cid, $ssOnlyCourseIds)) return false;
+        if (!$isJunior && in_array($cid, $jssOnlyCourseIds)) return false;
+        return true;
+    }));
+
+    // Compute totals & deduplicate by subject name
     $rows = [];
     $grandTotal = 0;
+    $seenSubjects = [];
+
+    // Check if student has ANY recorded positive score across all subjects
+    $studentHasAnyScores = false;
+    foreach ($grades as $chkG) {
+        $chkAsgn = floatval($chkG['assignment_score'] ?? 0);
+        $chkProj = floatval($chkG['project_score'] ?? 0);
+        $chkTest = floatval($chkG['mid_term_test'] ?? 0);
+        $chkCa1  = floatval($chkG['ca1'] ?? 0);
+        if ($chkAsgn > 0 || $chkProj > 0 || $chkTest > 0 || $chkCa1 > 0) {
+            $studentHasAnyScores = true;
+            break;
+        }
+    }
+
     foreach ($grades as $g) {
-        $asgn  = floatval($g['assignment_score'] ?? 0);
-        $proj  = floatval($g['project_score']    ?? 0);
-        $test  = floatval($g['mid_term_test']    ?? 0);
-        $total = round($asgn + $proj + $test, 2);
-        $grandTotal += $total;
+        $subjName = strtoupper(trim($g['subject']));
 
-        $remark = '';
-        if ($total >= 18)     $remark = 'EXCELLENT';
-        elseif ($total >= 14) $remark = 'VERY GOOD';
-        elseif ($total >= 10) $remark = 'GOOD';
-        elseif ($total >= 6)  $remark = 'FAIR';
-        else                  $remark = 'POOR';
+        $asgn = ($g['assignment_score'] !== null && $g['assignment_score'] !== '') ? floatval($g['assignment_score']) : null;
+        $proj = ($g['project_score'] !== null && $g['project_score'] !== '') ? floatval($g['project_score']) : null;
+        $test = ($g['mid_term_test'] !== null && $g['mid_term_test'] !== '') ? floatval($g['mid_term_test']) : null;
 
+        // Fallback: If component scores are not explicitly set but CA1 exists (out of 20):
+        if ($asgn === null && $proj === null && $test === null && !empty($g['ca1']) && floatval($g['ca1']) > 0) {
+            $ca1 = floatval($g['ca1']);
+            $asgn = round($ca1 * 0.25, 1);
+            $proj = round($ca1 * 0.25, 1);
+            $test = round($ca1 - ($asgn + $proj), 1);
+        }
+
+        $hasAnyScore = (
+            ($asgn !== null && $asgn > 0) ||
+            ($proj !== null && $proj > 0) ||
+            ($test !== null && $test > 0)
+        );
+
+        // Exclude subject with no score at all
+        if ($studentHasAnyScores && !$hasAnyScore) {
+            continue;
+        }
+
+        $hasData = ($asgn !== null || $proj !== null || $test !== null);
+        $total = $hasData ? round(($asgn ?? 0) + ($proj ?? 0) + ($test ?? 0), 2) : 0;
+
+        $remark = '—';
+        if ($hasData) {
+            $pct = round(($total / 20.0) * 100.0, 1);
+            if ($isJunior) {
+                if ($pct >= 80)     $remark = 'DISTINCTION';
+                elseif ($pct >= 70) $remark = 'VERY GOOD';
+                elseif ($pct >= 60) $remark = 'CREDIT';
+                elseif ($pct >= 50) $remark = 'PASS';
+                else                  $remark = 'FAIL';
+            } else {
+                // Official Senior Secondary WAEC Scale (dlhsportal.org)
+                if ($pct >= 85)     $remark = 'EXCELLENT';
+                elseif ($pct >= 80) $remark = 'VERY GOOD';
+                elseif ($pct >= 75) $remark = 'GOOD';
+                elseif ($pct >= 60) $remark = 'CREDIT';
+                elseif ($pct >= 50) $remark = 'PASS';
+                else                  $remark = 'FAIL';
+            }
+        }
+
+        // Deduplicate subjects by name, keeping the one with score data if duplicate exists
+        if (isset($seenSubjects[$subjName])) {
+            $idx = $seenSubjects[$subjName];
+            if (!$rows[$idx]['hasData'] && $hasData) {
+                $grandTotal -= ($rows[$idx]['hasData'] ? floatval($rows[$idx]['total']) : 0);
+                $grandTotal += $total;
+                $rows[$idx] = [
+                    'subject' => $subjName,
+                    'asgn'    => $asgn !== null ? number_format($asgn, 1, '.', '') : '',
+                    'proj'    => $proj !== null ? number_format($proj, 1, '.', '') : '',
+                    'test'    => $test !== null ? number_format($test, 1, '.', '') : '',
+                    'total'   => $hasData ? number_format($total, 1, '.', '') : '',
+                    'remark'  => $remark,
+                    'hasData' => $hasData
+                ];
+            }
+            continue;
+        }
+
+        if ($hasData) {
+            $grandTotal += $total;
+        }
+
+        $seenSubjects[$subjName] = count($rows);
         $rows[] = [
-            'subject' => strtoupper($g['subject']),
-            'asgn'    => $asgn > 0 ? number_format($asgn, 2, '.', '') : '',
-            'proj'    => $proj > 0 ? number_format($proj, 2, '.', '') : '',
-            'test'    => $test > 0 ? number_format($test, 2, '.', '') : '',
-            'total'   => $total > 0 ? number_format($total, 2, '.', '') : '',
+            'subject' => $subjName,
+            'asgn'    => $asgn !== null ? number_format($asgn, 1, '.', '') : '',
+            'proj'    => $proj !== null ? number_format($proj, 1, '.', '') : '',
+            'test'    => $test !== null ? number_format($test, 1, '.', '') : '',
+            'total'   => $hasData ? number_format($total, 1, '.', '') : '',
             'remark'  => $remark,
-            'hasData' => ($asgn + $proj + $test) > 0
+            'hasData' => $hasData
         ];
     }
     $count   = count(array_filter($rows, fn($r) => $r['hasData']));
@@ -1963,17 +2468,17 @@ foreach ($studentIds as $sid):
         <td><?= htmlspecialchars($row['proj']) ?></td>
         <td><?= htmlspecialchars($row['test']) ?></td>
         <td style="font-weight:800"><?= htmlspecialchars($row['total']) ?></td>
-        <td class="remark-cell"><?= $row['hasData'] ? htmlspecialchars($row['remark']) : '' ?></td>
+        <td class="remark-cell"><?= $row['hasData'] ? htmlspecialchars($row['remark']) : '—' ?></td>
       </tr>
       <?php endforeach; ?>
       <tr class="total-row">
         <td class="subj-name" colspan="4" style="text-align:right;padding-right:8px">TOTAL:</td>
-        <td><?= number_format($grandTotal, 2) ?></td>
+        <td><?= $count > 0 ? number_format($grandTotal, 2) : '—' ?></td>
         <td></td>
       </tr>
       <tr class="avg-row">
         <td class="subj-name" colspan="4" style="text-align:right;padding-right:8px;color:#dc2626">AVERAGE:</td>
-        <td><?= number_format($average, 2) ?></td>
+        <td style="font-weight:800;color:#dc2626"><?= $count > 0 ? (number_format($average, 2) . ' / 20 (' . number_format(($average / 20) * 100, 1) . '%)') : '—' ?></td>
         <td></td>
       </tr>
     </tbody>

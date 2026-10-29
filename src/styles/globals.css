@@ -120,7 +120,7 @@ html, body {
 }
 
 .table-responsive-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(33, 158, 188, 0.25);
+  background: rgba(41, 61, 125, 0.22);
   border-radius: 4px;
 }
 

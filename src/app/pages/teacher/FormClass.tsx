@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { 
   Award, Heart, CalendarDays, FileText, Download, Upload, CheckCircle2, 
-  AlertCircle, Edit2, Search, Sparkles, CheckSquare, X, RefreshCw, Star,
-  ChevronLeft, ChevronRight, ArrowLeft, Printer
+  AlertCircle, Edit2, Search, CheckSquare, X, RefreshCw, Star,
+  ChevronLeft, ChevronRight, ArrowLeft, Printer, GraduationCap
 } from "lucide-react";
 import { apiClient, API_BASE_URL } from "../../lib/apiClient";
 
@@ -62,7 +62,7 @@ export default function FormClass() {
 
   // Term & Session
   const [currentTerm, setCurrentTerm] = useState("2nd Term");
-  const [currentSession, setCurrentSession] = useState("2023/2024");
+  const [currentSession, setCurrentSession] = useState("2026/2027");
 
   // Filter query
   const [searchQuery, setSearchQuery] = useState("");
@@ -289,6 +289,24 @@ export default function FormClass() {
     const token = localStorage.getItem("token") || "";
     const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
     const url = `${apiBase}/index.php?path=/reports/midterm&class_id=${selectedClassId}&term=${encodeURIComponent(currentTerm)}&session=${encodeURIComponent(currentSession)}&token=${encodeURIComponent(token)}`;
+    window.open(url, "_blank");
+  };
+
+  // Print Cumulative Transcript for Selected Student
+  const handlePrintTranscript = () => {
+    if (!selectedStudent) return;
+    const token = localStorage.getItem("token") || "";
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
+    const url = `${apiBase}/index.php?path=/reports/transcript&student_id=${selectedStudent.id}&token=${encodeURIComponent(token)}`;
+    window.open(url, "_blank");
+  };
+
+  // Batch print transcripts for all students in this class arm
+  const handlePrintBatchTranscripts = () => {
+    if (!selectedClassId) return;
+    const token = localStorage.getItem("token") || "";
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
+    const url = `${apiBase}/index.php?path=/reports/transcript&class_id=${selectedClassId}&token=${encodeURIComponent(token)}`;
     window.open(url, "_blank");
   };
 
@@ -527,6 +545,18 @@ export default function FormClass() {
             title="Print Official Report Cards for all students in this class arm at once"
           >
             <Printer size={14} /> Batch Report Cards
+          </button>
+
+          <button
+            onClick={handlePrintBatchTranscripts}
+            style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9,
+              background: "linear-gradient(135deg, #8B5CF6, #6D28D9)", border: "none", color: "#fff",
+              fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(139,92,246,0.25)"
+            }}
+            title="Print Official Cumulative Transcripts for all students in this class arm at once"
+          >
+            <GraduationCap size={14} /> Batch Transcripts
           </button>
 
           <button
@@ -814,6 +844,19 @@ export default function FormClass() {
                   >
                     <Printer size={13} /> Report Card
                   </button>
+                  <button
+                    onClick={handlePrintTranscript}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "6px 12px", borderRadius: 8,
+                      border: "none", background: "linear-gradient(135deg,#8B5CF6,#6D28D9)",
+                      color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                    title="Print Cumulative Academic Transcript for this student"
+                  >
+                    <GraduationCap size={13} /> Transcript
+                  </button>
                 </div>
               </div>
 
@@ -1059,7 +1102,7 @@ export default function FormClass() {
                   {/* Comment Presets */}
                   <div style={{ marginBottom: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", alignSelf: "center", marginRight: 4 }}>
-                      <Sparkles size={11} style={{ display: "inline", verticalAlign: "middle", marginRight: 2 }} /> Quick Suggestions:
+                      <FileText size={11} style={{ display: "inline", verticalAlign: "middle", marginRight: 2 }} /> Official Remarks:
                     </span>
                     {COMMENT_PRESETS.map((preset, idx) => (
                       <button

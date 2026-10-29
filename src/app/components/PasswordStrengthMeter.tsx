@@ -31,17 +31,17 @@ export function evaluatePassword(password: string, minCharCount = 8) {
 
   if (metCount >= 5) {
     level = "strong";
-    color = "#2a9d8f";
+    color = "#10b981";
     label = "Strong";
     barsFilled = 4;
   } else if (metCount >= 3) {
     level = "good";
-    color = "#FFB703";
+    color = "#d4af37";
     label = "Good";
     barsFilled = 3;
   } else if (metCount >= 2) {
     level = "fair";
-    color = "#FB8500";
+    color = "#0093dd";
     label = "Fair";
     barsFilled = 2;
   } else {
@@ -110,7 +110,7 @@ export default function PasswordStrengthMeter({
           style={{
             padding: "10px 12px",
             borderRadius: 8,
-            background: "rgba(2, 48, 71, 0.08)",
+            background: "rgba(41, 61, 125, 0.05)",
             border: "1px solid var(--glass-border)",
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
@@ -125,7 +125,7 @@ export default function PasswordStrengthMeter({
                 alignItems: "center",
                 gap: 6,
                 fontSize: 11,
-                color: c.met ? "#2a9d8f" : "var(--subtext)",
+                color: c.met ? "#10b981" : "var(--subtext)",
                 transition: "color 0.2s",
               }}
             >
@@ -134,8 +134,8 @@ export default function PasswordStrengthMeter({
                   width: 14,
                   height: 14,
                   borderRadius: "50%",
-                  background: c.met ? "rgba(42,157,143,0.18)" : "rgba(255,255,255,0.08)",
-                  border: `1px solid ${c.met ? "#2a9d8f" : "var(--glass-border)"}`,
+                  background: c.met ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.08)",
+                  border: `1px solid ${c.met ? "#10b981" : "var(--glass-border)"}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -144,7 +144,7 @@ export default function PasswordStrengthMeter({
                 }}
               >
                 {c.met ? (
-                  <Check size={9} strokeWidth={3} style={{ color: "#2a9d8f" }} />
+                  <Check size={9} strokeWidth={3} style={{ color: "#10b981" }} />
                 ) : (
                   <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--subtext)", opacity: 0.5 }} />
                 )}
@@ -164,11 +164,11 @@ export default function PasswordStrengthMeter({
             gap: 6,
             fontSize: 11.5,
             fontWeight: 600,
-            color: isMatch ? "#2a9d8f" : "#ef4444",
+            color: isMatch ? "#10b981" : "#ef4444",
             padding: "4px 8px",
             borderRadius: 6,
-            background: isMatch ? "rgba(42,157,143,0.1)" : "rgba(239,68,68,0.1)",
-            border: `1px solid ${isMatch ? "rgba(42,157,143,0.3)" : "rgba(239,68,68,0.3)"}`,
+            background: isMatch ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+            border: `1px solid ${isMatch ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
             width: "fit-content",
           }}
         >

@@ -18,40 +18,43 @@ export function AttendanceWidget() {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
+      className="rounded-xl overflow-hidden"
       style={{
-        background: "rgba(2,48,71,0.5)",
-        border: "1px solid rgba(142,202,230,0.15)",
-        backdropFilter: "blur(20px)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+        background: "var(--card)",
+        border: "1px solid var(--border)",
+        boxShadow: "0 2px 8px rgba(16, 28, 50, 0.04)",
+        fontFamily: "'Lato', 'Plus Jakarta Sans', sans-serif"
       }}
     >
       <div
-        className="flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: "1px solid rgba(142,202,230,0.1)" }}
+        className="flex items-center justify-between px-5 py-4 border-b"
+        style={{ borderColor: "var(--border)" }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: "rgba(255,183,3,0.1)", border: "1px solid rgba(255,183,3,0.2)" }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: "rgba(41,61,125,0.08)", color: "#293d7d" }}
           >
-            <CalendarDays size={15} style={{ color: "#FFB703" }} />
+            <CalendarDays size={16} />
           </div>
           <div>
-            <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "14px", fontWeight: 600, color: "#e8f4f8" }}>
-              Attendance
+            <span style={{ fontFamily: "'Raleway',sans-serif", fontSize: "14px", fontWeight: 700, color: "var(--heading)" }}>
+              Attendance Register
             </span>
-            <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: "10px", color: "#8ECAE6" }}>
-              This term — 6 weeks
+            <div style={{ fontSize: "11px", color: "var(--subtext)" }}>
+              This term — 6 weeks record
             </div>
           </div>
         </div>
         <div
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
-          style={{ background: pct < 80 ? "rgba(255,183,3,0.1)" : "rgba(33,158,188,0.1)", border: `1px solid ${pct < 80 ? "rgba(255,183,3,0.25)" : "rgba(33,158,188,0.2)"}` }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md"
+          style={{
+            background: pct < 80 ? "rgba(220,19,123,0.08)" : "rgba(0,147,221,0.08)",
+            border: `1px solid ${pct < 80 ? "rgba(220,19,123,0.2)" : "rgba(0,147,221,0.2)"}`
+          }}
         >
-          {pct < 80 && <AlertTriangle size={11} style={{ color: "#FFB703" }} />}
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "13px", fontWeight: 700, color: pct < 80 ? "#FFB703" : "#219EBC" }}>
+          {pct < 80 && <AlertTriangle size={12} style={{ color: "#dc137b" }} />}
+          <span style={{ fontFamily: "'Raleway',sans-serif", fontSize: "13px", fontWeight: 800, color: pct < 80 ? "#dc137b" : "#0093dd" }}>
             {pct}%
           </span>
         </div>
@@ -61,7 +64,7 @@ export function AttendanceWidget() {
         {/* Day labels */}
         <div className="grid grid-cols-5 gap-1 mb-2">
           {days.map((d, i) => (
-            <div key={i} className="text-center" style={{ fontFamily: "'Poppins',sans-serif", fontSize: "10px", color: "rgba(142,202,230,0.4)" }}>
+            <div key={i} className="text-center" style={{ fontFamily: "'Raleway',sans-serif", fontSize: "10.5px", fontWeight: 700, color: "var(--subtext)" }}>
               {d}
             </div>
           ))}
@@ -74,14 +77,14 @@ export function AttendanceWidget() {
               {week.map((present, di) => (
                 <div
                   key={di}
-                  className="h-5 rounded"
+                  className="h-5 rounded-sm"
                   style={{
                     background: present
-                      ? "rgba(33,158,188,0.5)"
-                      : "rgba(255,183,3,0.3)",
+                      ? "rgba(0,147,221,0.35)"
+                      : "rgba(220,19,123,0.25)",
                     border: present
-                      ? "1px solid rgba(33,158,188,0.4)"
-                      : "1px solid rgba(255,183,3,0.4)",
+                      ? "1px solid rgba(0,147,221,0.4)"
+                      : "1px solid rgba(220,19,123,0.4)",
                   }}
                 />
               ))}
@@ -90,17 +93,17 @@ export function AttendanceWidget() {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-4 mt-3">
+        <div className="flex items-center gap-4 mt-3 pt-2 border-t" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ background: "rgba(33,158,188,0.5)", border: "1px solid rgba(33,158,188,0.4)" }} />
-            <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "10px", color: "rgba(142,202,230,0.5)" }}>Present</span>
+            <div className="w-2.5 h-2.5 rounded-sm" style={{ background: "rgba(0,147,221,0.6)", border: "1px solid rgba(0,147,221,0.5)" }} />
+            <span style={{ fontSize: "11px", color: "var(--subtext)", fontWeight: 500 }}>Present</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ background: "rgba(255,183,3,0.3)", border: "1px solid rgba(255,183,3,0.4)" }} />
-            <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "10px", color: "rgba(142,202,230,0.5)" }}>Absent</span>
+            <div className="w-2.5 h-2.5 rounded-sm" style={{ background: "rgba(220,19,123,0.6)", border: "1px solid rgba(220,19,123,0.5)" }} />
+            <span style={{ fontSize: "11px", color: "var(--subtext)", fontWeight: 500 }}>Absent</span>
           </div>
-          <div className="ml-auto" style={{ fontFamily: "'Poppins',sans-serif", fontSize: "10px", color: "rgba(142,202,230,0.5)" }}>
-            {present}/{total} days
+          <div className="ml-auto" style={{ fontSize: "11px", color: "var(--subtext)", fontWeight: 600 }}>
+            {present}/{total} school days
           </div>
         </div>
       </div>

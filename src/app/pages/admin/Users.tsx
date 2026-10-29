@@ -331,9 +331,9 @@ export default function UsersPage() {
 
   const roleColor = (r: string) => {
     const role = r.toLowerCase();
-    if (role === "teacher") return "#8ECAE6";
-    if (role === "student") return "#219EBC";
-    return "#FB8500";
+    if (role === "teacher") return "#293d7d";
+    if (role === "student") return "#0093dd";
+    return "#dc137b";
   };
 
   const roleCounts = {
@@ -346,8 +346,8 @@ export default function UsersPage() {
     <div>
       <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <div style={{ fontSize: 11, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Admin</div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>User Management</h1>
+          <div style={{ fontSize: 11, color: "#dc137b", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800, marginBottom: 4, fontFamily: "'Raleway', sans-serif" }}>User Management</div>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: "var(--heading)", margin: "0 0 4px", fontFamily: "'Raleway', sans-serif" }}>Institutional User Directory</h1>
           <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>{activeUsers.length} total users registered in system</p>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -359,9 +359,9 @@ export default function UsersPage() {
                 if (el) el.style.display = el.style.display === "none" ? "block" : "none";
               }}
               style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10,
-                background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.25)",
-                cursor: "pointer", fontSize: 12.5, fontWeight: 700, color: "#219EBC"
+                display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 6,
+                background: "rgba(41,61,125,0.06)", border: "1px solid rgba(41,61,125,0.2)",
+                cursor: "pointer", fontSize: 12.5, fontWeight: 700, color: "#293d7d", fontFamily: "'Raleway', sans-serif"
               }}
               title="Download CSV Template with sample data"
             >
@@ -369,9 +369,9 @@ export default function UsersPage() {
             </button>
             <div id="template-dropdown" style={{
               display: "none", position: "absolute", top: "100%", right: 0, marginTop: 8,
-              background: "var(--glass-bg)", border: "1px solid var(--glass-border)",
-              borderRadius: 10, padding: 6, width: 160, zIndex: 100,
-              boxShadow: "0 10px 25px rgba(0,0,0,0.2)", backdropFilter: "blur(20px)"
+              background: "var(--card)", border: "1px solid var(--border)",
+              borderRadius: 8, padding: 6, width: 160, zIndex: 100,
+              boxShadow: "0 10px 25px rgba(0,0,0,0.15)"
             }}>
               {(["student", "teacher"] as const).map(role => (
                 <button
@@ -384,9 +384,9 @@ export default function UsersPage() {
                   style={{
                     display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
                     background: "none", border: "none", borderRadius: 6, cursor: "pointer",
-                    fontSize: 12, color: "var(--heading)", textTransform: "capitalize"
+                    fontSize: 12, color: "var(--heading)", textTransform: "capitalize", fontFamily: "'Raleway', sans-serif", fontWeight: 700
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = "rgba(33,158,188,0.1)"}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(41,61,125,0.08)"}
                   onMouseLeave={e => e.currentTarget.style.background = "none"}
                 >
                   {role} Template
@@ -397,10 +397,10 @@ export default function UsersPage() {
           <button
             onClick={() => setShowCreateAdmin(true)}
             style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10,
-              background: "#219EBC", border: "none",
+              display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 6,
+              background: "#293d7d", border: "none",
               cursor: "pointer", fontSize: 12.5, fontWeight: 700, color: "#fff",
-              boxShadow: "0 4px 12px rgba(33,158,188,0.25)"
+              boxShadow: "0 2px 8px rgba(41,61,125,0.25)", fontFamily: "'Raleway', sans-serif"
             }}
           >
             <Plus size={14} /> New Admin
@@ -408,10 +408,10 @@ export default function UsersPage() {
           <button
             onClick={() => setShowImportModal(true)}
             style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10,
-              background: "linear-gradient(135deg, #FB8500, #E76F51)", border: "none",
+              display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 6,
+              background: "#dc137b", border: "none",
               cursor: "pointer", fontSize: 12.5, fontWeight: 700, color: "#fff",
-              boxShadow: "0 4px 12px rgba(251,133,0,0.25)"
+              boxShadow: "0 2px 8px rgba(220,19,123,0.25)", fontFamily: "'Raleway', sans-serif"
             }}
           >
             <Upload size={14} /> Import CSV/XLSX
@@ -422,12 +422,12 @@ export default function UsersPage() {
       {/* Stats Row */}
       <div className="responsive-grid-3">
         {[
-          { label: "Students", count: roleCounts.students, color: "#219EBC" },
-          { label: "Teachers", count: roleCounts.teachers, color: "#8ECAE6" },
-          { label: "Admins", count: roleCounts.admins, color: "#FB8500" },
+          { label: "Students", count: roleCounts.students, color: "#0093dd" },
+          { label: "Teachers", count: roleCounts.teachers, color: "#293d7d" },
+          { label: "Admins", count: roleCounts.admins, color: "#dc137b" },
         ].map(s => (
           <Glass key={s.label} style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: `${s.color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 6, background: `${s.color}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Users size={16} style={{ color: s.color }} />
             </div>
             <div>
@@ -439,8 +439,8 @@ export default function UsersPage() {
       </div>
 
       {savedMessage && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 9, background: "rgba(42,157,143,0.1)", border: "1px solid rgba(42,157,143,0.25)", marginBottom: 16 }}>
-          <CheckCircle size={14} style={{ color: "#2a9d8f" }} /><span style={{ fontSize: 12.5, color: "#2a9d8f", fontWeight: 600 }}>{savedMessage}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 9, background: "rgba(41,61,125,0.08)", border: "1px solid rgba(41,61,125,0.2)", marginBottom: 16 }}>
+          <CheckCircle size={14} style={{ color: "#293d7d" }} /><span style={{ fontSize: 12.5, color: "#293d7d", fontWeight: 600 }}>{savedMessage}</span>
         </div>
       )}
 
@@ -480,7 +480,7 @@ export default function UsersPage() {
             {loading ? (
               <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>Loading users...</div>
             ) : error ? (
-              <div style={{ padding: 40, textAlign: "center", color: "#fb8500" }}>⚠ {error}</div>
+              <div style={{ padding: 40, textAlign: "center", color: "#dc137b" }}>⚠ {error}</div>
             ) : filtered.length === 0 ? (
               <div style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>No users found matching search criteria.</div>
             ) : (
@@ -511,7 +511,7 @@ export default function UsersPage() {
                           {(() => {
                             const sClass = classes.find(c => c.id === u.class_id);
                             return (
-                              <div style={{ fontSize: 10, color: u.class_id ? "#219EBC" : "#e76f51", fontWeight: 700, marginTop: 2 }}>
+                              <div style={{ fontSize: 10, color: u.class_id ? "#0093dd" : "#dc137b", fontWeight: 700, marginTop: 2 }}>
                                 {sClass ? `${sClass.name} ${sClass.department ? `(${sClass.department})` : ''}` : "Unassigned Class"}
                               </div>
                             );
@@ -520,55 +520,55 @@ export default function UsersPage() {
                       ) : u.role.toLowerCase() === "teacher" ? (
                         <div>
                           {u.is_hod == 1 && (
-                            <span style={{ fontSize: 9.5, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(131,56,236,0.15)", color: "#8338EC", border: "1px solid rgba(131,56,236,0.3)" }}>
+                            <span style={{ fontSize: 9.5, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(220,19,123,0.1)", color: "#dc137b", border: "1px solid rgba(220,19,123,0.25)" }}>
                               HOD: {u.hod_department || 'General'}
                             </span>
                           )}
                           {!u.is_hod && <span style={{ color: "var(--subtext)" }}>Subject Teacher</span>}
                         </div>
                       ) : u.role.toLowerCase() === "admin" ? (
-                        <span style={{ fontSize: 10.5, fontWeight: 600, color: "#FB8500" }}>System Administrator</span>
+                        <span style={{ fontSize: 10.5, fontWeight: 600, color: "#dc137b" }}>System Administrator</span>
                       ) : "—"}
                     </span>
                     <div style={{ display: "flex", justifyContent: "center" }}>
-                      <button onClick={() => toggleStatus(u.id)} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 6, border: "none", background: isActive ? "rgba(42,157,143,0.12)" : "rgba(231,111,81,0.1)", cursor: "pointer" }}>
-                        <span style={{ fontSize: 10.5, fontWeight: 600, color: isActive ? "#2a9d8f" : "#e76f51" }}>{isActive ? "active" : "inactive"}</span>
+                      <button onClick={() => toggleStatus(u.id)} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 6, border: "none", background: isActive ? "rgba(41,61,125,0.08)" : "rgba(220,19,123,0.08)", cursor: "pointer" }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 600, color: isActive ? "#293d7d" : "#dc137b" }}>{isActive ? "active" : "inactive"}</span>
                       </button>
                     </div>
                     <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
                       {u.role.toLowerCase() === "admin" && (
                         <>
                           <button onClick={() => handleOpenEditAdmin(u)}
-                            style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(33,158,188,0.08)", border: "1px solid rgba(33,158,188,0.2)", cursor: "pointer" }}
+                            style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(41,61,125,0.08)", border: "1px solid rgba(41,61,125,0.2)", cursor: "pointer" }}
                             title="Edit Admin Details">
-                            <Edit2 size={12} style={{ color: "#219EBC" }} />
+                            <Edit2 size={12} style={{ color: "#293d7d" }} />
                           </button>
                           <button onClick={() => { setResettingUser(u); setResetPasswordVal(""); }}
-                            style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(251,133,0,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
+                            style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(220,19,123,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
                             title="Reset Password">
-                            <Key size={12} style={{ color: "#FB8500" }} />
+                            <Key size={12} style={{ color: "#dc137b" }} />
                           </button>
                         </>
                       )}
                       {u.role.toLowerCase() === "teacher" && (
                         <>
                           <button onClick={() => handleOpenAppointHod(u)}
-                            style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(131,56,236,0.08)", border: "1px solid rgba(131,56,236,0.25)", cursor: "pointer" }}
+                            style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.25)", cursor: "pointer" }}
                             title="Appoint / Manage HOD Status">
-                            <Award size={12} style={{ color: "#8338EC" }} />
+                            <Award size={12} style={{ color: "#dc137b" }} />
                           </button>
                           <button onClick={() => { setResettingUser(u); setResetPasswordVal(""); }}
-                            style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(251,133,0,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
+                            style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(220,19,123,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
                             title="Reset Password">
-                            <Key size={12} style={{ color: "#FB8500" }} />
+                            <Key size={12} style={{ color: "#dc137b" }} />
                           </button>
                         </>
                       )}
                       {u.role.toLowerCase() === "student" && (
                         <button onClick={() => { setAssigningClassUser(u); setSelectedClassId(String(u.class_id || "")); }}
-                          style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(251,133,0,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
+                          style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(220,19,123,0.08)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer" }}
                           title="Assign Class">
-                          <BookOpen size={12} style={{ color: "#FB8500" }} />
+                          <BookOpen size={12} style={{ color: "#dc137b" }} />
                         </button>
                       )}
                       <button 
@@ -576,13 +576,13 @@ export default function UsersPage() {
                         disabled={currentUser?.id === u.id}
                         style={{ 
                           width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", 
-                          background: "rgba(231,111,81,0.08)", border: "1px solid rgba(231,111,81,0.2)", 
+                          background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.2)", 
                           cursor: currentUser?.id === u.id ? "not-allowed" : "pointer",
                           opacity: currentUser?.id === u.id ? 0.35 : 1
                         }}
                         title={currentUser?.id === u.id ? "Cannot delete your own admin account" : "Delete User"}
                       >
-                        <Trash2 size={12} style={{ color: "#e76f51" }} />
+                        <Trash2 size={12} style={{ color: "#dc137b" }} />
                       </button>
                     </div>
                   </div>
@@ -622,24 +622,24 @@ export default function UsersPage() {
                   {u.role.toLowerCase() === "student" && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, background: "var(--glass-bg)", padding: "6px 10px", borderRadius: 6 }}>
                       <span>{u.admission_number ? <strong>Adm: {u.admission_number}</strong> : <span style={{ color: "var(--subtext)" }}>No Adm No</span>}</span>
-                      <span style={{ color: u.class_id ? "#219EBC" : "#e76f51", fontWeight: 600 }}>{sClass ? sClass.name : "No Class"}</span>
+                      <span style={{ color: u.class_id ? "#0093dd" : "#dc137b", fontWeight: 600 }}>{sClass ? sClass.name : "No Class"}</span>
                     </div>
                   )}
 
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 4, borderTop: "1px solid var(--glass-border)" }}>
-                    <button onClick={() => toggleStatus(u.id)} style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: isActive ? "rgba(42,157,143,0.12)" : "rgba(231,111,81,0.1)", cursor: "pointer", fontSize: 11, fontWeight: 600, color: isActive ? "#2a9d8f" : "#e76f51" }}>
+                    <button onClick={() => toggleStatus(u.id)} style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: isActive ? "rgba(41,61,125,0.08)" : "rgba(220,19,123,0.08)", cursor: "pointer", fontSize: 11, fontWeight: 600, color: isActive ? "#293d7d" : "#dc137b" }}>
                       {isActive ? "✔ Active" : "✖ Inactive"}
                     </button>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {u.role.toLowerCase() === "admin" && (
                         <>
                           <button onClick={() => handleOpenEditAdmin(u)}
-                            style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                            style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(41,61,125,0.08)", border: "1px solid rgba(41,61,125,0.25)", color: "#293d7d", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
                             title="Edit Admin Details">
                             <Edit2 size={11} /> Edit
                           </button>
                           <button onClick={() => { setResettingUser(u); setResetPasswordVal(""); }}
-                            style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(251,133,0,0.1)", border: "1px solid rgba(251,133,0,0.3)", color: "#FB8500", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                            style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.25)", color: "#dc137b", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
                             title="Reset Password">
                             <Key size={11} /> Pass
                           </button>
@@ -648,26 +648,26 @@ export default function UsersPage() {
                       {u.role.toLowerCase() === "teacher" && (
                         <>
                           <button onClick={() => handleOpenAppointHod(u)}
-                            style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(131,56,236,0.1)", border: "1px solid rgba(131,56,236,0.3)", color: "#8338EC", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                            style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.25)", color: "#dc137b", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
                             title="Appoint / Manage HOD Status">
                             <Award size={11} /> HOD
                           </button>
                           <button onClick={() => { setResettingUser(u); setResetPasswordVal(""); }}
-                            style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(251,133,0,0.1)", border: "1px solid rgba(251,133,0,0.3)", color: "#FB8500", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                            style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.25)", color: "#dc137b", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
                             title="Reset Password">
                             <Key size={11} /> Pass
                           </button>
                         </>
                       )}
                       {u.role.toLowerCase() === "student" && (
-                        <button onClick={() => { setAssigningClassUser(u); setSelectedClassId(String(u.class_id || "")); }} style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(251,133,0,0.1)", border: "1px solid rgba(251,133,0,0.3)", color: "#FB8500", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                        <button onClick={() => { setAssigningClassUser(u); setSelectedClassId(String(u.class_id || "")); }} style={{ padding: "5px 9px", borderRadius: 6, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.25)", color: "#dc137b", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
                           <BookOpen size={11} /> Class
                         </button>
                       )}
                       <button 
                         onClick={() => deleteUser(u.id)} 
                         disabled={currentUser?.id === u.id}
-                        style={{ padding: "5px 8px", borderRadius: 6, background: "rgba(231,111,81,0.1)", border: "1px solid rgba(231,111,81,0.3)", color: "#e76f51", cursor: currentUser?.id === u.id ? "not-allowed" : "pointer", opacity: currentUser?.id === u.id ? 0.35 : 1 }}
+                        style={{ padding: "5px 8px", borderRadius: 6, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.25)", color: "#dc137b", cursor: currentUser?.id === u.id ? "not-allowed" : "pointer", opacity: currentUser?.id === u.id ? 0.35 : 1 }}
                         title={currentUser?.id === u.id ? "Cannot delete your own admin account" : "Delete User"}
                       >
                         <Trash2 size={12} />
@@ -711,7 +711,7 @@ export default function UsersPage() {
                 </select>
               </div>
               <button type="submit" disabled={assignClassLoading}
-                style={{ width: "100%", padding: "11px", background: "#FB8500", color: "white", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", marginTop: 8 }}>
+                style={{ width: "100%", padding: "11px", background: "#dc137b", color: "white", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", marginTop: 8 }}>
                 {assignClassLoading ? "Assigning Class..." : "Save Class Assignment"}
               </button>
             </form>
@@ -727,8 +727,8 @@ export default function UsersPage() {
               <X size={18} />
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(251,133,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Upload size={18} style={{ color: "#FB8500" }} />
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(220,19,123,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Upload size={18} style={{ color: "#dc137b" }} />
               </div>
               <div>
                 <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)", margin: 0 }}>Bulk Import Users</h3>
@@ -737,12 +737,12 @@ export default function UsersPage() {
             </div>
 
             {/* Template download hint */}
-            <div style={{ padding: "12px 14px", borderRadius: 9, background: "rgba(33,158,188,0.07)", border: "1px solid rgba(33,158,188,0.2)", marginBottom: 16, fontSize: 12.5, color: "var(--subtext)", lineHeight: 1.55 }}>
-              📥 <strong>Template structure matters!</strong> We have specific templates for each role because fields differ (e.g. teachers have 'subject', students have 'class_level'). 
+            <div style={{ padding: "12px 14px", borderRadius: 9, background: "rgba(41,61,125,0.06)", border: "1px solid rgba(41,61,125,0.2)", marginBottom: 16, fontSize: 12.5, color: "var(--subtext)", lineHeight: 1.55 }}>
+              <strong>Template structure matters!</strong> We have specific templates for each role because fields differ (e.g. teachers have 'subject', students have 'class_level'). 
               <br/><br/>
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                 {(["student", "teacher"] as const).map(role => (
-                  <button key={role} onClick={() => downloadCsvTemplate(role)} style={{ background: "rgba(33,158,188,0.15)", border: "1px solid rgba(33,158,188,0.3)", borderRadius: 6, color: "#219EBC", fontWeight: 700, cursor: "pointer", fontSize: 11, padding: "4px 10px", textTransform: "capitalize" }}>
+                  <button key={role} onClick={() => downloadCsvTemplate(role)} style={{ background: "rgba(41,61,125,0.08)", border: "1px solid rgba(41,61,125,0.25)", borderRadius: 6, color: "#293d7d", fontWeight: 700, cursor: "pointer", fontSize: 11, padding: "4px 10px", textTransform: "capitalize" }}>
                     {role} CSV
                   </button>
                 ))}
@@ -760,7 +760,7 @@ export default function UsersPage() {
               <div style={{ marginTop: 8, fontSize: 11, color: "var(--subtext)" }}>
                 Role must be one of: <strong>student</strong>, <strong>teacher</strong>. 
                 <br/><br/>
-                <span style={{ color: "#2a9d8f", fontWeight: 600 }}>Emails & Passwords are AUTO-GENERATED.</span> Do not include them in the CSV. The backend creates emails as <em>firstname.lastname@dlhs.edu.ng</em> and passwords as <em>firstname + 4 digits</em>.
+                <span style={{ color: "#293d7d", fontWeight: 600 }}>Emails & Passwords are AUTO-GENERATED.</span> Do not include them in the CSV. The backend creates emails as <em>firstname.lastname@dlhs.edu.ng</em> and passwords as <em>firstname + 4 digits</em>.
               </div>
             </div>
 
@@ -769,13 +769,13 @@ export default function UsersPage() {
               <div
                 onClick={() => fileInputRef.current?.click()}
                 style={{
-                  border: `2px dashed ${importFile ? "rgba(42,157,143,0.5)" : "var(--glass-border)"}`,
+                  border: `2px dashed ${importFile ? "rgba(41,61,125,0.3)" : "var(--glass-border)"}`,
                   borderRadius: 10, padding: "20px 16px", textAlign: "center", cursor: "pointer",
-                  background: importFile ? "rgba(42,157,143,0.05)" : "var(--muted)", transition: "all 0.2s"
+                  background: importFile ? "rgba(41,61,125,0.04)" : "var(--muted)", transition: "all 0.2s"
                 }}
               >
-                <Upload size={24} style={{ color: importFile ? "#2a9d8f" : "var(--subtext)", marginBottom: 6 }} />
-                <div style={{ fontSize: 13, fontWeight: 600, color: importFile ? "#2a9d8f" : "var(--heading)" }}>
+                <Upload size={24} style={{ color: importFile ? "#293d7d" : "var(--subtext)", marginBottom: 6 }} />
+                <div style={{ fontSize: 13, fontWeight: 600, color: importFile ? "#293d7d" : "var(--heading)" }}>
                   {importFile ? importFile.name : "Click to select file or drag and drop"}
                 </div>
                 <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 3 }}>CSV or XLSX files supported. Max 5MB.</div>
@@ -792,20 +792,20 @@ export default function UsersPage() {
               {importResult && (
                 <div style={{
                   borderRadius: 10, padding: "12px 14px",
-                  background: importResult.created > 0 ? "rgba(42,157,143,0.08)" : "rgba(231,111,81,0.08)",
-                  border: `1px solid ${importResult.created > 0 ? "rgba(42,157,143,0.25)" : "rgba(231,111,81,0.25)"}`,
+                  background: importResult.created > 0 ? "rgba(41,61,125,0.06)" : "rgba(220,19,123,0.08)",
+                  border: `1px solid ${importResult.created > 0 ? "rgba(41,61,125,0.2)" : "rgba(220,19,123,0.25)"}`,
                 }}>
                   {importResult.created > 0 && (
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: importResult.errors.length > 0 ? 8 : 0 }}>
-                      <CheckCircle size={14} style={{ color: "#2a9d8f" }} />
-                      <span style={{ fontSize: 12.5, color: "#2a9d8f", fontWeight: 600 }}>{importResult.created} user(s) imported successfully!</span>
+                      <CheckCircle size={14} style={{ color: "#293d7d" }} />
+                      <span style={{ fontSize: 12.5, color: "#293d7d", fontWeight: 600 }}>{importResult.created} user(s) imported successfully!</span>
                     </div>
                   )}
                   {importResult.errors.length > 0 && (
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#e76f51", marginBottom: 4 }}>⚠ Errors ({importResult.errors.length}):</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#dc137b", marginBottom: 4 }}>⚠ Errors ({importResult.errors.length}):</div>
                       {importResult.errors.slice(0, 5).map((e, i) => (
-                        <div key={i} style={{ fontSize: 11.5, color: "#e76f51", lineHeight: 1.4 }}>• {e}</div>
+                        <div key={i} style={{ fontSize: 11.5, color: "#dc137b", lineHeight: 1.4 }}>• {e}</div>
                       ))}
                       {importResult.errors.length > 5 && <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 4 }}>...and {importResult.errors.length - 5} more</div>}
                     </div>
@@ -819,10 +819,10 @@ export default function UsersPage() {
                 </button>
                 {!importResult?.created && (
                   <button type="submit" disabled={!importFile || importLoading} style={{
-                    flex: 2, padding: "10px", borderRadius: 9, background: importFile ? "linear-gradient(135deg, #FB8500, #E76F51)" : "var(--muted)",
+                    flex: 2, padding: "10px", borderRadius: 9, background: importFile ? "#dc137b" : "var(--muted)",
                     border: "none", cursor: importFile ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700,
                     color: importFile ? "#fff" : "var(--subtext)", transition: "all 0.2s",
-                    boxShadow: importFile ? "0 4px 12px rgba(251,133,0,0.25)" : "none"
+                    boxShadow: importFile ? "0 4px 12px rgba(220,19,123,0.25)" : "none"
                   }}>
                     {importLoading ? "Importing..." : "Import Users"}
                   </button>
@@ -867,8 +867,8 @@ export default function UsersPage() {
                   style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
               </div>
               <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                <button type="button" onClick={() => setShowCreateAdmin(false)} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" disabled={adminActionLoading} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "#219EBC", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700 }}>
+                <button type="button" onClick={() => setShowCreateAdmin(false)} style={{ flex: 1, padding: "10px", borderRadius: 6, background: "var(--muted)", border: "1px solid var(--border)", color: "var(--heading)", cursor: "pointer", fontFamily: "'Raleway', sans-serif", fontWeight: 700 }}>Cancel</button>
+                <button type="submit" disabled={adminActionLoading} style={{ flex: 1, padding: "10px", borderRadius: 6, background: "#293d7d", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700, fontFamily: "'Raleway', sans-serif" }}>
                   {adminActionLoading ? "Creating..." : "Create Admin"}
                 </button>
               </div>
@@ -912,8 +912,8 @@ export default function UsersPage() {
                 </select>
               </div>
               <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                <button type="button" onClick={() => setEditingAdmin(null)} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" disabled={adminActionLoading} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "#219EBC", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700 }}>
+                <button type="button" onClick={() => setEditingAdmin(null)} style={{ flex: 1, padding: "10px", borderRadius: 6, background: "var(--muted)", border: "1px solid var(--border)", color: "var(--heading)", cursor: "pointer", fontFamily: "'Raleway', sans-serif", fontWeight: 700 }}>Cancel</button>
+                <button type="submit" disabled={adminActionLoading} style={{ flex: 1, padding: "10px", borderRadius: 6, background: "#293d7d", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700, fontFamily: "'Raleway', sans-serif" }}>
                   {adminActionLoading ? "Saving..." : "Save Changes"}
                 </button>
               </div>
@@ -940,8 +940,8 @@ export default function UsersPage() {
                   style={{ width: "100%", padding: "10px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box" }} />
               </div>
               <div style={{ display: "flex", gap: 10 }}>
-                <button type="button" onClick={() => setResettingUser(null)} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" disabled={adminActionLoading || !resetPasswordVal.trim()} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "#FB8500", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700 }}>
+                <button type="button" onClick={() => setResettingUser(null)} style={{ flex: 1, padding: "10px", borderRadius: 6, background: "var(--muted)", border: "1px solid var(--border)", color: "var(--heading)", cursor: "pointer", fontFamily: "'Raleway', sans-serif", fontWeight: 700 }}>Cancel</button>
+                <button type="submit" disabled={adminActionLoading || !resetPasswordVal.trim()} style={{ flex: 1, padding: "10px", borderRadius: 6, background: "#dc137b", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700, fontFamily: "'Raleway', sans-serif" }}>
                   {adminActionLoading ? "Updating..." : "Reset Password"}
                 </button>
               </div>
@@ -969,7 +969,7 @@ export default function UsersPage() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(131,56,236,0.06)", border: "1px solid rgba(131,56,236,0.2)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(220,19,123,0.06)", border: "1px solid rgba(220,19,123,0.2)" }}>
                 <input
                   type="checkbox"
                   id="hod-checkbox"
@@ -1000,7 +1000,7 @@ export default function UsersPage() {
 
               <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
                 <button type="button" onClick={() => setAppointingHodUser(null)} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" disabled={adminActionLoading} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "#8338EC", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700 }}>
+                <button type="submit" disabled={adminActionLoading} style={{ flex: 1, padding: "10px", borderRadius: 8, background: "#dc137b", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700 }}>
                   {adminActionLoading ? "Saving..." : "Save HOD Role"}
                 </button>
               </div>

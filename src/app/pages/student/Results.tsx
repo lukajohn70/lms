@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   TrendingUp, Award, Star, Printer, CheckCircle2,
-  BarChart2, ClipboardList, Layers
+  BarChart2, ClipboardList, Layers, GraduationCap
 } from "lucide-react";
 import { apiClient, API_BASE_URL } from "../../lib/apiClient";
 
@@ -86,6 +86,13 @@ export default function Results() {
     window.open(url, "_blank");
   };
 
+  const handlePrintTranscript = () => {
+    const token = localStorage.getItem("token");
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
+    const url = `${apiBase}/index.php?path=/reports/transcript&token=${encodeURIComponent(token || "")}`;
+    window.open(url, "_blank");
+  };
+
   const ViewBtn = ({ type, label, icon }: { type: ViewType; label: string; icon: React.ReactNode }) => (
     <button
       onClick={() => setViewType(type)}
@@ -110,8 +117,8 @@ export default function Results() {
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>Results &amp; Transcripts</h1>
           <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>
-            {viewType === "mid_term" ? <span style={{ color: "#FFB703", fontWeight: 700 }}>⚡ Mid-Term Assessment Results</span>
-              : viewType === "cumulative" ? <span style={{ color: "#FB8500", fontWeight: 700 }}>📊 Cumulative — {term === "2nd" ? "1st & 2nd Term" : "All 3 Terms"} Average</span>
+            {viewType === "mid_term" ? <span style={{ color: "#293d7d", fontWeight: 700 }}>Mid-Term Assessment Progress</span>
+              : viewType === "cumulative" ? <span style={{ color: "#dc137b", fontWeight: 700 }}>Cumulative — {term === "2nd" ? "1st & 2nd Term" : "All 3 Terms"} Aggregate</span>
               : "End-of-Term academic results & class position"}
           </p>
         </div>
@@ -120,7 +127,7 @@ export default function Results() {
           {/* Term pills */}
           <div style={{ display: "flex", background: "var(--muted)", borderRadius: 8, padding: 3, border: "1px solid var(--glass-border)" }}>
             {["1st", "2nd", "3rd"].map(t => (
-              <button key={t} onClick={() => setTerm(t)} style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: term === t ? "#219EBC" : "transparent", color: term === t ? "#fff" : "var(--subtext)", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>{t} Term</button>
+              <button key={t} onClick={() => setTerm(t)} style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: term === t ? "#293d7d" : "transparent", color: term === t ? "#fff" : "var(--subtext)", fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>{t} Term</button>
             ))}
           </div>
 
@@ -130,11 +137,14 @@ export default function Results() {
           <ViewBtn type="cumulative" label="Cumulative" icon={<Layers size={12} />} />
 
           {/* Print */}
-          <button onClick={handlePrintMidterm} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, background: "linear-gradient(135deg,#FFB703,#FB8500)", color: "#011d2f", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, boxShadow: "0 4px 14px rgba(255,183,3,0.3)" }}>
+          <button onClick={handlePrintMidterm} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, background: "#dc137b", color: "#ffffff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, boxShadow: "0 3px 12px rgba(220,19,123,0.25)" }}>
             <Printer size={13} /> Mid-Term Result
           </button>
           <button onClick={handlePrint} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, background: "linear-gradient(135deg,#219EBC,#023047)", color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, boxShadow: "0 4px 14px rgba(33,158,188,0.3)" }}>
             <Printer size={13} /> Print Report Card
+          </button>
+          <button onClick={handlePrintTranscript} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, background: "linear-gradient(135deg,#8B5CF6,#6D28D9)", color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, boxShadow: "0 4px 14px rgba(139,92,246,0.3)" }}>
+            <GraduationCap size={13} /> Full Transcript
           </button>
         </div>
       </div>

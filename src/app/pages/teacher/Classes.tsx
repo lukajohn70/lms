@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Users, TrendingUp, ChevronRight, ArrowLeft, ClipboardList, CheckSquare, Star, AlertTriangle } from "lucide-react";
+import { Users, TrendingUp, ChevronRight, ArrowLeft, ClipboardList, CheckSquare, Star, AlertTriangle, Calendar } from "lucide-react";
+import { useApp } from "../../contexts/AppContext";
 import { apiClient } from "../../lib/apiClient";
 
 const Glass = ({ children, style, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -14,6 +15,9 @@ const gradeColor = (g: string) =>
 
 export default function Classes() {
   const navigate = useNavigate();
+  const { settings } = useApp();
+
+  const [selectedSession, setSelectedSession] = useState(settings?.academic_session || "2026/2027");
 
   // ── Course list state ──────────────────────────────────────────────────
   const [courses, setCourses] = useState<any[]>([]);
@@ -24,19 +28,22 @@ export default function Classes() {
   const [roster, setRoster] = useState<any[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  // Load course list on mount
+  // Load course list whenever selectedSession changes
   useEffect(() => {
-    apiClient.get("/teacher/classes")
+    setLoadingCourses(true);
+    setSelected(null);
+    setRoster([]);
+    apiClient.get(`/teacher/classes?session=${encodeURIComponent(selectedSession)}`)
       .then((res: any) => setCourses(res.courses || []))
       .catch(err => console.error(err))
       .finally(() => setLoadingCourses(false));
-  }, []);
+  }, [selectedSession]);
 
   // Load detail when a course is selected
   const openCourse = (course: any) => {
     setSelected(course);
     setLoadingDetail(true);
-    apiClient.get(`/teacher/classes/detail?course_id=${course.id}`)
+    apiClient.get(`/teacher/classes/detail?course_id=${course.id}&class_id=${course.class_id}&session=${encodeURIComponent(selectedSession)}`)
       .then((res: any) => setRoster(res.roster || []))
       .catch(err => console.error(err))
       .finally(() => setLoadingDetail(false));
@@ -81,19 +88,19 @@ export default function Classes() {
           {/* Quick action buttons */}
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             <button
-              onClick={() => navigate(`/teacher/grades?course_id=${selected.id}`)}
+              onClick={() => navigate(`/teacher/grades?course_id=${selected.id}&class_id=${selected.class_id}&session=${encodeURIComponent(selectedSession)}`)}
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, background: "rgba(251,133,0,0.1)", border: "1px solid rgba(251,133,0,0.3)", color: "#FB8500", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
             >
               <TrendingUp size={13} /> Enter Grades
             </button>
             <button
-              onClick={() => navigate(`/teacher/attendance?course_id=${selected.id}`)}
+              onClick={() => navigate(`/teacher/attendance?course_id=${selected.id}&class_id=${selected.class_id}&session=${encodeURIComponent(selectedSession)}`)}
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
             >
               <CheckSquare size={13} /> Take Attendance
             </button>
             <button
-              onClick={() => navigate(`/teacher/assessments?course_id=${selected.id}`)}
+              onClick={() => navigate(`/teacher/assessments?course_id=${selected.id}&class_id=${selected.class_id}&session=${encodeURIComponent(selectedSession)}`)}
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, background: "rgba(255,183,3,0.1)", border: "1px solid rgba(255,183,3,0.3)", color: "#FFB703", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
             >
               <Star size={13} /> Assessments
@@ -200,19 +207,34 @@ export default function Classes() {
 
   return (
     <div>
-      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>My Classes</h1>
           <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>
-            {loadingCourses ? "Loading..." : `${courses.length} course${courses.length !== 1 ? "s" : ""} assigned`}
+            {loadingCourses ? "Loading..." : `${courses.length} class arm${courses.length !== 1 ? "s" : ""} assigned for ${selectedSession}`}
           </p>
         </div>
-        <button
-          onClick={() => navigate("/teacher/grades")}
-          style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.25)", color: "#219EBC", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
-        >
-          <ClipboardList size={13} /> Enter Grades
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Academic Session Selector */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--muted)", border: "1px solid var(--glass-border)", borderRadius: 8, padding: "5px 10px" }}>
+            <Calendar size={13} style={{ color: "#219EBC" }} />
+            <select
+              value={selectedSession}
+              onChange={e => setSelectedSession(e.target.value)}
+              style={{ background: "transparent", border: "none", color: "var(--heading)", fontSize: 12, fontWeight: 600, outline: "none", cursor: "pointer" }}
+            >
+              {["2026/2027", "2025/2026", "2024/2025", "2023/2024"].map(sess => (
+                <option key={sess} value={sess} style={{ background: "var(--popover)", color: "var(--heading)" }}>{sess}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={() => navigate(`/teacher/grades?session=${encodeURIComponent(selectedSession)}`)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.25)", color: "#219EBC", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+          >
+            <ClipboardList size={13} /> Enter Grades
+          </button>
+        </div>
       </div>
 
       {loadingCourses ? (

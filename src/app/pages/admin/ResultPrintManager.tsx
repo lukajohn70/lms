@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { 
   Printer, Search, RefreshCw, AlertCircle, FileText, CheckCircle2, 
-  Users, Award, Sparkles, Layers 
+  Users, Award, Layers 
 } from "lucide-react";
 import { apiClient, API_BASE_URL } from "../../lib/apiClient";
 
@@ -22,8 +22,8 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
   const [availableClasses, setAvailableClasses] = useState<any[]>([]);
   const [cohortOptions, setCohortOptions] = useState<string[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
-  const [selectedTerm, setSelectedTerm] = useState<string>("3rd Term");
-  const [selectedSession, setSelectedSession] = useState<string>("2023/2024");
+  const [selectedTerm, setSelectedTerm] = useState<string>("2nd Term");
+  const [selectedSession, setSelectedSession] = useState<string>("2026/2027");
   const [cumulative, setCumulative] = useState<"1" | "0">("1");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -122,19 +122,19 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       {/* Top Banner / Description */}
-      <Glass style={{ padding: "18px 24px", background: isEndOfTerm ? "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(79,70,229,0.03) 100%)" : "linear-gradient(135deg, rgba(217,119,6,0.08) 0%, rgba(180,83,9,0.03) 100%)" }}>
+      <Glass style={{ padding: "18px 24px", background: "var(--card)", border: "1px solid var(--border)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{
-              width: 46, height: 46, borderRadius: 12,
-              background: isEndOfTerm ? "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)" : "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-              display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
-              boxShadow: isEndOfTerm ? "0 4px 14px rgba(99,102,241,0.35)" : "0 4px 14px rgba(217,119,6,0.35)"
+              width: 44, height: 44, borderRadius: 8,
+              background: isEndOfTerm ? "rgba(220,19,123,0.1)" : "rgba(41,61,125,0.08)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: isEndOfTerm ? "#dc137b" : "#293d7d"
             }}>
               <FileText size={22} />
             </div>
             <div>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--heading)", margin: "0 0 3px" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 900, color: "var(--heading)", margin: "0 0 3px", fontFamily: "'Raleway', sans-serif" }}>
                 {isEndOfTerm ? "End-of-Term Report Cards Printing" : "Mid-Term Results Printing"}
               </h2>
               <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>
@@ -154,15 +154,16 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
               alignItems: "center",
               gap: 8,
               padding: "10px 20px",
-              borderRadius: 10,
+              borderRadius: 6,
               border: "none",
-              background: isEndOfTerm ? "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)" : "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+              background: isEndOfTerm ? "#dc137b" : "#293d7d",
               color: "#fff",
-              fontSize: 13.5,
+              fontSize: 13,
               fontWeight: 700,
               cursor: loading || students.length === 0 ? "not-allowed" : "pointer",
               opacity: loading || students.length === 0 ? 0.6 : 1,
-              boxShadow: isEndOfTerm ? "0 4px 16px rgba(99,102,241,0.35)" : "0 4px 16px rgba(217,119,6,0.35)",
+              boxShadow: isEndOfTerm ? "0 2px 8px rgba(220,19,123,0.25)" : "0 2px 8px rgba(41,61,125,0.25)",
+              fontFamily: "'Raleway', sans-serif",
               transition: "transform 0.15s, box-shadow 0.15s"
             }}
           >
@@ -264,10 +265,10 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
                   cursor: "pointer"
                 }}
               >
-                <option value="2023/2024">2023/2024</option>
-                <option value="2024/2025">2024/2025</option>
+                <option value="2026/2027">2026/2027 (Current)</option>
                 <option value="2025/2026">2025/2026</option>
-                <option value="2026/2027">2026/2027</option>
+                <option value="2024/2025">2024/2025</option>
+                <option value="2023/2024">2023/2024</option>
               </select>
             </div>
 
@@ -332,7 +333,7 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
             gap: 14
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Layers size={16} style={{ color: "#6366f1" }} />
+              <Layers size={16} style={{ color: "#293d7d" }} />
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)" }}>
                   Cumulative Breakdown Setting
@@ -361,13 +362,13 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
                   padding: "6px 14px",
                   borderRadius: 7,
                   border: "none",
-                  background: cumulative === "1" ? "#6366f1" : "transparent",
+                  background: cumulative === "1" ? "#293d7d" : "transparent",
                   color: cumulative === "1" ? "#fff" : "var(--subtext)",
                   fontSize: 12,
                   fontWeight: 700,
                   cursor: "pointer",
                   transition: "all 0.15s",
-                  boxShadow: cumulative === "1" ? "0 2px 6px rgba(99,102,241,0.3)" : "none"
+                  boxShadow: cumulative === "1" ? "0 2px 6px rgba(41,61,125,0.25)" : "none"
                 }}
               >
                 {cumulative === "1" && <CheckCircle2 size={13} />}
@@ -384,13 +385,13 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
                   padding: "6px 14px",
                   borderRadius: 7,
                   border: "none",
-                  background: cumulative === "0" ? "#0ea5e9" : "transparent",
+                  background: cumulative === "0" ? "#dc137b" : "transparent",
                   color: cumulative === "0" ? "#fff" : "var(--subtext)",
                   fontSize: 12,
                   fontWeight: 700,
                   cursor: "pointer",
                   transition: "all 0.15s",
-                  boxShadow: cumulative === "0" ? "0 2px 6px rgba(14,165,233,0.3)" : "none"
+                  boxShadow: cumulative === "0" ? "0 2px 6px rgba(220,19,123,0.25)" : "none"
                 }}
               >
                 {cumulative === "0" && <CheckCircle2 size={13} />}
@@ -412,7 +413,7 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
       <Glass style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(0,0,0,0.02)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Users size={16} style={{ color: isEndOfTerm ? "#6366f1" : "#d97706" }} />
+            <Users size={16} style={{ color: "#293d7d" }} />
             <span style={{ fontSize: 13.5, fontWeight: 700, color: "var(--heading)" }}>
               Student Roster — {schoolInfo.class_title || "Selected Arm"}
             </span>
@@ -424,7 +425,7 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
           <div style={{ fontSize: 11.5, color: "var(--subtext)" }}>
             Session: <strong>{selectedSession}</strong> • Term: <strong>{selectedTerm}</strong>
             {isEndOfTerm && (
-              <span style={{ marginLeft: 8, padding: "2px 8px", borderRadius: 4, background: cumulative === "1" ? "rgba(99,102,241,0.12)" : "rgba(14,165,233,0.12)", color: cumulative === "1" ? "#6366f1" : "#0ea5e9", fontWeight: 700 }}>
+              <span style={{ marginLeft: 8, padding: "2px 8px", borderRadius: 4, background: cumulative === "1" ? "rgba(41,61,125,0.08)" : "rgba(220,19,123,0.08)", color: cumulative === "1" ? "#293d7d" : "#dc137b", fontWeight: 700 }}>
                 {cumulative === "1" ? "With Cumulative" : "Without Cumulative"}
               </span>
             )}
@@ -460,7 +461,7 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
                 {filteredStudents.map((stu: any, idx: number) => {
                   const avg = stu.average !== null && stu.average !== undefined ? Number(stu.average).toFixed(2) : "—";
                   const numAvg = parseFloat(avg);
-                  const avgColor = isNaN(numAvg) ? "var(--subtext)" : numAvg >= 70 ? "#10b981" : numAvg >= 60 ? "#0ea5e9" : numAvg >= 50 ? "#14b8a6" : numAvg >= 45 ? "#f59e0b" : "#ef4444";
+                  const avgColor = isNaN(numAvg) ? "var(--subtext)" : numAvg >= 75 ? "#293d7d" : numAvg >= 50 ? "#0093dd" : "#dc137b";
 
                   return (
                     <tr
@@ -493,15 +494,14 @@ export default function ResultPrintManager({ mode }: ResultPrintManagerProps) {
                             gap: 5,
                             padding: "6px 12px",
                             borderRadius: 6,
-                            border: isEndOfTerm ? "none" : "1px solid #d97706",
-                            background: isEndOfTerm
-                              ? "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)"
-                              : "rgba(217, 119, 6, 0.12)",
-                            color: isEndOfTerm ? "#fff" : "#d97706",
+                            border: "none",
+                            background: isEndOfTerm ? "#293d7d" : "#0093dd",
+                            color: "#ffffff",
                             fontSize: 11.5,
                             fontWeight: 700,
                             cursor: "pointer",
-                            boxShadow: isEndOfTerm ? "0 2px 8px rgba(99,102,241,0.25)" : "none"
+                            boxShadow: isEndOfTerm ? "0 2px 6px rgba(41,61,125,0.2)" : "0 2px 6px rgba(0,147,221,0.2)",
+                            fontFamily: "'Raleway', sans-serif"
                           }}
                           title={`Print ${isEndOfTerm ? "Report Card" : "Mid-Term"} for ${stu.name}`}
                         >

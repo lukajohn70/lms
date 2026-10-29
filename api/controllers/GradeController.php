@@ -31,30 +31,42 @@ class GradeController {
         
         $courseId = isset($_GET['course_id']) ? intval($_GET['course_id']) : null;
         $term = $this->normalizeTerm($_GET['term'] ?? null);
-        $session = isset($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
+        $session = isset($_GET['session']) && !empty($_GET['session']) ? $_GET['session'] : $this->getSetting('academic_session', '2026/2027');
+        $classId = isset($_GET['class_id']) && !empty($_GET['class_id']) ? intval($_GET['class_id']) : null;
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
         
-        // 1. Get courses taught by teacher (or all courses if admin)
+        // 1. Get courses taught by teacher for this specific session
         if ($teacher['role'] === 'admin') {
             $coursesQuery = "SELECT id, name FROM courses ORDER BY name";
             $coursesStmt = $this->conn->query($coursesQuery);
             $courses = $coursesStmt->fetchAll();
         } else {
-            // Teacher sees courses assigned directly (courses.teacher_id)
-            // OR via class subject allocation (class_subjects.teacher_id)
+            // Teacher ONLY sees courses assigned to them for this specific session in at least one class
             $coursesQuery = "
                 SELECT DISTINCT c.id, c.name FROM courses c
-                WHERE c.teacher_id = :tid
-                   OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)
+                WHERE c.id IN (
+                    SELECT DISTINCT course_id FROM teacher_allocations 
+                    WHERE teacher_id = :tid AND academic_session = :session
+                    UNION
+                    SELECT DISTINCT cs.course_id FROM class_subjects cs 
+                    WHERE cs.teacher_id = :tid2 AND :is_curr = 1
+                )
                 ORDER BY c.name
             ";
             $coursesStmt = $this->conn->prepare($coursesQuery);
-            $coursesStmt->execute([':tid' => $teacher['id'], ':tid2' => $teacher['id']]);
+            $coursesStmt->execute([
+                ':tid' => $teacher['id'],
+                ':session' => $session,
+                ':tid2' => $teacher['id'],
+                ':is_curr' => ($session === $currentSession ? 1 : 0)
+            ]);
             $courses = $coursesStmt->fetchAll();
         }
         
         if (empty($courses)) {
             echo json_encode([
                 "courses" => [],
+                "classes" => [],
                 "students" => [],
                 "course_status" => "draft",
                 "selected_term" => $term,
@@ -63,16 +75,81 @@ class GradeController {
             return;
         }
         
-        if (!$courseId) {
+        $courseIds = array_column($courses, 'id');
+        if (!$courseId || !in_array($courseId, $courseIds)) {
             $courseId = $courses[0]['id'];
         }
+
+        // Available classes where this course is taught / allocated to teacher for this session
+        if ($teacher['role'] === 'admin') {
+            $classesStmt = $this->conn->prepare("
+                SELECT DISTINCT cl.id, cl.name 
+                FROM classes cl
+                WHERE cl.id IN (
+                    SELECT DISTINCT class_id FROM class_subjects WHERE course_id = :cid
+                    UNION
+                    SELECT DISTINCT g.class_id FROM grades g WHERE g.course_id = :cid2 AND g.academic_session = :session AND g.class_id IS NOT NULL
+                    UNION
+                    SELECT DISTINCT u.class_id FROM enrollments e JOIN users u ON e.student_id = u.id WHERE e.course_id = :cid3 AND u.class_id IS NOT NULL
+                )
+                ORDER BY cl.name ASC
+            ");
+            $classesStmt->execute([':cid' => $courseId, ':cid2' => $courseId, ':session' => $session, ':cid3' => $courseId]);
+            $availableClasses = $classesStmt->fetchAll();
+        } else {
+            // Teacher sees ONLY classes they are specifically assigned to for this course and session!
+            $classesStmt = $this->conn->prepare("
+                SELECT DISTINCT cl.id, cl.name 
+                FROM classes cl
+                WHERE cl.id IN (
+                    SELECT DISTINCT class_id FROM teacher_allocations 
+                    WHERE teacher_id = :tid AND course_id = :cid AND academic_session = :session
+                    UNION
+                    SELECT DISTINCT cs.class_id FROM class_subjects cs 
+                    WHERE cs.teacher_id = :tid2 AND cs.course_id = :cid2 AND :is_curr = 1
+                )
+                ORDER BY cl.name ASC
+            ");
+            $classesStmt->execute([
+                ':tid' => $teacher['id'],
+                ':cid' => $courseId,
+                ':session' => $session,
+                ':tid2' => $teacher['id'],
+                ':cid2' => $courseId,
+                ':is_curr' => ($session === $currentSession ? 1 : 0)
+            ]);
+            $availableClasses = $classesStmt->fetchAll();
+        }
+
+        if (empty($availableClasses)) {
+            echo json_encode([
+                "courses" => $courses,
+                "classes" => [],
+                "selected_course_id" => $courseId,
+                "selected_class_id" => null,
+                "selected_term" => $term,
+                "selected_session" => $session,
+                "course_status" => "draft",
+                "result_mode" => $this->getSetting('result_mode', 'end_of_term'),
+                "students" => []
+            ]);
+            return;
+        }
+
+        // For a teacher, if classId is not specified or not in their available classes, pin to their first assigned class!
+        $allowedClassIds = array_column($availableClasses, 'id');
+        if (!$classId || !in_array($classId, $allowedClassIds)) {
+            $classId = $allowedClassIds[0];
+        }
         
-        // 2. Fetch enrolled students and their grades for this specific term/session
+        // 2. Fetch enrolled students and their grades for this specific class, term, and session
         $gradesQuery = "
             SELECT 
                 u.id, 
                 CONCAT(u.first_name, ' ', u.last_name) as name,
                 u.email,
+                COALESCE(g.class_id, (SELECT class_id FROM student_class_history WHERE student_id = u.id AND academic_session = :session_sch ORDER BY id DESC LIMIT 1), u.class_id) as class_id,
+                cl.name as class_name,
                 g.ca1,
                 g.ca2,
                 g.exam,
@@ -85,29 +162,61 @@ class GradeController {
             FROM users u
             JOIN enrollments e ON u.id = e.student_id
             LEFT JOIN grades g ON (u.id = g.student_id AND g.course_id = :cid AND g.academic_term = :term AND g.academic_session = :session)
-            WHERE e.course_id = :cid
+            LEFT JOIN classes cl ON cl.id = COALESCE(g.class_id, (SELECT class_id FROM student_class_history WHERE student_id = u.id AND academic_session = :session_sch2 ORDER BY id DESC LIMIT 1), u.class_id)
+            WHERE e.course_id = :cid2
+              AND (
+                  g.class_id = :cls1
+                  OR u.id IN (SELECT student_id FROM student_class_history WHERE class_id = :cls2 AND academic_session = :session_cls)
+                  OR (u.class_id = :cls3 AND NOT EXISTS (SELECT 1 FROM student_class_history sch WHERE sch.student_id = u.id AND sch.academic_session = :session_cls2))
+              )
             ORDER BY u.first_name, u.last_name
         ";
+
+        $params = [
+            ':cid' => $courseId,
+            ':cid2' => $courseId,
+            ':term' => $term,
+            ':session' => $session,
+            ':session_sch' => $session,
+            ':session_sch2' => $session,
+            ':cls1' => $classId,
+            ':cls2' => $classId,
+            ':session_cls' => $session,
+            ':cls3' => $classId,
+            ':session_cls2' => $session
+        ];
         
         $gradesStmt = $this->conn->prepare($gradesQuery);
-        $gradesStmt->execute([
-            ':cid' => $courseId,
-            ':term' => $term,
-            ':session' => $session
-        ]);
+        $gradesStmt->execute($params);
         $students = $gradesStmt->fetchAll();
         
-        // Find overall status of this course mark sheet
+        // Find overall status of this mark sheet (prioritize draft if any unsubmitted, else submitted, else published)
         $courseStatus = "draft";
+        $hasPublished = false;
+        $hasSubmitted = false;
+        $hasDraft = false;
+        foreach ($students as $s) {
+            $st = $s['status'] ?: 'draft';
+            if ($st === 'published') $hasPublished = true;
+            elseif ($st === 'submitted') $hasSubmitted = true;
+            else $hasDraft = true;
+        }
+        if ($hasDraft || empty($students)) {
+            $courseStatus = "draft";
+        } elseif ($hasSubmitted) {
+            $courseStatus = "submitted";
+        } elseif ($hasPublished) {
+            $courseStatus = "published";
+        }
+
         $formattedStudents = [];
         foreach ($students as $s) {
-            if ($s['status']) {
-                $courseStatus = $s['status'];
-            }
             $formattedStudents[] = [
                 "id" => $s['id'],
                 "name" => $s['name'],
                 "student_number" => "STU/" . str_pad($s['id'], 3, '0', STR_PAD_LEFT),
+                "class_id" => $s['class_id'],
+                "class_name" => $s['class_name'] ?: "",
                 "ca1" => $s['ca1'] !== null ? strval(floatval($s['ca1'])) : "0",
                 "ca2" => $s['ca2'] !== null ? strval(floatval($s['ca2'])) : "0",
                 "exam" => $s['exam'] !== null ? strval(floatval($s['exam'])) : "0",
@@ -122,7 +231,9 @@ class GradeController {
         
         echo json_encode([
             "courses" => $courses,
+            "classes" => $availableClasses,
             "selected_course_id" => $courseId,
+            "selected_class_id" => $classId,
             "selected_term" => $term,
             "selected_session" => $session,
             "course_status" => $courseStatus,
@@ -145,13 +256,53 @@ class GradeController {
         $courseId = intval($data->course_id);
         $term = $this->normalizeTerm($data->term ?? null);
         $session = isset($data->session) ? $data->session : $this->getSetting('academic_session', '2026/2027');
+        $targetClassId = isset($data->class_id) && !empty($data->class_id) ? intval($data->class_id) : null;
         $resultMode = $this->getSetting('result_mode', 'end_of_term');
         $targetStatus = isset($data->status) && in_array($data->status, ['draft', 'submitted', 'approved', 'published']) ? $data->status : 'draft';
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
 
-        // If not admin, check if already published/locked
+        // If not admin, verify teacher allocation per class per session
         if ($user['role'] !== 'admin') {
-            $lockCheck = $this->conn->prepare("SELECT status FROM grades WHERE course_id = :cid AND academic_term = :term AND academic_session = :session LIMIT 1");
-            $lockCheck->execute([':cid' => $courseId, ':term' => $term, ':session' => $session]);
+            if (!$targetClassId) {
+                http_response_code(400);
+                echo json_encode(["error" => "Class ID is required when saving grades."]);
+                return;
+            }
+
+            $allocCheck = $this->conn->prepare("
+                SELECT 1 FROM teacher_allocations 
+                WHERE teacher_id = :tid AND course_id = :cid AND class_id = :cls AND academic_session = :session
+                UNION
+                SELECT 1 FROM class_subjects 
+                WHERE teacher_id = :tid2 AND course_id = :cid2 AND class_id = :cls2 AND :is_curr = 1
+                LIMIT 1
+            ");
+            $allocCheck->execute([
+                ':tid' => $user['id'],
+                ':cid' => $courseId,
+                ':cls' => $targetClassId,
+                ':session' => $session,
+                ':tid2' => $user['id'],
+                ':cid2' => $courseId,
+                ':cls2' => $targetClassId,
+                ':is_curr' => ($session === $currentSession ? 1 : 0)
+            ]);
+            if (!$allocCheck->fetchColumn()) {
+                http_response_code(403);
+                echo json_encode(["error" => "Access Denied: You are not assigned to teach this subject to this class in session $session."]);
+                return;
+            }
+
+            // Check if published/locked
+            $lockSql = "SELECT status FROM grades WHERE course_id = :cid AND academic_term = :term AND academic_session = :session";
+            $lockParams = [':cid' => $courseId, ':term' => $term, ':session' => $session];
+            if ($targetClassId) {
+                $lockSql .= " AND class_id = :cls";
+                $lockParams[':cls'] = $targetClassId;
+            }
+            $lockSql .= " AND status = 'published' LIMIT 1";
+            $lockCheck = $this->conn->prepare($lockSql);
+            $lockCheck->execute($lockParams);
             $currentStatus = $lockCheck->fetchColumn();
             if ($currentStatus === 'published') {
                 http_response_code(403);
@@ -170,11 +321,11 @@ class GradeController {
                     score, max_score, remarks, graded_by, status
                 ) VALUES (
                     :s, :c, :term, :session,
-                    (SELECT class_id FROM users WHERE id = :s2 LIMIT 1),
+                    COALESCE(:target_class, (SELECT class_id FROM student_class_history WHERE student_id = :s_sch AND academic_session = :session_sch ORDER BY id DESC LIMIT 1), (SELECT class_id FROM users WHERE id = :s2 LIMIT 1)),
                     :ca1, :ca2, :exam, :asgn, :proj, :test, 
                     :score, 100, :remarks, :g, :status
                 ) ON DUPLICATE KEY UPDATE 
-                    class_id = COALESCE(class_id, (SELECT class_id FROM users WHERE id = :s3 LIMIT 1)),
+                    class_id = COALESCE(class_id, :target_class_up, (SELECT class_id FROM users WHERE id = :s3 LIMIT 1)),
                     ca1 = :ca1, 
                     ca2 = :ca2, 
                     exam = :exam, 
@@ -234,10 +385,16 @@ class GradeController {
                 
                 $remarks = isset($g->remarks) ? $g->remarks : "";
                 
+                $targetClass = !empty($g->class_id) ? intval($g->class_id) : $targetClassId;
+
                 $stmt->execute([
                     ':s' => intval($g->student_id),
+                    ':s_sch' => intval($g->student_id),
+                    ':session_sch' => $session,
                     ':s2' => intval($g->student_id),
                     ':s3' => intval($g->student_id),
+                    ':target_class' => $targetClass,
+                    ':target_class_up' => $targetClass,
                     ':c' => $courseId,
                     ':term' => $term,
                     ':session' => $session,
@@ -275,20 +432,58 @@ class GradeController {
         }
 
         $courseId = intval($data->course_id);
+        $targetClassId = isset($data->class_id) && !empty($data->class_id) ? intval($data->class_id) : null;
         $term = $this->normalizeTerm($data->term ?? null);
         $session = isset($data->session) ? $data->session : $this->getSetting('academic_session', '2026/2027');
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+
+        // Verify teacher allocation per class per session
+        if ($teacher['role'] !== 'admin') {
+            if (!$targetClassId) {
+                http_response_code(400);
+                echo json_encode(["error" => "Class ID is required when submitting grades."]);
+                return;
+            }
+
+            $allocCheck = $this->conn->prepare("
+                SELECT 1 FROM teacher_allocations 
+                WHERE teacher_id = :tid AND course_id = :cid AND class_id = :cls AND academic_session = :session
+                UNION
+                SELECT 1 FROM class_subjects 
+                WHERE teacher_id = :tid2 AND course_id = :cid2 AND class_id = :cls2 AND :is_curr = 1
+                LIMIT 1
+            ");
+            $allocCheck->execute([
+                ':tid' => $teacher['id'],
+                ':cid' => $courseId,
+                ':cls' => $targetClassId,
+                ':session' => $session,
+                ':tid2' => $teacher['id'],
+                ':cid2' => $courseId,
+                ':cls2' => $targetClassId,
+                ':is_curr' => ($session === $currentSession ? 1 : 0)
+            ]);
+            if (!$allocCheck->fetchColumn()) {
+                http_response_code(403);
+                echo json_encode(["error" => "Access Denied: You are not assigned to teach this subject to this class in session $session."]);
+                return;
+            }
+        }
 
         try {
-            $stmt = $this->conn->prepare("
-                UPDATE grades 
-                SET status = 'submitted' 
-                WHERE course_id = :cid AND academic_term = :term AND academic_session = :session
-            ");
-            $stmt->execute([
+            $sql = "UPDATE grades SET status = 'submitted' WHERE course_id = :cid AND academic_term = :term AND academic_session = :session";
+            $params = [
                 ':cid' => $courseId,
                 ':term' => $term,
                 ':session' => $session
-            ]);
+            ];
+            if ($targetClassId) {
+                $sql .= " AND class_id = :cls";
+                $params[':cls'] = $targetClassId;
+            }
+
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
 
             echo json_encode(["success" => true, "message" => "Results submitted to Administration for approval."]);
         } catch (Exception $e) {
@@ -309,22 +504,53 @@ class GradeController {
         }
 
         $courseId = intval($data->course_id);
+        $targetClassId = isset($data->class_id) && !empty($data->class_id) ? intval($data->class_id) : null;
         $term = $this->normalizeTerm($data->term ?? null);
         $session = isset($data->session) ? $data->session : $this->getSetting('academic_session', '2026/2027');
         $reason = isset($data->reason) && !empty(trim($data->reason)) ? trim($data->reason) : "Teacher requested grade sheet reopening for adjustments.";
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+
+        if ($teacher['role'] !== 'admin' && $targetClassId) {
+            $allocCheck = $this->conn->prepare("
+                SELECT 1 FROM teacher_allocations 
+                WHERE teacher_id = :tid AND course_id = :cid AND class_id = :cls AND academic_session = :session
+                UNION
+                SELECT 1 FROM class_subjects 
+                WHERE teacher_id = :tid2 AND course_id = :cid2 AND class_id = :cls2 AND :is_curr = 1
+                LIMIT 1
+            ");
+            $allocCheck->execute([
+                ':tid' => $teacher['id'],
+                ':cid' => $courseId,
+                ':cls' => $targetClassId,
+                ':session' => $session,
+                ':tid2' => $teacher['id'],
+                ':cid2' => $courseId,
+                ':cls2' => $targetClassId,
+                ':is_curr' => ($session === $currentSession ? 1 : 0)
+            ]);
+            if (!$allocCheck->fetchColumn()) {
+                http_response_code(403);
+                echo json_encode(["error" => "Access Denied: You are not assigned to teach this subject to this class in session $session."]);
+                return;
+            }
+        }
 
         try {
-            $stmt = $this->conn->prepare("
-                UPDATE grades 
-                SET status = 'reopen_requested', reopen_reason = :reason 
-                WHERE course_id = :cid AND academic_term = :term AND academic_session = :session
-            ");
-            $stmt->execute([
+            $sql = "UPDATE grades SET status = 'reopen_requested', reopen_reason = :reason WHERE course_id = :cid AND academic_term = :term AND academic_session = :session";
+            $params = [
                 ':reason' => $reason,
                 ':cid' => $courseId,
                 ':term' => $term,
                 ':session' => $session
-            ]);
+            ];
+            if ($targetClassId) {
+                $sql .= " AND class_id = :cls";
+                $params[':cls'] = $targetClassId;
+            }
+
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
 
             echo json_encode(["success" => true, "message" => "Reopening request sent to Administration for review."]);
         } catch (Exception $e) {
@@ -352,8 +578,22 @@ class GradeController {
                 SELECT 
                     c.id as course_id,
                     c.name as course_name,
-                    CONCAT(t.first_name, ' ', t.last_name) as teacher_name,
-                    t.email as teacher_email,
+                    COALESCE(
+                        (SELECT CONCAT(tu.first_name, ' ', tu.last_name) 
+                         FROM teacher_allocations ta 
+                         JOIN users tu ON ta.teacher_id = tu.id 
+                         WHERE ta.course_id = c.id AND ta.academic_session = :session_alloc 
+                         LIMIT 1),
+                        CONCAT(t.first_name, ' ', t.last_name)
+                    ) as teacher_name,
+                    COALESCE(
+                        (SELECT tu.email 
+                         FROM teacher_allocations ta 
+                         JOIN users tu ON ta.teacher_id = tu.id 
+                         WHERE ta.course_id = c.id AND ta.academic_session = :session_alloc2 
+                         LIMIT 1),
+                        t.email
+                    ) as teacher_email,
                     COUNT(DISTINCT e.student_id) as enrolled_count,
                     COUNT(DISTINCT g.student_id) as graded_count,
                     ROUND(AVG(g.score), 1) as class_average,
@@ -368,7 +608,7 @@ class GradeController {
             ";
             
             $stmt = $this->conn->prepare($query);
-            $stmt->execute([':term' => $term, ':session' => $session]);
+            $stmt->execute([':term' => $term, ':session' => $session, ':session_alloc' => $session, ':session_alloc2' => $session]);
             $submissions = $stmt->fetchAll();
 
             echo json_encode([
@@ -399,9 +639,22 @@ class GradeController {
         }
 
         try {
-            // Course info
-            $course = $this->conn->prepare("SELECT c.id, c.name, CONCAT(t.first_name,' ',t.last_name) as teacher_name FROM courses c LEFT JOIN users t ON c.teacher_id=t.id WHERE c.id=:id");
-            $course->execute([':id' => $courseId]);
+            // Course info - resolve teacher for requested session from teacher_allocations, falling back to courses.teacher_id
+            $course = $this->conn->prepare("
+                SELECT c.id, c.name, 
+                       COALESCE(
+                           (SELECT CONCAT(tu.first_name,' ',tu.last_name) 
+                            FROM teacher_allocations ta 
+                            JOIN users tu ON ta.teacher_id = tu.id 
+                            WHERE ta.course_id = c.id AND ta.academic_session = :session 
+                            LIMIT 1),
+                           CONCAT(t.first_name,' ',t.last_name)
+                       ) as teacher_name 
+                FROM courses c 
+                LEFT JOIN users t ON c.teacher_id=t.id 
+                WHERE c.id=:id
+            ");
+            $course->execute([':id' => $courseId, ':session' => $session]);
             $courseInfo = $course->fetch();
 
             // Enrolled students with their grades
@@ -544,12 +797,43 @@ class GradeController {
             $viewType = 'terminal';
         }
 
-        // 1. Fetch enrolled courses + grades for the requested term
+        // Resolve student's class for this academic session (or current enrolled class as fallback)
+        $gCls = $this->conn->prepare("SELECT class_id FROM grades WHERE student_id = :sid AND academic_session = :session AND class_id IS NOT NULL LIMIT 1");
+        $gCls->execute([':sid' => $studentId, ':session' => $session]);
+        $stClsId = $gCls->fetchColumn();
+        if (!$stClsId) {
+            $uCls = $this->conn->prepare("SELECT class_id FROM users WHERE id = :sid");
+            $uCls->execute([':sid' => $studentId]);
+            $stClsId = $uCls->fetchColumn();
+        }
+        $clsName = '';
+        if ($stClsId) {
+            $cnStmt = $this->conn->prepare("SELECT name FROM classes WHERE id = :cid");
+            $cnStmt->execute([':cid' => $stClsId]);
+            $clsName = strtoupper($cnStmt->fetchColumn() ?: '');
+        }
+        $isJunior = (stripos($clsName, 'BASIC') !== false || stripos($clsName, 'JSS') !== false || stripos($clsName, 'JS') !== false);
+        $isSenior = (stripos($clsName, 'SS') !== false || stripos($clsName, 'SSS') !== false || stripos($clsName, 'CLASS OF') !== false);
+
+        // 1. Fetch courses + grades for the requested term and session
+        // Priority 1: Courses where student has published grades for this term & session
         $gradesQuery = "
             SELECT
                 c.id as course_id,
                 c.name as subject,
-                CONCAT(u.first_name, ' ', u.last_name) as teacher,
+                COALESCE(
+                    (SELECT CONCAT(tu.first_name, ' ', tu.last_name) 
+                     FROM teacher_allocations ta 
+                     JOIN users tu ON ta.teacher_id = tu.id 
+                     WHERE ta.course_id = g.course_id 
+                       AND ta.academic_session = g.academic_session 
+                       AND (ta.class_id = g.class_id OR (g.class_id IS NULL AND ta.class_id = :cls_id1))
+                     LIMIT 1),
+                    (SELECT CONCAT(gu.first_name, ' ', gu.last_name) 
+                     FROM users gu 
+                     WHERE gu.id = g.graded_by AND gu.role = 'teacher'),
+                    CONCAT(u.first_name, ' ', u.last_name)
+                ) as teacher,
                 g.ca1,
                 g.ca2,
                 g.exam,
@@ -560,22 +844,81 @@ class GradeController {
                 g.remarks,
                 g.status,
                 g.auto_publish_at
-            FROM enrollments e
-            JOIN courses c ON e.course_id = c.id
+            FROM grades g
+            JOIN courses c ON g.course_id = c.id
             LEFT JOIN users u ON c.teacher_id = u.id
-            LEFT JOIN grades g ON (
-                e.student_id = g.student_id
-                AND g.course_id = c.id
-                AND g.academic_term = :term
-                AND g.academic_session = :session
-                AND g.status = 'published'
-            )
-            WHERE e.student_id = :sid
+            WHERE g.student_id = :sid
+              AND g.academic_term = :term
+              AND g.academic_session = :session
+              AND g.status = 'published'
             ORDER BY c.name
         ";
         $stmt = $this->conn->prepare($gradesQuery);
-        $stmt->execute([':sid' => $studentId, ':term' => $currentTerm, ':session' => $session]);
+        $stmt->execute([
+            ':sid' => $studentId, 
+            ':term' => $currentTerm, 
+            ':session' => $session, 
+            ':cls_id1' => $stClsId ?: 0
+        ]);
         $grades = $stmt->fetchAll();
+
+        // Priority 2: Fallback for current active term before grades are published
+        if (empty($grades)) {
+            $fallbackQuery = "
+                SELECT
+                    c.id as course_id,
+                    c.name as subject,
+                    COALESCE(
+                        (SELECT CONCAT(tu.first_name, ' ', tu.last_name) 
+                         FROM teacher_allocations ta 
+                         JOIN users tu ON ta.teacher_id = tu.id 
+                         WHERE ta.course_id = c.id 
+                           AND ta.academic_session = :session_alloc 
+                           AND ta.class_id = :cls_id2
+                         LIMIT 1),
+                        (SELECT CONCAT(csu.first_name, ' ', csu.last_name) 
+                         FROM class_subjects cs 
+                         JOIN users csu ON cs.teacher_id = csu.id 
+                         WHERE cs.course_id = c.id AND cs.class_id = :cls_id3 
+                         LIMIT 1),
+                        CONCAT(u.first_name, ' ', u.last_name)
+                    ) as teacher,
+                    NULL as ca1,
+                    NULL as ca2,
+                    NULL as exam,
+                    NULL as assignment_score,
+                    NULL as project_score,
+                    NULL as mid_term_test,
+                    NULL as total,
+                    NULL as remarks,
+                    'draft' as status,
+                    NULL as auto_publish_at
+                FROM enrollments e
+                JOIN courses c ON e.course_id = c.id
+                LEFT JOIN users u ON c.teacher_id = u.id
+                WHERE e.student_id = :sid
+                ORDER BY c.name
+            ";
+            $stmt = $this->conn->prepare($fallbackQuery);
+            $stmt->execute([
+                ':sid' => $studentId,
+                ':session_alloc' => $session,
+                ':cls_id2' => $stClsId ?: 0,
+                ':cls_id3' => $stClsId ?: 0
+            ]);
+            $grades = $stmt->fetchAll();
+        }
+
+        // Apply JSS / SS level isolation
+        $jssOnlyCourseIds = [40, 41, 42, 24, 50, 55, 33, 154, 23];
+        $ssOnlyCourseIds  = [181, 182, 183, 26, 193, 188, 186, 185, 190, 144, 114, 191, 12, 108, 32, 122, 198, 197];
+
+        $grades = array_values(array_filter($grades, function($g) use ($isJunior, $isSenior, $jssOnlyCourseIds, $ssOnlyCourseIds) {
+            $cid = intval($g['course_id']);
+            if ($isJunior && in_array($cid, $ssOnlyCourseIds)) return false;
+            if ($isSenior && in_array($cid, $jssOnlyCourseIds)) return false;
+            return true;
+        }));
 
         // 2. Fetch all-term scores for cumulative calculations
         $allTermsStmt = $this->conn->prepare(
@@ -602,6 +945,26 @@ class GradeController {
         $cumSum       = 0;
         $cumCount     = 0;
 
+        // Check if student has ANY recorded positive score across all subjects
+        $studentHasAnyGrades = false;
+        foreach ($grades as $chkG) {
+            $chkCid  = $chkG['course_id'];
+            $chkT1   = $termMatrix[$chkCid]['1st Term'] ?? 0;
+            $chkT2   = $termMatrix[$chkCid]['2nd Term'] ?? 0;
+            $chkT3   = $termMatrix[$chkCid]['3rd Term'] ?? 0;
+            $chkTot  = floatval($chkG['total'] ?? 0);
+            $chkCa1  = floatval($chkG['ca1'] ?? 0);
+            $chkCa2  = floatval($chkG['ca2'] ?? 0);
+            $chkExam = floatval($chkG['exam'] ?? 0);
+            $chkAsgn = floatval($chkG['assignment_score'] ?? 0);
+            $chkProj = floatval($chkG['project_score'] ?? 0);
+            $chkTest = floatval($chkG['mid_term_test'] ?? 0);
+            if ($chkTot > 0 || $chkCa1 > 0 || $chkCa2 > 0 || $chkExam > 0 || $chkAsgn > 0 || $chkProj > 0 || $chkTest > 0 || $chkT1 > 0 || $chkT2 > 0 || $chkT3 > 0) {
+                $studentHasAnyGrades = true;
+                break;
+            }
+        }
+
         foreach ($grades as $g) {
             $cid  = $g['course_id'];
             $t1   = $termMatrix[$cid]['1st Term'] ?? null;
@@ -615,6 +978,12 @@ class GradeController {
                 $ca   = $ca1 + $ca2;
                 $exam = floatval($g['exam'] ?? 0);
                 $total = floatval($g['total'] ?? ($ca + $exam));
+
+                $hasAnyScore = ($ca1 > 0 || $ca2 > 0 || $exam > 0 || $total > 0);
+                if ($studentHasAnyGrades && !$hasAnyScore) {
+                    continue;
+                }
+
                 $row  = [
                     'course_id'  => $cid,
                     'subject'    => $g['subject'],
@@ -640,6 +1009,12 @@ class GradeController {
                 $proj  = floatval($g['project_score']    ?? 0);
                 $test  = floatval($g['mid_term_test']    ?? 0);
                 $total = $asgn + $proj + $test;
+
+                $hasAnyScore = ($asgn > 0 || $proj > 0 || $test > 0 || $total > 0);
+                if ($studentHasAnyGrades && !$hasAnyScore) {
+                    continue;
+                }
+
                 if      ($total >= 36) $rating = 'EXCELLENT';
                 else if ($total >= 28) $rating = 'VERY GOOD';
                 else if ($total >= 20) $rating  = 'GOOD';
@@ -665,12 +1040,18 @@ class GradeController {
                 // 2nd Term cumulative: average of 1st + 2nd
                 // 3rd Term cumulative: average of 1st + 2nd + 3rd
                 if ($currentTerm === '2nd Term') {
-                    $termsInAvg = array_filter([$t1, $t2], fn($v) => $v !== null);
+                    $termsInAvg = array_filter([$t1, $t2], fn($v) => $v !== null && floatval($v) > 0);
                     $cumAvg     = count($termsInAvg) > 0 ? round(array_sum($termsInAvg) / count($termsInAvg), 1) : 0;
                 } else { // 3rd Term
-                    $termsInAvg = array_filter([$t1, $t2, $t3], fn($v) => $v !== null);
+                    $termsInAvg = array_filter([$t1, $t2, $t3], fn($v) => $v !== null && floatval($v) > 0);
                     $cumAvg     = count($termsInAvg) > 0 ? round(array_sum($termsInAvg) / count($termsInAvg), 1) : 0;
                 }
+
+                $hasAnyScore = ($cumAvg > 0 || count($termsInAvg) > 0);
+                if ($studentHasAnyGrades && !$hasAnyScore) {
+                    continue;
+                }
+
                 $row = [
                     'course_id'  => $cid,
                     'subject'    => $g['subject'],

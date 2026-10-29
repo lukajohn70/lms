@@ -19,6 +19,7 @@ class BroadsheetController {
 
     private function normalizeTerm($raw) {
         if (!$raw) return $this->getSetting('current_term', '3rd Term');
+        if (stripos($raw, 'CUMULATIVE') !== false || stripos($raw, 'ANNUAL') !== false) return 'Cumulative';
         if ($raw === '1st' || $raw === '1st Term' || $raw === 'FIRST') return '1st Term';
         if ($raw === '2nd' || $raw === '2nd Term' || $raw === 'SECOND') return '2nd Term';
         if ($raw === '3rd' || $raw === '3rd Term' || $raw === 'THIRD') return '3rd Term';
@@ -48,12 +49,89 @@ class BroadsheetController {
         return 'F';
     }
 
+    public function getShortSubjectName($name) {
+        $trimmed = trim($name);
+        $upper = strtoupper($trimmed);
+
+        // 1. Explicit canonical short forms for school broadsheets
+        $map = [
+            "LEADERSHIP & ENTREPRENEURSHIP TRAINING (L.E.T.)" => "L.E.T.",
+            "LEADERSHIP AND ENTREPRENEURSHIP TRAINING (L.E.T.)" => "L.E.T.",
+            "LEADERSHIP & ENTREPRENEURSHIP TRAINING" => "L.E.T.",
+            "LEADERSHIP AND ENTREPRENEURSHIP TRAINING" => "L.E.T.",
+            "PHYSICAL AND HEALTH EDUCATION (P.H.E.)" => "P.H.E.",
+            "PHYSICAL & HEALTH EDUCATION (P.H.E.)" => "P.H.E.",
+            "PHYSICAL AND HEALTH EDUCATION" => "P.H.E.",
+            "PHYSICAL & HEALTH EDUCATION" => "P.H.E.",
+            "CULTURAL AND CREATIVE ART (C.C.A.)" => "C.C.A.",
+            "CULTURAL & CREATIVE ART (C.C.A.)" => "C.C.A.",
+            "CULTURAL AND CREATIVE ART" => "C.C.A.",
+            "CULTURAL & CREATIVE ARTS" => "C.C.A.",
+            "CULTURAL AND CREATIVE ARTS" => "C.C.A.",
+            "CHRISTIAN RELIGIOUS STUDIES" => "C.R.S.",
+            "CHRISTIAN RELIGIOUS KNOWLEDGE" => "C.R.K.",
+            "ISLAMIC RELIGIOUS STUDIES" => "I.R.S.",
+            "ISLAMIC RELIGIOUS KNOWLEDGE" => "I.R.K.",
+            "ROBOTICS AND ARTIFICIAL INTELLIGENCE" => "ROBOTICS & A.I.",
+            "ROBOTICS & ARTIFICIAL INTELLIGENCE" => "ROBOTICS & A.I.",
+            "ROBOTICS AND A.I." => "ROBOTICS & A.I.",
+            "ROBOTICS & A.I." => "ROBOTICS & A.I.",
+            "AGRICULTURAL SCIENCE" => "AGRIC SCIENCE",
+            "INFORMATION & COMMUNICATION TECHNOLOGY" => "I.C.T.",
+            "INFORMATION AND COMMUNICATION TECHNOLOGY" => "I.C.T.",
+            "COMPUTER HARDWARE AND GSM REPAIRS" => "HARDWARE & GSM",
+            "FASHION DESIGN AND GARMENT MAKING" => "GARMENT MAKING",
+            "SOLAR PHOTOVOLTAIC INSTALLATION AND MAINTENANCE" => "SOLAR PHOTOVOLTAIC",
+            "CITIZENSHIP AND HERITAGE STUDIES" => "HERITAGE STUDIES",
+            "SOCIAL AND CITIZENSHIP STUDIES" => "CITIZENSHIP STUDIES",
+            "HORTICULTURE AND CROP PRODUCTION" => "CROP PRODUCTION",
+            "CATERING CRAFT PRACTICE" => "CATERING CRAFT",
+            "LITERATURE IN ENGLISH" => "LIT. IN ENGLISH",
+            "FINANCIAL ACCOUNTING" => "FIN. ACCOUNTING",
+            "FOOD AND NUTRITION" => "FOOD & NUTRITION",
+            "FOOD & NUTRITION" => "FOOD & NUTRITION",
+            "TECHNICAL DRAWING" => "TECH. DRAWING",
+            "FURTHER MATHEMATICS" => "FURTHER MATHS",
+            "ENTRANCE EXAMINATION" => "ENTRANCE EXAM",
+            "INTERMEDIATE SCIENCE" => "INTERMED. SCIENCE"
+        ];
+
+        if (isset($map[$upper])) {
+            return $map[$upper];
+        }
+
+        // 2. If subject contains an acronym in brackets/parentheses, extract it
+        if (preg_match('/\(([A-Z\.\s]{2,8})\)/i', $trimmed, $m)) {
+            return strtoupper(trim($m[1]));
+        }
+
+        // 3. Keep short/medium names as is (up to 16 chars)
+        if (strlen($upper) <= 16) {
+            return $upper;
+        }
+
+        // 4. For longer names, apply standard educational abbreviations
+        $replacements = [
+            '/\bAND\b/i' => '&',
+            '/\bMATHEMATICS\b/i' => 'MATHS',
+            '/\bEDUCATION\b/i' => 'EDU',
+            '/\bTECHNOLOGY\b/i' => 'TECH',
+            '/\bLANGUAGE\b/i' => 'LANG'
+        ];
+        $short = preg_replace(array_keys($replacements), array_values($replacements), $upper);
+        return trim($short);
+    }
+
     /**
      * Core data aggregation logic for broadsheet
      */
-    private function compileBroadsheetData($classParam, $termParam, $sessionParam) {
+    public function compileBroadsheetData($classParam, $termParam, $sessionParam) {
         $term = $this->normalizeTerm($termParam);
-        $session = !empty($sessionParam) ? $sessionParam : $this->getSetting('academic_session', '2023/2024');
+        $session = !empty($sessionParam) ? $sessionParam : $this->getSetting('academic_session', '2026/2027');
+        $isCumulative = ($term === 'Cumulative' || (isset($_GET['cumulative']) && ($_GET['cumulative'] === '1' || $_GET['cumulative'] === 'true' || $_GET['cumulative'] === 'yes')));
+        if ($isCumulative) {
+            $term = 'Cumulative';
+        }
 
         // Resolve school metadata
         $schoolName = $this->getSetting('school_name', 'DEEPER LIFE HIGH SCHOOL');
@@ -69,7 +147,8 @@ class BroadsheetController {
         $logoPath = $this->getSetting('school_logo_path', 'uploads/logos/dlhs_logo.webp');
         $isHttps  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
         $proto    = $isHttps ? 'https://' : 'http://';
-        $apiBase  = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/lms/api';
+        $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/api'), '/\\');
+        $apiBase  = $proto . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ($scriptDir ?: '/api');
         $logoUrl  = $logoPath ? "$apiBase/$logoPath" : '';
 
         // Fetch all classes for options and mapping
@@ -136,7 +215,11 @@ class BroadsheetController {
             stripos($classTitle, 'SS3') !== false
         );
         $isJunior = !$isSenior;
-        $levelTitle = $isSenior ? "END OF TERM RESULT FOR SENIOR CLASS" : "END OF TERM RESULT FOR JUNIOR CLASS";
+        if ($isCumulative) {
+            $levelTitle = $isSenior ? "ANNUAL CUMULATIVE RESULT FOR SENIOR CLASS" : "ANNUAL CUMULATIVE RESULT FOR JUNIOR CLASS";
+        } else {
+            $levelTitle = $isSenior ? "END OF TERM RESULT FOR SENIOR CLASS" : "END OF TERM RESULT FOR JUNIOR CLASS";
+        }
 
         if (empty($targetClassIds)) {
             return [
@@ -148,6 +231,7 @@ class BroadsheetController {
                     "term" => $term,
                     "session" => $session,
                     "is_senior" => $isSenior,
+                    "is_cumulative" => $isCumulative,
                     "logo_url" => $logoUrl
                 ],
                 "subjects" => [],
@@ -159,27 +243,98 @@ class BroadsheetController {
         }
 
         // 1. Fetch students who were in the selected class(es) for this term & session
-        $inPlaceholders = implode(',', array_fill(0, count($targetClassIds), '?'));
-        $studentQuery = "
-            SELECT DISTINCT u.id, u.first_name, u.last_name, u.admission_number, u.gender,
-                   COALESCE(sch.class_id, g_chk.class_id, u.class_id) as class_id,
-                   c.name as class_name
-            FROM users u
-            LEFT JOIN student_class_history sch ON (u.id = sch.student_id AND sch.academic_session = ? AND sch.academic_term = ?)
-            LEFT JOIN (SELECT DISTINCT student_id, class_id FROM grades WHERE academic_session = ? AND academic_term = ? AND class_id IS NOT NULL) g_chk ON u.id = g_chk.student_id
-            LEFT JOIN classes c ON COALESCE(sch.class_id, g_chk.class_id, u.class_id) = c.id
-            WHERE u.role = 'student'
-              AND (
-                sch.class_id IN ($inPlaceholders)
-                OR (sch.class_id IS NULL AND g_chk.class_id IN ($inPlaceholders))
-                OR (sch.class_id IS NULL AND g_chk.class_id IS NULL AND u.class_id IN ($inPlaceholders))
-              )
-            ORDER BY u.last_name ASC, u.first_name ASC
-        ";
-        $stuParams = array_merge([$session, $term, $session, $term], $targetClassIds, $targetClassIds, $targetClassIds);
-        $stuStmt = $this->conn->prepare($studentQuery);
-        $stuStmt->execute($stuParams);
-        $students = $stuStmt->fetchAll();
+        $inClassPlaceholders = implode(',', array_fill(0, count($targetClassIds), '?'));
+        
+        if ($isCumulative) {
+            // Priority 1: Check grades table for students graded in this class & session across any term
+            $studentQuery = "
+                SELECT DISTINCT u.id, u.first_name, u.last_name, u.admission_number, u.gender,
+                       g.class_id, c.name as class_name
+                FROM grades g
+                JOIN users u ON g.student_id = u.id
+                JOIN classes c ON g.class_id = c.id
+                WHERE g.class_id IN ($inClassPlaceholders)
+                  AND g.academic_session = ?
+                  AND u.role = 'student'
+                ORDER BY u.last_name ASC, u.first_name ASC
+            ";
+            $stuParams = array_merge($targetClassIds, [$session]);
+            $stuStmt = $this->conn->prepare($studentQuery);
+            $stuStmt->execute($stuParams);
+            $students = $stuStmt->fetchAll();
+
+            // Priority 2: If no grades recorded, check authentic student_class_history for this session
+            if (empty($students)) {
+                $histQuery = "
+                    SELECT DISTINCT u.id, u.first_name, u.last_name, u.admission_number, u.gender,
+                           sch.class_id, c.name as class_name
+                    FROM student_class_history sch
+                    JOIN users u ON sch.student_id = u.id
+                    JOIN classes c ON sch.class_id = c.id
+                    WHERE sch.class_id IN ($inClassPlaceholders)
+                      AND sch.academic_session = ?
+                      AND u.role = 'student'
+                    ORDER BY u.last_name ASC, u.first_name ASC
+                ";
+                $histStmt = $this->conn->prepare($histQuery);
+                $histStmt->execute(array_merge($targetClassIds, [$session]));
+                $students = $histStmt->fetchAll();
+            }
+        } else {
+            // Priority 1: Check grades table for students graded in this class, session, and term
+            $studentQuery = "
+                SELECT DISTINCT u.id, u.first_name, u.last_name, u.admission_number, u.gender,
+                       g.class_id, c.name as class_name
+                FROM grades g
+                JOIN users u ON g.student_id = u.id
+                JOIN classes c ON g.class_id = c.id
+                WHERE g.class_id IN ($inClassPlaceholders)
+                  AND g.academic_session = ?
+                  AND g.academic_term = ?
+                  AND u.role = 'student'
+                ORDER BY u.last_name ASC, u.first_name ASC
+            ";
+            $stuParams = array_merge($targetClassIds, [$session, $term]);
+            $stuStmt = $this->conn->prepare($studentQuery);
+            $stuStmt->execute($stuParams);
+            $students = $stuStmt->fetchAll();
+
+            // Priority 2: If no grades recorded, check authentic student_class_history
+            if (empty($students)) {
+                $histQuery = "
+                    SELECT DISTINCT u.id, u.first_name, u.last_name, u.admission_number, u.gender,
+                           sch.class_id, c.name as class_name
+                    FROM student_class_history sch
+                    JOIN users u ON sch.student_id = u.id
+                    JOIN classes c ON sch.class_id = c.id
+                    WHERE sch.class_id IN ($inClassPlaceholders)
+                      AND sch.academic_session = ?
+                      AND sch.academic_term = ?
+                      AND u.role = 'student'
+                    ORDER BY u.last_name ASC, u.first_name ASC
+                ";
+                $histStmt = $this->conn->prepare($histQuery);
+                $histStmt->execute(array_merge($targetClassIds, [$session, $term]));
+                $students = $histStmt->fetchAll();
+            }
+        }
+
+        // Priority 3: Only if active current session and no grades/history exist yet, fall back to current users.class_id
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+        if (empty($students) && $session === $currentSession) {
+            $currQuery = "
+                SELECT u.id, u.first_name, u.last_name, u.admission_number, u.gender,
+                       u.class_id, c.name as class_name
+                FROM users u
+                JOIN classes c ON u.class_id = c.id
+                WHERE u.class_id IN ($inClassPlaceholders)
+                  AND u.role = 'student'
+                ORDER BY u.last_name ASC, u.first_name ASC
+            ";
+            $currStmt = $this->conn->prepare($currQuery);
+            $currStmt->execute($targetClassIds);
+            $students = $currStmt->fetchAll();
+        }
 
         if (empty($students)) {
             return [
@@ -191,6 +346,7 @@ class BroadsheetController {
                     "term" => $term,
                     "session" => $session,
                     "is_senior" => $isSenior,
+                    "is_cumulative" => $isCumulative,
                     "logo_url" => $logoUrl
                 ],
                 "subjects" => [],
@@ -204,21 +360,78 @@ class BroadsheetController {
         $studentIds = array_column($students, 'id');
         $stuPlaceholders = implode(',', array_fill(0, count($studentIds), '?'));
 
-        // 2. Fetch all subjects/courses taken by these students (either via enrollments or existing grades)
-        $courseQuery = "
-            SELECT DISTINCT c.id, c.name
-            FROM courses c
-            WHERE c.id IN (
-                SELECT course_id FROM enrollments WHERE student_id IN ($stuPlaceholders)
-                UNION
-                SELECT course_id FROM grades WHERE student_id IN ($stuPlaceholders) AND academic_term = ? AND academic_session = ?
-            )
-            ORDER BY c.name ASC
-        ";
-        $courseParams = array_merge($studentIds, $studentIds, [$term, $session]);
-        $cStmt = $this->conn->prepare($courseQuery);
-        $cStmt->execute($courseParams);
-        $rawCourses = $cStmt->fetchAll();
+        // Subjects strictly unique to JSS (must never appear in SS)
+        $jssOnlyCourseIds = [40, 41, 42, 24, 50, 55, 33, 154, 23]; // Basic Sci, Basic Tech, Bus Studies, CCA, Home Ec, Social Studies, PHE, Music, Hausa
+        // Subjects strictly unique to SS (must never appear in JSS)
+        $ssOnlyCourseIds  = [181, 182, 183, 26, 193, 188, 186, 185, 190, 144, 114, 191, 12, 108, 32, 122, 198, 197]; // Bio, Chem, Phys, FMath, Econ, Geog, Govt, Lit, Comm, FinAcct, DataProc, TechDraw, VisArt, AnimHusb, CatCraft, FoodNut, Garment, SolarPV
+
+        // 2. Fetch all subjects/courses taken by these students scoped strictly to the selected class(es), term & session
+        // Only include subjects that have actual recorded scores (> 0) in this class and session/term
+        if ($isCumulative) {
+            $courseQuery = "
+                SELECT c.id, c.name
+                FROM courses c
+                JOIN grades g ON c.id = g.course_id
+                WHERE g.class_id IN ($inClassPlaceholders)
+                  AND g.academic_session = ?
+                GROUP BY c.id, c.name
+                HAVING (MAX(COALESCE(g.score, 0)) > 0 
+                     OR MAX(COALESCE(g.ca1, 0)) > 0 
+                     OR MAX(COALESCE(g.ca2, 0)) > 0 
+                     OR MAX(COALESCE(g.exam, 0)) > 0)
+                ORDER BY c.name ASC
+            ";
+            $cStmt = $this->conn->prepare($courseQuery);
+            $cStmt->execute(array_merge($targetClassIds, [$session]));
+            $rawCourses = $cStmt->fetchAll();
+        } else {
+            // Priority 1: Courses with recorded positive grades for this class, session, and term
+            $courseQuery = "
+                SELECT c.id, c.name
+                FROM courses c
+                JOIN grades g ON c.id = g.course_id
+                WHERE g.class_id IN ($inClassPlaceholders)
+                  AND g.academic_term = ?
+                  AND g.academic_session = ?
+                GROUP BY c.id, c.name
+                HAVING (MAX(COALESCE(g.score, 0)) > 0 
+                     OR MAX(COALESCE(g.ca1, 0)) > 0 
+                     OR MAX(COALESCE(g.ca2, 0)) > 0 
+                     OR MAX(COALESCE(g.exam, 0)) > 0)
+                ORDER BY c.name ASC
+            ";
+            $cStmt = $this->conn->prepare($courseQuery);
+            $cStmt->execute(array_merge($targetClassIds, [$term, $session]));
+            $rawCourses = $cStmt->fetchAll();
+        }
+
+        // Priority 2: If no grades recorded yet for this term/session, fall back to class_subjects
+        if (empty($rawCourses)) {
+            $csQuery = "
+                SELECT DISTINCT c.id, c.name
+                FROM courses c
+                JOIN class_subjects cs ON c.id = cs.course_id
+                WHERE cs.class_id IN ($inClassPlaceholders)
+                ORDER BY c.name ASC
+            ";
+            $csStmt = $this->conn->prepare($csQuery);
+            $csStmt->execute($targetClassIds);
+            $rawCourses = $csStmt->fetchAll();
+        }
+
+        // Enforce strict educational level boundaries:
+        // JSS classes can NEVER contain SS-only subjects.
+        // SS classes can NEVER contain JSS-only subjects.
+        $rawCourses = array_values(array_filter($rawCourses, function($c) use ($isJunior, $isSenior, $jssOnlyCourseIds, $ssOnlyCourseIds) {
+            $cid = intval($c['id']);
+            if ($isJunior && in_array($cid, $ssOnlyCourseIds)) {
+                return false;
+            }
+            if ($isSenior && in_array($cid, $jssOnlyCourseIds)) {
+                return false;
+            }
+            return true;
+        }));
 
         // Sort courses to match standard DLHS hierarchy:
         // English Language -> Mathematics -> Agricultural Science -> Animal Husbandry -> Biology -> Catering Craft -> Chemistry -> Civic Education -> Computer Studies -> Data Processing -> Economics -> Food & Nutrition -> French -> Further Mathematics -> Geography -> Physics -> Technical Drawing -> Visual Arts -> AI/Robotics -> LET
@@ -257,36 +470,111 @@ class BroadsheetController {
         $subjects = [];
         $subIndex = 1;
         foreach ($rawCourses as $rc) {
+            $fullName = strtoupper(trim($rc['name']));
+            $shortName = $this->getShortSubjectName($rc['name']);
             $subjects[] = [
                 'id' => intval($rc['id']),
-                'name' => strtoupper(trim($rc['name'])),
+                'name' => $fullName,
+                'short_name' => $shortName,
                 'index' => $subIndex++
             ];
         }
 
-        // 3. Fetch all grades for these students
-        $gradesQuery = "
-            SELECT student_id, course_id, score, ca1, ca2, exam
-            FROM grades
-            WHERE student_id IN ($stuPlaceholders)
-              AND academic_term = ?
-              AND academic_session = ?
-        ";
-        $gParams = array_merge($studentIds, [$term, $session]);
-        $gStmt = $this->conn->prepare($gradesQuery);
-        $gStmt->execute($gParams);
-        $gradesList = $gStmt->fetchAll();
+        // 3. Fetch all grades for these students strictly scoped to these class(es)
+        if ($isCumulative) {
+            $gradesQuery = "
+                SELECT student_id, course_id, academic_term, score, ca1, ca2, exam
+                FROM grades
+                WHERE student_id IN ($stuPlaceholders)
+                  AND class_id IN ($inClassPlaceholders)
+                  AND academic_session = ?
+                  AND (score IS NOT NULL OR ca1 IS NOT NULL OR ca2 IS NOT NULL OR exam IS NOT NULL)
+            ";
+            $gParams = array_merge($studentIds, $targetClassIds, [$session]);
+            $gStmt = $this->conn->prepare($gradesQuery);
+            $gStmt->execute($gParams);
+            $gradesList = $gStmt->fetchAll();
 
-        // Index grades by [student_id][course_id]
-        $studentScores = [];
-        foreach ($gradesList as $g) {
-            $sid = intval($g['student_id']);
-            $cid = intval($g['course_id']);
-            $scoreVal = $g['score'] !== null ? floatval($g['score']) : null;
-            $studentScores[$sid][$cid] = $scoreVal;
+            $studentTermScores = [];
+            foreach ($gradesList as $g) {
+                $sid = intval($g['student_id']);
+                $cid = intval($g['course_id']);
+                $t = trim($g['academic_term']);
+
+                // Calculate end-of-term total from components if available
+                $hasComponents = ($g['ca1'] !== null || $g['ca2'] !== null || $g['exam'] !== null);
+                if ($hasComponents) {
+                    $comp = floatval($g['ca1'] ?? 0) + floatval($g['ca2'] ?? 0) + floatval($g['exam'] ?? 0);
+                    $scoreVal = round(min(100.0, $comp), 2);
+                } elseif ($g['score'] !== null && $g['score'] !== '') {
+                    $scoreVal = floatval($g['score']);
+                } else {
+                    $scoreVal = null;
+                }
+
+                if ($scoreVal !== null) {
+                    $studentTermScores[$sid][$cid][$t] = $scoreVal;
+                }
+            }
+
+            // Calculate cumulative subject scores (average of available terms)
+            $studentScores = [];
+            foreach ($studentIds as $sid) {
+                foreach ($subjects as $sub) {
+                    $cid = $sub['id'];
+                    $tScores = $studentTermScores[$sid][$cid] ?? [];
+                    if (!empty($tScores)) {
+                        $studentScores[$sid][$cid] = round(array_sum($tScores) / count($tScores), 2);
+                    } else {
+                        $studentScores[$sid][$cid] = null;
+                    }
+                }
+            }
+        } else {
+            $gradesQuery = "
+                SELECT student_id, course_id, score, ca1, ca2, exam
+                FROM grades
+                WHERE student_id IN ($stuPlaceholders)
+                  AND class_id IN ($inClassPlaceholders)
+                  AND academic_term = ?
+                  AND academic_session = ?
+            ";
+            $gParams = array_merge($studentIds, $targetClassIds, [$term, $session]);
+            $gStmt = $this->conn->prepare($gradesQuery);
+            $gStmt->execute($gParams);
+            $gradesList = $gStmt->fetchAll();
+
+            // Index grades by [student_id][course_id]
+            // Broadsheet subject totals are calculated from the authentic end-of-term continuous assessments (CA1 + CA2 + Exam)
+            $studentScores = [];
+            foreach ($gradesList as $g) {
+                $sid = intval($g['student_id']);
+                $cid = intval($g['course_id']);
+
+                $hasComponents = ($g['ca1'] !== null || $g['ca2'] !== null || $g['exam'] !== null);
+                if ($hasComponents) {
+                    $comp = floatval($g['ca1'] ?? 0) + floatval($g['ca2'] ?? 0) + floatval($g['exam'] ?? 0);
+                    $scoreVal = round(min(100.0, $comp), 2);
+                } elseif ($g['score'] !== null && $g['score'] !== '') {
+                    $scoreVal = floatval($g['score']);
+                } else {
+                    $scoreVal = null;
+                }
+                $studentScores[$sid][$cid] = $scoreVal;
+            }
         }
 
         // 4. Calculate student averages, letter grade tallies, and prepare student rows
+        $maxClassScore = 0.0;
+        foreach ($studentScores as $sidScores) {
+            foreach ($sidScores as $scVal) {
+                if ($scVal !== null && floatval($scVal) > $maxClassScore) {
+                    $maxClassScore = floatval($scVal);
+                }
+            }
+        }
+        $isMidtermScale = ($maxClassScore > 0 && $maxClassScore <= 20.0);
+
         $compiledStudents = [];
         foreach ($students as $stu) {
             $sid = intval($stu['id']);
@@ -297,13 +585,14 @@ class BroadsheetController {
 
             foreach ($subjects as $sub) {
                 $cid = $sub['id'];
-                if (isset($studentScores[$sid][$cid]) && $studentScores[$sid][$cid] !== null) {
-                    $sc = $studentScores[$sid][$cid];
+                if (isset($studentScores[$sid][$cid]) && $studentScores[$sid][$cid] !== null && floatval($studentScores[$sid][$cid]) > 0) {
+                    $sc = floatval($studentScores[$sid][$cid]);
                     $scoresMap[$cid] = $sc;
                     $totalScore += $sc;
                     $offeredCount++;
 
-                    $letter = $this->calculateGradeLetter($sc, $isJunior);
+                    $evalScore = $isMidtermScale ? round(($sc / 20.0) * 100.0, 2) : $sc;
+                    $letter = $this->calculateGradeLetter($evalScore, $isJunior);
                     if ($letter && isset($gradeCounts[$letter])) {
                         $gradeCounts[$letter]++;
                     }
@@ -313,6 +602,18 @@ class BroadsheetController {
             }
 
             $average = $offeredCount > 0 ? round($totalScore / $offeredCount, 2) : 0.00;
+
+            // Determine cumulative decision (Promoted / Promoted on Trial / Repeat)
+            $decision = '—';
+            if ($isCumulative && $offeredCount > 0) {
+                if ($average >= 50.0) {
+                    $decision = 'PROMOTED';
+                } elseif ($average >= 40.0) {
+                    $decision = 'PROMOTED ON TRIAL';
+                } else {
+                    $decision = 'REPEAT';
+                }
+            }
 
             $fullName = strtoupper(trim($stu['last_name'] . ' ' . $stu['first_name']));
 
@@ -324,7 +625,8 @@ class BroadsheetController {
                 'scores' => $scoresMap,
                 'average' => $average,
                 'offered_count' => $offeredCount,
-                'grades' => $gradeCounts
+                'grades' => $gradeCounts,
+                'decision' => $decision
             ];
         }
 
@@ -391,6 +693,7 @@ class BroadsheetController {
                 "term" => $term,
                 "session" => $session,
                 "is_senior" => $isSenior,
+                "is_cumulative" => $isCumulative,
                 "logo_url" => $logoUrl
             ],
             "subjects" => $subjects,
@@ -453,8 +756,8 @@ class BroadsheetController {
 <head>
     <meta charset="UTF-8">
     <title>Broadsheet - <?= htmlspecialchars($school['class_title']) ?> (<?= htmlspecialchars($school['term']) ?> <?= htmlspecialchars($school['session']) ?>)</title>
-    <link rel="icon" type="image/x-icon" href="/lms/favicon.ico">
-    <link rel="icon" type="image/png" href="<?= htmlspecialchars(!empty($school['logo_url']) ? $school['logo_url'] : '/lms/public/favicon.png') ?>">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="<?= htmlspecialchars(!empty($school['logo_url']) ? $school['logo_url'] : '/favicon.png') ?>">
     <style>
         @page {
             size: landscape;
@@ -611,20 +914,40 @@ class BroadsheetController {
             font-weight: bold;
             padding: 2px 2px;
         }
+        .col-decision {
+            width: 72px;
+            min-width: 68px;
+            text-align: center;
+            font-size: 8.5px;
+            font-weight: bold;
+            padding: 2px 2px;
+        }
 
         /* Numbered header row */
         tr.index-row th {
-            height: 16px;
+            height: 18px;
             font-size: 9px;
             background: #f8fafc;
         }
 
         /* Vertical rotated subject header */
         .vertical-header {
-            height: 125px;
+            height: 135px;
+            max-height: 135px;
             position: relative;
             vertical-align: bottom !important;
-            padding-bottom: 6px !important;
+            padding: 0 1px !important;
+            overflow: hidden !important;
+        }
+        .vertical-header-wrapper {
+            height: 135px;
+            max-height: 135px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 5px;
+            overflow: hidden !important;
+            box-sizing: border-box;
         }
         .vertical-text {
             writing-mode: vertical-rl;
@@ -632,10 +955,12 @@ class BroadsheetController {
             white-space: nowrap;
             display: inline-block;
             text-align: left;
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: bold;
-            letter-spacing: 0.3px;
-            max-height: 115px;
+            letter-spacing: 0.2px;
+            max-height: 125px;
+            overflow: hidden !important;
+            text-overflow: ellipsis;
         }
 
         /* Alternating row styling */
@@ -722,30 +1047,44 @@ class BroadsheetController {
                 <th class="col-grade"></th>
                 <th class="col-grade"></th>
                 <th class="col-grade"></th>
+                <?php if (!empty($school['is_cumulative'])): ?>
+                    <th class="col-decision"></th>
+                <?php endif; ?>
             </tr>
             <!-- Subject names (vertical headers) -->
             <tr>
                 <th class="col-sno" style="vertical-align: bottom;">S/<br>NO</th>
                 <th class="col-name" style="vertical-align: bottom;">NAME OF STUDENT</th>
                 <?php foreach ($subjects as $sub): ?>
-                    <th class="col-sub vertical-header">
-                        <span class="vertical-text"><?= htmlspecialchars($sub['name']) ?></span>
+                    <th class="col-sub vertical-header" title="<?= htmlspecialchars($sub['name']) ?>">
+                        <div class="vertical-header-wrapper">
+                            <span class="vertical-text"><?= htmlspecialchars($sub['short_name'] ?? $sub['name']) ?></span>
+                        </div>
                     </th>
                 <?php endforeach; ?>
-                <th class="col-avg vertical-header">
-                    <span class="vertical-text">AVERAGE</span>
+                <th class="col-avg vertical-header" title="<?= !empty($school['is_cumulative']) ? 'Cumulative Average' : 'Term Average' ?>">
+                    <div class="vertical-header-wrapper">
+                        <span class="vertical-text"><?= !empty($school['is_cumulative']) ? 'CUM. AVG' : 'AVERAGE' ?></span>
+                    </div>
                 </th>
                 <th class="col-grade" style="vertical-align: bottom;">A</th>
                 <th class="col-grade" style="vertical-align: bottom;">B</th>
                 <th class="col-grade" style="vertical-align: bottom;">C</th>
                 <th class="col-grade" style="vertical-align: bottom;">D</th>
                 <th class="col-grade" style="vertical-align: bottom;">F</th>
+                <?php if (!empty($school['is_cumulative'])): ?>
+                    <th class="col-decision" style="vertical-align: bottom; font-size: 8.5px; font-weight: bold;">DECISION</th>
+                <?php endif; ?>
             </tr>
         </thead>
         <tbody>
+            <?php 
+                $totalCols = 2 + count($subjects) + 1 + 5 + (!empty($school['is_cumulative']) ? 1 : 0); 
+                $summaryTrailing = !empty($school['is_cumulative']) ? 7 : 6;
+            ?>
             <?php if (empty($students)): ?>
                 <tr>
-                    <td colspan="<?= 3 + count($subjects) + 5 ?>" style="padding: 24px; text-align:center; color:#64748b;">
+                    <td colspan="<?= $totalCols ?>" style="padding: 24px; text-align:center; color:#64748b;">
                         No student results found for this class and term.
                     </td>
                 </tr>
@@ -757,7 +1096,7 @@ class BroadsheetController {
                         <?php foreach ($subjects as $sub): ?>
                             <?php $sc = $stu['scores'][$sub['id']] ?? null; ?>
                             <td class="col-sub score-val">
-                                <?= $sc !== null ? (floatval($sc) == intval($sc) ? intval($sc) : number_format($sc, 2)) : '' ?>
+                                <?= ($sc !== null && floatval($sc) > 0) ? (floatval($sc) == intval($sc) ? intval($sc) : number_format($sc, 2)) : '' ?>
                             </td>
                         <?php endforeach; ?>
                         <td class="col-avg"><?= number_format($stu['average'], 2) ?></td>
@@ -766,12 +1105,17 @@ class BroadsheetController {
                         <td class="col-grade"><?= $stu['grades']['C'] ?></td>
                         <td class="col-grade"><?= $stu['grades']['D'] ?></td>
                         <td class="col-grade"><?= $stu['grades']['F'] ?></td>
+                        <?php if (!empty($school['is_cumulative'])): ?>
+                            <td class="col-decision" style="font-weight: bold; font-size: 8px; color: <?= ($stu['decision'] ?? '') === 'PROMOTED' ? '#15803d' : (($stu['decision'] ?? '') === 'PROMOTED ON TRIAL' ? '#b45309' : '#b91c1c') ?>;">
+                                <?= htmlspecialchars($stu['decision'] ?? '—') ?>
+                            </td>
+                        <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>
 
                 <!-- Blank spacer row before summary -->
                 <tr>
-                    <td colspan="<?= 3 + count($subjects) + 5 ?>" style="height: 10px; background: #e2e8f0; border-left:none; border-right:none;"></td>
+                    <td colspan="<?= $totalCols ?>" style="height: 10px; background: #e2e8f0; border-left:none; border-right:none;"></td>
                 </tr>
 
                 <!-- Subject Statistics Summary -->
@@ -780,56 +1124,56 @@ class BroadsheetController {
                     <?php foreach ($subjects as $sub): ?>
                         <td class="bold-cell"><?= $summary[$sub['id']]['student_count'] ?? 0 ?></td>
                     <?php endforeach; ?>
-                    <td colspan="6" style="background:#f8fafc;"></td>
+                    <td colspan="<?= $summaryTrailing ?>" style="background:#f8fafc;"></td>
                 </tr>
                 <tr class="summary-row">
                     <td class="label-cell" colspan="2">No of A's</td>
                     <?php foreach ($subjects as $sub): ?>
                         <td><?= $summary[$sub['id']]['a_count'] ?? 0 ?></td>
                     <?php endforeach; ?>
-                    <td colspan="6" style="background:#f8fafc;"></td>
+                    <td colspan="<?= $summaryTrailing ?>" style="background:#f8fafc;"></td>
                 </tr>
                 <tr class="summary-row">
                     <td class="label-cell" colspan="2">No of B's</td>
                     <?php foreach ($subjects as $sub): ?>
                         <td><?= $summary[$sub['id']]['b_count'] ?? 0 ?></td>
                     <?php endforeach; ?>
-                    <td colspan="6" style="background:#f8fafc;"></td>
+                    <td colspan="<?= $summaryTrailing ?>" style="background:#f8fafc;"></td>
                 </tr>
                 <tr class="summary-row">
                     <td class="label-cell" colspan="2">No of C's</td>
                     <?php foreach ($subjects as $sub): ?>
                         <td><?= $summary[$sub['id']]['c_count'] ?? 0 ?></td>
                     <?php endforeach; ?>
-                    <td colspan="6" style="background:#f8fafc;"></td>
+                    <td colspan="<?= $summaryTrailing ?>" style="background:#f8fafc;"></td>
                 </tr>
                 <tr class="summary-row">
                     <td class="label-cell" colspan="2">No of D's</td>
                     <?php foreach ($subjects as $sub): ?>
                         <td><?= $summary[$sub['id']]['d_count'] ?? 0 ?></td>
                     <?php endforeach; ?>
-                    <td colspan="6" style="background:#f8fafc;"></td>
+                    <td colspan="<?= $summaryTrailing ?>" style="background:#f8fafc;"></td>
                 </tr>
                 <tr class="summary-row">
                     <td class="label-cell" colspan="2">No of F's</td>
                     <?php foreach ($subjects as $sub): ?>
                         <td><?= $summary[$sub['id']]['f_count'] ?? 0 ?></td>
                     <?php endforeach; ?>
-                    <td colspan="6" style="background:#f8fafc;"></td>
+                    <td colspan="<?= $summaryTrailing ?>" style="background:#f8fafc;"></td>
                 </tr>
                 <tr class="summary-row">
                     <td class="label-cell bold-cell" colspan="2">No of Pass</td>
                     <?php foreach ($subjects as $sub): ?>
                         <td class="bold-cell"><?= $summary[$sub['id']]['pass_count'] ?? 0 ?></td>
                     <?php endforeach; ?>
-                    <td colspan="6" style="background:#f8fafc;"></td>
+                    <td colspan="<?= $summaryTrailing ?>" style="background:#f8fafc;"></td>
                 </tr>
                 <tr class="summary-row">
                     <td class="label-cell bold-cell" colspan="2">% pass</td>
                     <?php foreach ($subjects as $sub): ?>
                         <td class="pass-pct"><?= ($summary[$sub['id']]['pass_percentage'] ?? 0) ?>%</td>
                     <?php endforeach; ?>
-                    <td colspan="6" style="background:#f8fafc;"></td>
+                    <td colspan="<?= $summaryTrailing ?>" style="background:#f8fafc;"></td>
                 </tr>
             <?php endif; ?>
         </tbody>
@@ -879,12 +1223,15 @@ class BroadsheetController {
         foreach ($subjects as $sub) {
             $header[] = $sub['name'];
         }
-        $header[] = 'AVERAGE';
+        $header[] = !empty($school['is_cumulative']) ? 'CUM. AVERAGE' : 'AVERAGE';
         $header[] = 'A';
         $header[] = 'B';
         $header[] = 'C';
         $header[] = 'D';
         $header[] = 'F';
+        if (!empty($school['is_cumulative'])) {
+            $header[] = 'DECISION';
+        }
         fputcsv($out, $header);
 
         // Student Rows
@@ -892,7 +1239,7 @@ class BroadsheetController {
             $row = [$stu['s_no'], $stu['name']];
             foreach ($subjects as $sub) {
                 $sc = $stu['scores'][$sub['id']] ?? '';
-                $row[] = $sc !== null && $sc !== '' ? (floatval($sc) == intval($sc) ? intval($sc) : number_format($sc, 2)) : '';
+                $row[] = ($sc !== null && $sc !== '' && floatval($sc) > 0) ? (floatval($sc) == intval($sc) ? intval($sc) : number_format($sc, 2)) : '';
             }
             $row[] = number_format($stu['average'], 2);
             $row[] = $stu['grades']['A'];
@@ -900,6 +1247,9 @@ class BroadsheetController {
             $row[] = $stu['grades']['C'];
             $row[] = $stu['grades']['D'];
             $row[] = $stu['grades']['F'];
+            if (!empty($school['is_cumulative'])) {
+                $row[] = $stu['decision'] ?? '';
+            }
             fputcsv($out, $row);
         }
 

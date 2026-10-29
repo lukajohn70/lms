@@ -79,12 +79,12 @@ export default function AdminLibrary() {
     <div>
       <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
-          <div style={{ fontSize: 11, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Academic Setup</div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--heading)", margin: 0 }}>E-Library Manager</h1>
+          <div style={{ fontSize: 11, color: "#dc137b", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4, fontFamily: "'Raleway', sans-serif", fontWeight: 800 }}>Academic Setup</div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--heading)", margin: 0, fontFamily: "'Raleway', sans-serif" }}>E-Library Manager</h1>
         </div>
         <button
           onClick={() => setShowUpload(true)}
-          style={{ padding: "10px 18px", borderRadius: 10, background: "linear-gradient(135deg, #FB8500, #E85D04)", border: "none", color: "#fff", fontSize: 13, fontWeight: 600, display: "flex", gap: 8, alignItems: "center", cursor: "pointer" }}
+          style={{ padding: "10px 18px", borderRadius: 8, background: "#293d7d", border: "none", color: "#fff", fontSize: 12.5, fontWeight: 700, display: "flex", gap: 8, alignItems: "center", cursor: "pointer", fontFamily: "'Raleway', sans-serif" }}
         >
           <Plus size={16} /> Upload Book
         </button>
@@ -118,10 +118,10 @@ export default function AdminLibrary() {
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{book.title}</div>
                     <div style={{ fontSize: 11, color: "var(--subtext)", marginBottom: 6 }}>{book.author || "Unknown Author"}</div>
-                    {book.category && <div style={{ fontSize: 9.5, background: "rgba(33,158,188,0.1)", color: "#219EBC", padding: "2px 6px", borderRadius: 4, display: "inline-block", alignSelf: "flex-start", marginBottom: 6 }}>{book.category}</div>}
+                    {book.category && <div style={{ fontSize: 9.5, background: "rgba(0,147,221,0.08)", color: "#0093dd", padding: "2px 6px", borderRadius: 4, display: "inline-block", alignSelf: "flex-start", marginBottom: 6, fontWeight: 700 }}>{book.category}</div>}
                     
                     <div style={{ marginTop: "auto", display: "flex", gap: 8 }}>
-                      <a href={fileUrl} target="_blank" style={{ fontSize: 11, color: "#219EBC", textDecoration: "none", fontWeight: 600 }}>View PDF</a>
+                      <a href={fileUrl} target="_blank" style={{ fontSize: 11, color: "#293d7d", textDecoration: "none", fontWeight: 700 }}>View PDF</a>
                       <button onClick={() => handleDelete(book.id)} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>Delete</button>
                     </div>
                   </div>
@@ -165,7 +165,7 @@ export default function AdminLibrary() {
 
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
                 <button type="button" onClick={() => setShowUpload(false)} style={{ flex: 1, padding: 10, borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" disabled={uploading} style={{ flex: 1, padding: 10, borderRadius: 8, background: "#FB8500", border: "none", color: "#fff", cursor: "pointer", fontWeight: 600 }}>
+                <button type="submit" disabled={uploading} style={{ flex: 1, padding: 10, borderRadius: 8, background: "#dc137b", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700, fontFamily: "'Raleway', sans-serif" }}>
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>

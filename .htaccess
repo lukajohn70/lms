@@ -1,8 +1,69 @@
 Options -Indexes
 Options +FollowSymLinks
 
-# Block direct access to scratch/utility scripts
-<FilesMatch "^scratch_.*\.php$">
-    Order Deny,Allow
-    Deny from all
-</FilesMatch>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Block access to hidden files and sensitive project configuration
+    RewriteRule ^(\.git|\.env|\.cpanel\.yml|composer\.|package(-lock)?\.json|tsconfig\.json|vite\.config\.ts) - [F,L]
+
+    # 2. Block direct HTTP access to scratch/debug scripts
+    <FilesMatch "^(scratch_.*|diagnose.*)\.php$">
+        Order Deny,Allow
+        Deny from all
+    </FilesMatch>
+
+    # 3. Allow API requests to pass directly to the api directory
+    RewriteRule ^api(/.*)?$ - [L]
+
+    # 4. If the requested file or directory exists in root, serve it directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # 5. Direct repo clone scenario: if dist/ exists and file exists inside dist, serve it
+    RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ dist/$1 [L]
+
+    # 6. Single Page Application (SPA) routing for React Router:
+    # If dist/index.html exists (direct repo clone), rewrite to dist/index.html
+    RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f
+    RewriteRule ^ dist/index.html [L]
+
+    # Otherwise, fallback to root index.html (when dist/* was deployed to root via .cpanel.yml)
+    RewriteCond %{DOCUMENT_ROOT}/index.html -f
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Gzip compression for high performance
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+    AddOutputFilterByType DEFLATE application/x-font
+    AddOutputFilterByType DEFLATE application/x-font-opentype
+    AddOutputFilterByType DEFLATE application/x-font-otf
+    AddOutputFilterByType DEFLATE application/x-font-truetype
+    AddOutputFilterByType DEFLATE application/x-font-ttf
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE font/opentype
+    AddOutputFilterByType DEFLATE font/otf
+    AddOutputFilterByType DEFLATE font/ttf
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE image/x-icon
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/xml
+</IfModule>

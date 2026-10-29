@@ -32,7 +32,7 @@ export function ErrorBoundary() {
         background: "var(--background, #011627)",
         color: "var(--heading, #e8f4f8)",
         padding: 24,
-        fontFamily: "'Poppins', sans-serif"
+        fontFamily: "'Lato', sans-serif"
       }}
     >
       <div
@@ -42,7 +42,7 @@ export function ErrorBoundary() {
           padding: "36px 32px",
           borderRadius: 16,
           background: "rgba(1, 29, 47, 0.8)",
-          border: "1px solid rgba(142, 202, 230, 0.15)",
+          border: "1px solid var(--glass-border)",
           backdropFilter: "blur(20px)",
           boxShadow: "0 12px 40px rgba(0,0,0,0.4)",
           textAlign: "center"
@@ -53,13 +53,13 @@ export function ErrorBoundary() {
             width: 56,
             height: 56,
             borderRadius: 16,
-            background: status === 404 ? "rgba(255, 183, 3, 0.15)" : "rgba(239, 68, 68, 0.15)",
-            border: `1px solid ${status === 404 ? "rgba(255, 183, 3, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+            background: status === 404 ? "rgba(212, 175, 55, 0.15)" : "rgba(239, 68, 68, 0.15)",
+            border: `1px solid ${status === 404 ? "rgba(212, 175, 55, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             margin: "0 auto 20px",
-            color: status === 404 ? "#FFB703" : "#ef4444"
+            color: status === 404 ? "#d4af37" : "#ef4444"
           }}
         >
           <AlertCircle size={28} />
@@ -69,7 +69,7 @@ export function ErrorBoundary() {
           {title}
         </h1>
 
-        <p style={{ fontSize: 13.5, color: "var(--subtext, #8ECAE6)", lineHeight: 1.6, margin: "0 0 28px" }}>
+        <p style={{ fontSize: 13.5, color: "var(--subtext, var(--subtext))", lineHeight: 1.6, margin: "0 0 28px" }}>
           {message}
         </p>
 
@@ -82,8 +82,8 @@ export function ErrorBoundary() {
               gap: 8,
               padding: "10px 20px",
               borderRadius: 10,
-              background: "rgba(142, 202, 230, 0.1)",
-              border: "1px solid rgba(142, 202, 230, 0.2)",
+              background: "rgba(41, 61, 125, 0.08)",
+              border: "1px solid rgba(41, 61, 125, 0.2)",
               color: "var(--heading, #e8f4f8)",
               fontSize: 13,
               fontWeight: 600,
@@ -114,13 +114,13 @@ export function ErrorBoundary() {
               gap: 8,
               padding: "10px 22px",
               borderRadius: 10,
-              background: "linear-gradient(135deg, #219EBC 0%, #023047 100%)",
+              background: "#293d7d",
               border: "none",
               color: "#fff",
               fontSize: 13,
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 4px 16px rgba(33,158,188,0.3)",
+              boxShadow: "0 2px 8px rgba(41,61,125,0.25)",
               transition: "all 0.2s"
             }}
           >

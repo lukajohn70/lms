@@ -16,7 +16,7 @@ const Glass = ({ children, style }: { children: React.ReactNode; style?: React.C
       background: theme === "dark" ? "rgba(255, 255, 255, 0.03)" : "rgba(255, 255, 255, 0.8)",
       backdropFilter: "blur(12px)",
       WebkitBackdropFilter: "blur(12px)",
-      border: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.07)" : "rgba(33,158,188,0.12)"}`,
+      border: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.07)" : "rgba(41,61,125,0.08)"}`,
       borderRadius: "16px",
       padding: "24px",
       boxShadow: "0 8px 32px rgba(2, 48, 71, 0.04)",
@@ -191,7 +191,7 @@ export default function AdminAdmissions() {
               content: '';
               position: absolute;
               inset: 18px;
-              border: 2.5px solid #219EBC;
+              border: 2.5px solid #293d7d;
               pointer-events: none;
             }
             .page::after {
@@ -202,16 +202,16 @@ export default function AdminAdmissions() {
               pointer-events: none;
             }
             /* Header */
-            .header { display: flex; align-items: center; gap: 18px; padding-bottom: 18px; border-bottom: 2px solid #219EBC; margin-bottom: 28px; }
+            .header { display: flex; align-items: center; gap: 18px; padding-bottom: 18px; border-bottom: 2px solid #293d7d; margin-bottom: 28px; }
             .logo { width: 70px; height: 70px; border-radius: 14px; flex-shrink: 0; }
             .school-info { flex: 1; }
             .school-name { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 800; color: #012030; letter-spacing: 0.5px; text-transform: uppercase; }
-            .school-tagline { font-size: 12px; color: #fb8500; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+            .school-tagline { font-size: 12px; color: #d4af37; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
             .school-contact { font-size: 11px; color: #5a7f92; margin-top: 5px; line-height: 1.6; }
             .ref-block { text-align: right; font-size: 12px; color: #5a7f92; line-height: 1.8; }
             /* Title bar */
             .letter-title { text-align: center; margin-bottom: 28px; }
-            .letter-title h2 { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #012030; background: rgba(33,158,188,0.08); display: inline-block; padding: 8px 28px; border-radius: 4px; border-bottom: 2px solid #219EBC; }
+            .letter-title h2 { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #012030; background: rgba(33,158,188,0.08); display: inline-block; padding: 8px 28px; border-radius: 4px; border-bottom: 2px solid #293d7d; }
             /* Body text */
             .salutation { font-size: 15px; line-height: 1.8; margin-bottom: 14px; }
             .body-text { font-size: 14.5px; line-height: 1.85; margin-bottom: 16px; text-align: justify; }
@@ -222,21 +222,21 @@ export default function AdminAdmissions() {
             .info-table td { padding: 9px 14px; vertical-align: top; }
             .info-table td:first-child { font-weight: 700; color: #5a7f92; width: 40%; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.3px; }
             .info-table td:last-child { font-weight: 600; color: #012030; font-size: 14px; }
-            .adm-number { font-size: 20px; font-family: 'Montserrat', sans-serif; font-weight: 800; color: #fb8500; }
+            .adm-number { font-size: 20px; font-family: 'Montserrat', sans-serif; font-weight: 800; color: #d4af37; }
             /* Instruction box */
-            .instruction-box { background: rgba(33,158,188,0.05); border-left: 4px solid #219EBC; padding: 14px 18px; margin: 20px 0; border-radius: 0 8px 8px 0; }
-            .instruction-box h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #219EBC; font-weight: 700; margin-bottom: 8px; }
+            .instruction-box { background: rgba(41,61,125,0.04); border-left: 4px solid #293d7d; padding: 14px 18px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+            .instruction-box h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #293d7d; font-weight: 700; margin-bottom: 8px; }
             .instruction-box ol { padding-left: 18px; }
             .instruction-box li { font-size: 13px; line-height: 1.7; margin-bottom: 4px; }
             /* Fee note */
             .fee-note { background: rgba(251,133,0,0.06); border: 1px solid rgba(251,133,0,0.2); border-radius: 8px; padding: 14px 18px; margin: 18px 0; font-size: 13px; line-height: 1.6; }
-            .fee-note strong { color: #fb8500; }
+            .fee-note strong { color: #d4af37; }
             /* Signature */
             .signature-block { margin-top: 36px; display: flex; justify-content: space-between; align-items: flex-end; }
             .sign-left { font-size: 13.5px; line-height: 1.7; }
             .sign-line { width: 200px; border-bottom: 1.5px solid #012030; margin-bottom: 5px; height: 36px; }
             .sign-label { font-size: 11.5px; color: #5a7f92; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
-            .stamp-circle { width: 80px; height: 80px; border-radius: 50%; border: 3px double #219EBC; display: flex; align-items: center; justify-content: center; font-size: 9px; text-align: center; color: #219EBC; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.4; }
+            .stamp-circle { width: 80px; height: 80px; border-radius: 50%; border: 3px double #293d7d; display: flex; align-items: center; justify-content: center; font-size: 9px; text-align: center; color: #293d7d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.4; }
             /* Footer */
             .footer { margin-top: 32px; padding-top: 14px; border-top: 1px solid rgba(33,158,188,0.2); text-align: center; font-size: 10.5px; color: #b5c7d3; line-height: 1.6; }
             @media print {
@@ -253,7 +253,7 @@ export default function AdminAdmissions() {
                 <div class="school-name">Deeper Life High School</div>
                 <div class="school-tagline">Leadership with Distinction</div>
                 <div class="school-contact">
-                  📍 Km 42, Lagos-Ibadan Expressway, Ogun State, Nigeria &nbsp;|&nbsp; 📞 +234 800 354 7466 &nbsp;|&nbsp; ✉ info@deeperlifehighschool.org
+                  Campus: Km 42, Lagos-Ibadan Expressway, Ogun State, Nigeria &nbsp;|&nbsp; Tel: +234 800 354 7466 &nbsp;|&nbsp; ✉ info@deeperlifehighschool.org
                 </div>
               </div>
               <div class="ref-block">
@@ -384,28 +384,28 @@ export default function AdminAdmissions() {
           <link rel="icon" type="image/x-icon" href="/favicon.ico">
           <link rel="icon" type="image/png" href="/logo.png">
           <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #023047; padding: 20px; }
-            .card { border: 3px double #219EBC; padding: 30px; max-width: 650px; margin: 0 auto; position: relative; border-radius: 12px; background: #fafdfc; }
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #16234b; padding: 20px; }
+            .card { border: 3px double #293d7d; padding: 30px; max-width: 650px; margin: 0 auto; position: relative; border-radius: 12px; background: #fafdfc; }
             .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 80px; color: rgba(33, 158, 188, 0.05); font-weight: 800; pointer-events: none; z-index: 0; white-space: nowrap; }
-            .header { display: flex; align-items: center; border-bottom: 2px solid #219EBC; padding-bottom: 15px; margin-bottom: 20px; z-index: 1; position: relative; }
+            .header { display: flex; align-items: center; border-bottom: 2px solid #293d7d; padding-bottom: 15px; margin-bottom: 20px; z-index: 1; position: relative; }
             .logo { width: 60px; height: 60px; border-radius: 12px; margin-right: 15px; }
             .title { flex-grow: 1; }
-            .title h1 { margin: 0; font-size: 22px; color: #023047; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-            .title p { margin: 3px 0 0; font-size: 12px; color: #fb8500; font-weight: 600; text-transform: uppercase; }
+            .title h1 { margin: 0; font-size: 22px; color: #16234b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+            .title p { margin: 3px 0 0; font-size: 12px; color: #d4af37; font-weight: 600; text-transform: uppercase; }
             .details { display: grid; grid-template-columns: 140px 1fr; gap: 15px; margin-bottom: 25px; z-index: 1; position: relative; }
             .photo-box { width: 120px; height: 130px; border: 2px dashed #b5c7d3; display: flex; align-items: center; justify-content: center; background: #f0f4f7; font-size: 11px; color: #5a7f92; font-weight: 600; text-align: center; border-radius: 8px; }
             .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13.5px; }
             .info-item { margin-bottom: 6px; }
             .info-label { font-weight: bold; color: #5a7f92; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; }
-            .info-value { font-weight: 600; color: #023047; }
+            .info-value { font-weight: 600; color: #16234b; }
             .schedule-box { background: rgba(33, 158, 188, 0.08); border: 1.5px solid rgba(33, 158, 188, 0.2); border-radius: 8px; padding: 15px; margin-bottom: 20px; z-index: 1; position: relative; }
-            .schedule-title { font-weight: bold; color: #219EBC; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; letter-spacing: 0.5px; }
+            .schedule-title { font-weight: bold; color: #293d7d; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; letter-spacing: 0.5px; }
             .schedule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13.5px; }
             .instructions { font-size: 11.5px; line-height: 1.5; color: #5a7f92; border-top: 1px solid #dde3e8; padding-top: 15px; z-index: 1; position: relative; }
             .instructions ol { padding-left: 20px; margin: 5px 0 0; }
             @media print {
               body { padding: 0; background: #fff; }
-              .card { border: 2px solid #219EBC; box-shadow: none; max-width: 100%; margin: 0; border-radius: 0; }
+              .card { border: 2px solid #293d7d; box-shadow: none; max-width: 100%; margin: 0; border-radius: 0; }
             }
           </style>
         </head>
@@ -429,7 +429,7 @@ export default function AdminAdmissions() {
               <div class="info-grid">
                 <div class="info-item" style="grid-column: span 2;">
                   <div class="info-label">Application Number</div>
-                  <div class="info-value" style="font-size: 16px; color: #fb8500; font-weight: 700;">${appDetails.application_number || ''}</div>
+                  <div class="info-value" style="font-size: 16px; color: #d4af37; font-weight: 700;">${appDetails.application_number || ''}</div>
                 </div>
                 <div class="info-item">
                   <div class="info-label">Candidate Name</div>
@@ -459,7 +459,7 @@ export default function AdminAdmissions() {
                 </div>
                 <div class="info-item">
                   <div class="info-label">Seat Number</div>
-                  <div class="info-value" style="color: #fb8500; font-weight: 700;">${appDetails.exam_seat_number || 'SEAT-100'}</div>
+                  <div class="info-value" style="color: #d4af37; font-weight: 700;">${appDetails.exam_seat_number || 'SEAT-100'}</div>
                 </div>
                 <div class="info-item">
                   <div class="info-label">Date</div>
@@ -497,15 +497,15 @@ export default function AdminAdmissions() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "applied":
-        return <span style={{ color: "#219EBC", background: "rgba(33,158,188,0.12)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>Applied</span>;
+        return <span style={{ color: "#0093dd", background: "rgba(0,147,221,0.12)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>Applied</span>;
       case "exam_scheduled":
-        return <span style={{ color: "#8ECAE6", background: "rgba(142,202,230,0.15)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>Exam Scheduled</span>;
+        return <span style={{ color: "#293d7d", background: "rgba(41,61,125,0.12)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>Exam Scheduled</span>;
       case "exam_completed":
-        return <span style={{ color: "#FFB703", background: "rgba(255,183,3,0.12)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>Exam Graded</span>;
+        return <span style={{ color: "#d4af37", background: "rgba(212,175,55,0.14)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>Exam Graded</span>;
       case "admitted":
-        return <span style={{ color: "#2a9d8f", background: "rgba(42,157,143,0.12)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>Admitted</span>;
+        return <span style={{ color: "#293d7d", background: "rgba(41,61,125,0.08)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>Admitted</span>;
       case "rejected":
-        return <span style={{ color: "#e76f51", background: "rgba(231,111,81,0.12)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>Rejected</span>;
+        return <span style={{ color: "#dc137b", background: "rgba(220,19,123,0.08)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>Rejected</span>;
       default:
         return <span style={{ color: "#5a7f92", background: "rgba(90,127,146,0.1)", padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 700 }}>{status}</span>;
     }
@@ -542,7 +542,7 @@ export default function AdminAdmissions() {
           onClick={loadAdmissions}
           style={{
             padding: "10px 18px", borderRadius: 10, background: "rgba(33, 158, 188, 0.1)", 
-            color: "#219EBC", border: "1px solid rgba(33, 158, 188, 0.2)", cursor: "pointer", fontWeight: 700, fontSize: 13
+            color: "#293d7d", border: "1px solid rgba(41, 61, 125, 0.2)", cursor: "pointer", fontWeight: 700, fontSize: 13
           }}
         >
           Refresh Data
@@ -552,7 +552,7 @@ export default function AdminAdmissions() {
       {/* STATS */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
         <Glass style={{ padding: 18, display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
+          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(41,61,125,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d" }}>
             <FileText size={20} />
           </div>
           <div>
@@ -562,7 +562,7 @@ export default function AdminAdmissions() {
         </Glass>
 
         <Glass style={{ padding: 18, display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(142,202,230,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#8ECAE6" }}>
+          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(0,147,221,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0093dd" }}>
             <Calendar size={20} />
           </div>
           <div>
@@ -572,7 +572,7 @@ export default function AdminAdmissions() {
         </Glass>
 
         <Glass style={{ padding: 18, display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(255,183,3,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFB703" }}>
+          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(212,175,55,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#d4af37" }}>
             <Award size={20} />
           </div>
           <div>
@@ -582,7 +582,7 @@ export default function AdminAdmissions() {
         </Glass>
 
         <Glass style={{ padding: 18, display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(42,157,143,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#2a9d8f" }}>
+          <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(41,61,125,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d" }}>
             <CheckCircle size={20} />
           </div>
           <div>
@@ -639,7 +639,7 @@ export default function AdminAdmissions() {
         {loading ? (
           <div style={{ padding: 40, textAlign: "center", color: "#5a7f92" }}>Loading admissions...</div>
         ) : error ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#e76f51" }}>⚠ {error}</div>
+          <div style={{ padding: 40, textAlign: "center", color: "#dc137b" }}>⚠ {error}</div>
         ) : filteredApps.length === 0 ? (
           <div style={{ padding: 40, textAlign: "center", color: "#5a7f92" }}>No applications match filters.</div>
         ) : (
@@ -662,9 +662,9 @@ export default function AdminAdmissions() {
                     
                     {/* App Number */}
                     <td style={{ padding: "16px 20px" }}>
-                      <div style={{ fontWeight: 700, color: "#fb8500", fontSize: 13.5 }}>{app.application_number}</div>
+                      <div style={{ fontWeight: 700, color: "#293d7d", fontSize: 13.5 }}>{app.application_number}</div>
                       {app.admission_number && (
-                        <div style={{ fontSize: 11, color: "#2a9d8f", fontWeight: 700, marginTop: 4 }}>Adm No: {app.admission_number}</div>
+                        <div style={{ fontSize: 11, color: "#293d7d", fontWeight: 700, marginTop: 4 }}>Adm No: {app.admission_number}</div>
                       )}
                       <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4 }}>{new Date(app.created_at).toLocaleDateString()}</div>
                     </td>
@@ -694,8 +694,8 @@ export default function AdminAdmissions() {
                     <td style={{ padding: "16px 20px" }}>
                       <div style={{ fontSize: 13.5, fontWeight: 600 }}>{app.parent_first_name} {app.parent_last_name} ({app.parent_relationship})</div>
                       <div style={{ fontSize: 11.5, opacity: 0.6, marginTop: 4, display: "flex", flexDirection: "column", gap: 2 }}>
-                        <span>📧 {app.parent_email}</span>
-                        <span>📞 {app.parent_phone}</span>
+                        <span>Email: {app.parent_email}</span>
+                        <span>Tel: {app.parent_phone}</span>
                       </div>
                     </td>
 
@@ -729,7 +729,7 @@ export default function AdminAdmissions() {
                         <button
                           onClick={() => handleOpenSchedule(app)}
                           style={{
-                            padding: "6px 10px", borderRadius: 6, border: "1px solid #219EBC", color: "#219EBC",
+                            padding: "6px 10px", borderRadius: 6, border: "1px solid #293d7d", color: "#293d7d",
                             background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700
                           }}
                         >
@@ -739,7 +739,7 @@ export default function AdminAdmissions() {
                         <button
                           onClick={() => handleOpenGrade(app)}
                           style={{
-                            padding: "6px 10px", borderRadius: 6, border: "1px solid #FFB703", color: "#FFB703",
+                            padding: "6px 10px", borderRadius: 6, border: "1px solid #d4af37", color: "#d4af37",
                             background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700
                           }}
                         >
@@ -752,7 +752,7 @@ export default function AdminAdmissions() {
                               onClick={() => handleApprove(app.id)}
                               style={{
                                 padding: "6px 10px", borderRadius: 6, border: "none", color: "white",
-                                background: "#2a9d8f", cursor: "pointer", fontSize: 11.5, fontWeight: 700
+                                background: "#293d7d", cursor: "pointer", fontSize: 11.5, fontWeight: 700
                               }}
                             >
                               Approve
@@ -761,7 +761,7 @@ export default function AdminAdmissions() {
                               onClick={() => handleReject(app.id)}
                               style={{
                                 padding: "6px 10px", borderRadius: 6, border: "none", color: "white",
-                                background: "#e76f51", cursor: "pointer", fontSize: 11.5, fontWeight: 700
+                                background: "#dc137b", cursor: "pointer", fontSize: 11.5, fontWeight: 700
                               }}
                             >
                               Reject
@@ -784,8 +784,8 @@ export default function AdminAdmissions() {
                           <button
                             onClick={() => handlePrintAdmissionLetter(app)}
                             style={{
-                              padding: "6px 10px", borderRadius: 6, border: "1px solid #2a9d8f",
-                              color: "#2a9d8f", background: "none", cursor: "pointer",
+                              padding: "6px 10px", borderRadius: 6, border: "1px solid #293d7d",
+                              color: "#293d7d", background: "none", cursor: "pointer",
                               fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 4
                             }}
                             title="Print Admission Letter"
@@ -817,14 +817,14 @@ export default function AdminAdmissions() {
                         style={{ width: 44, height: 50, objectFit: "cover", borderRadius: 8, border: "1.5px solid rgba(251,133,0,0.2)" }} 
                       />
                     ) : (
-                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(33,158,188,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#219EBC" }}>
+                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(41,61,125,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#293d7d" }}>
                         {app.child_first_name?.[0]}{app.child_last_name?.[0]}
                       </div>
                     )}
                     <div>
                       <div style={{ fontWeight: 800, fontSize: 14.5, color: "var(--heading)" }}>{app.child_first_name} {app.child_last_name}</div>
                       <div style={{ fontSize: 12, color: "var(--subtext)", marginTop: 2 }}>Class: <strong>{app.grade_level}</strong> · {app.child_gender}</div>
-                      <div style={{ fontWeight: 700, color: "#fb8500", fontSize: 12, marginTop: 3 }}>App: {app.application_number}</div>
+                      <div style={{ fontWeight: 700, color: "#293d7d", fontSize: 12, marginTop: 3 }}>App: {app.application_number}</div>
                     </div>
                   </div>
                   <div>{getStatusBadge(app.status)}</div>
@@ -832,7 +832,7 @@ export default function AdminAdmissions() {
 
                 {/* Admission number if admitted */}
                 {app.admission_number && (
-                  <div style={{ padding: "6px 10px", borderRadius: 6, background: "rgba(42,157,143,0.1)", color: "#2a9d8f", fontSize: 12, fontWeight: 700 }}>
+                  <div style={{ padding: "6px 10px", borderRadius: 6, background: "rgba(42,157,143,0.1)", color: "#293d7d", fontSize: 12, fontWeight: 700 }}>
                     Admission No: {app.admission_number}
                   </div>
                 )}
@@ -840,8 +840,8 @@ export default function AdminAdmissions() {
                 {/* Parent contact */}
                 <div style={{ fontSize: 12, color: "var(--subtext)", background: "var(--glass-bg)", padding: "8px 12px", borderRadius: 8, display: "flex", flexDirection: "column", gap: 3 }}>
                   <div style={{ fontWeight: 600, color: "var(--heading)" }}>Parent: {app.parent_first_name} {app.parent_last_name} ({app.parent_relationship})</div>
-                  <div>📧 {app.parent_email}</div>
-                  <div>📞 {app.parent_phone}</div>
+                  <div>Email: {app.parent_email}</div>
+                  <div>Tel: {app.parent_phone}</div>
                 </div>
 
                 {/* Exam scores */}
@@ -849,7 +849,7 @@ export default function AdminAdmissions() {
                   <span>Exam Scores:</span>
                   {app.score_english !== null || app.score_math !== null || app.score_general !== null ? (
                     <div style={{ display: "flex", gap: 6 }}>
-                      <span style={{ background: "rgba(33,158,188,0.1)", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Eng: {app.score_english}</span>
+                      <span style={{ background: "rgba(41,61,125,0.08)", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Eng: {app.score_english}</span>
                       <span style={{ background: "rgba(251,133,0,0.1)", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Math: {app.score_math}</span>
                       <span style={{ background: "rgba(42,157,143,0.1)", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>Gen: {app.score_general}</span>
                     </div>
@@ -862,13 +862,13 @@ export default function AdminAdmissions() {
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
                   <button
                     onClick={() => handleOpenSchedule(app)}
-                    style={{ flex: "1 1 110px", padding: "7px 10px", borderRadius: 7, border: "1px solid #219EBC", color: "#219EBC", background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700, textAlign: "center" }}
+                    style={{ flex: "1 1 110px", padding: "7px 10px", borderRadius: 7, border: "1px solid #293d7d", color: "#293d7d", background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700, textAlign: "center" }}
                   >
                     Schedule Exam
                   </button>
                   <button
                     onClick={() => handleOpenGrade(app)}
-                    style={{ flex: "1 1 100px", padding: "7px 10px", borderRadius: 7, border: "1px solid #FFB703", color: "#FFB703", background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700, textAlign: "center" }}
+                    style={{ flex: "1 1 100px", padding: "7px 10px", borderRadius: 7, border: "1px solid #d4af37", color: "#d4af37", background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700, textAlign: "center" }}
                   >
                     Grade Exam
                   </button>
@@ -876,13 +876,13 @@ export default function AdminAdmissions() {
                     <>
                       <button
                         onClick={() => handleApprove(app.id)}
-                        style={{ flex: "1 1 80px", padding: "7px 10px", borderRadius: 7, border: "none", color: "white", background: "#2a9d8f", cursor: "pointer", fontSize: 11.5, fontWeight: 700 }}
+                        style={{ flex: "1 1 80px", padding: "7px 10px", borderRadius: 7, border: "none", color: "white", background: "#293d7d", cursor: "pointer", fontSize: 11.5, fontWeight: 700 }}
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => handleReject(app.id)}
-                        style={{ flex: "1 1 80px", padding: "7px 10px", borderRadius: 7, border: "none", color: "white", background: "#e76f51", cursor: "pointer", fontSize: 11.5, fontWeight: 700 }}
+                        style={{ flex: "1 1 80px", padding: "7px 10px", borderRadius: 7, border: "none", color: "white", background: "#dc137b", cursor: "pointer", fontSize: 11.5, fontWeight: 700 }}
                       >
                         Reject
                       </button>
@@ -897,7 +897,7 @@ export default function AdminAdmissions() {
                   {app.status === "admitted" && app.admission_number && (
                     <button
                       onClick={() => handlePrintAdmissionLetter(app)}
-                      style={{ padding: "7px 12px", borderRadius: 7, border: "1px solid #2a9d8f", color: "#2a9d8f", background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
+                      style={{ padding: "7px 12px", borderRadius: 7, border: "1px solid #293d7d", color: "#293d7d", background: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
                     >
                       <FileText size={13} /> Letter
                     </button>
@@ -974,7 +974,7 @@ export default function AdminAdmissions() {
               <button 
                 type="submit" disabled={gradeLoading}
                 style={{
-                  width: "100%", padding: "12px", border: "none", borderRadius: 8, background: "#fb8500",
+                  width: "100%", padding: "12px", border: "none", borderRadius: 8, background: "#dc137b",
                   color: "white", fontWeight: 700, fontSize: 13.5, cursor: "pointer", marginTop: 6
                 }}
               >
@@ -1065,7 +1065,7 @@ export default function AdminAdmissions() {
               <button 
                 type="submit" disabled={scheduleLoading}
                 style={{
-                  width: "100%", padding: "12px", border: "none", borderRadius: 8, background: "#219EBC",
+                  width: "100%", padding: "12px", border: "none", borderRadius: 8, background: "#293d7d",
                   color: "white", fontWeight: 700, fontSize: 13.5, cursor: "pointer", marginTop: 6
                 }}
               >

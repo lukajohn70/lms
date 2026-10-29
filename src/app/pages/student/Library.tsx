@@ -51,11 +51,12 @@ export default function StudentLibrary() {
   };
 
   const checkGuides = async () => {
-    const baseUrl = API_BASE_URL.replace("/index.php", "");
+    const basePrefix = typeof window !== 'undefined' && window.location.pathname.startsWith('/lms') ? '/lms/public' : '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const checks: Record<string, boolean> = {};
     await Promise.all(
       GUIDE_BASES.map(async g => {
-        const url = `${baseUrl}/public/study_guides/${g.key}_guide.pdf`;
+        const url = `${origin}${basePrefix}/study_guides/${g.key}_guide.pdf`;
         try {
           const r = await fetch(url, { method: "HEAD" });
           checks[g.key] = r.ok;
@@ -243,7 +244,9 @@ export default function StudentLibrary() {
           <div className="responsive-grid-3" style={{ gap: 16, marginBottom: 24 }}>
             {GUIDE_BASES.map(g => {
               const available = guideStatuses[g.key];
-              const pdfUrl = `http://${window.location.hostname}/lms/public/study_guides/${g.key}_guide.pdf`;
+              const basePrefix = typeof window !== 'undefined' && window.location.pathname.startsWith('/lms') ? '/lms/public' : '';
+              const origin = typeof window !== 'undefined' ? window.location.origin : '';
+              const pdfUrl = `${origin}${basePrefix}/study_guides/${g.key}_guide.pdf`;
               return (
                 <Glass key={g.key} style={{ padding: 24, textAlign: "center", position: "relative", overflow: "hidden" }}>
                   {/* Color accent bar */}

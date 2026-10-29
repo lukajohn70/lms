@@ -45,6 +45,7 @@ require_once 'controllers/ClassController.php';
 require_once 'controllers/MessageController.php';
 require_once 'controllers/LibraryController.php';
 require_once 'controllers/FormTeacherController.php';
+require_once 'controllers/TranscriptController.php';
 
 require_once 'config/Database.php';
 require_once 'lib/Router.php';
@@ -91,6 +92,14 @@ $router->get('/student/assessment', 'AssessmentController@getStudentAssessment')
 $router->get('/parent/assessment', 'AssessmentController@getStudentAssessment');
 $router->get('/reports/print', 'AssessmentController@printReportCard');
 $router->get('/reports/midterm', 'AssessmentController@printMidtermResult');
+$router->get('/reports/transcript', 'TranscriptController@printTranscript');
+
+// Academic Transcripts
+$router->get('/admin/transcript/students', 'TranscriptController@getTranscriptStudents');
+$router->get('/transcript/data', 'TranscriptController@getTranscriptData');
+$router->get('/student/transcript', 'TranscriptController@getStudentTranscript');
+$router->get('/parent/transcript', 'TranscriptController@getParentTranscript');
+$router->get('/transcript/verify', 'TranscriptController@verifyTranscript');
 
 // Form Teacher Portal & Class Arm Actions
 $router->get('/teacher/form-classes', 'FormTeacherController@getFormClasses');
@@ -104,6 +113,14 @@ $router->post('/teacher/form-class/set-term-days', 'FormTeacherController@setBul
 // System Settings
 $router->get('/admin/settings', 'SettingController@getSettings');
 $router->post('/admin/settings/save', 'SettingController@saveSettings');
+
+// DLHS Portal Synchronization & Data Import
+$router->get('/admin/portal-sync/status', 'PortalSyncController@getStatus');
+$router->post('/admin/portal-sync/test-connection', 'PortalSyncController@testConnection');
+$router->post('/admin/portal-sync/trigger', 'PortalSyncController@triggerSync');
+$router->post('/admin/portal-sync/cancel', 'PortalSyncController@cancelSync');
+$router->post('/admin/portal-sync/schedule', 'PortalSyncController@saveSchedule');
+$router->get('/admin/portal-sync/audit', 'PortalSyncController@auditData');
 
 // Reports & Broadsheet (Admin Only)
 $router->get('/admin/reports', 'DashboardController@getAdminReports');

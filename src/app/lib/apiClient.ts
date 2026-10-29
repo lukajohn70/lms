@@ -1,12 +1,16 @@
 function computeApiBaseUrl(): string {
-  // If running via Vite / dev server port (e.g. 5173, 3000), connect to Apache on port 80
-  const isDevPort = typeof window !== 'undefined' && (window.location.port === '5173' || window.location.port === '3000');
+  if (typeof window === 'undefined') {
+    return '/api/index.php';
+  }
+  // If running via Vite / dev server port (e.g. 5173, 3000), connect to local Apache
+  const isDevPort = window.location.port === '5173' || window.location.port === '3000';
   if (isDevPort) {
     return `http://${window.location.hostname}/lms/api/index.php`;
   }
-  return typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.host}/lms/api/index.php`
-    : '/lms/api/index.php';
+  // If running in a subfolder like /lms (local MAMP Apache), keep that prefix
+  const isLmsSubdir = window.location.pathname.startsWith('/lms');
+  const basePath = isLmsSubdir ? '/lms/api/index.php' : '/api/index.php';
+  return `${window.location.protocol}//${window.location.host}${basePath}`;
 }
 
 export const API_BASE_URL = computeApiBaseUrl();

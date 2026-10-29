@@ -121,8 +121,8 @@ function SearchableTeacherSelect({
                       fontWeight: 700,
                       padding: "2px 6px",
                       borderRadius: 4,
-                      background: isAtMax ? "rgba(231,111,81,0.15)" : count > 0 ? "rgba(251,133,0,0.15)" : "rgba(33,158,188,0.15)",
-                      color: isAtMax ? "#e76f51" : count > 0 ? "#FB8500" : "#219EBC"
+                      background: isAtMax ? "rgba(220,19,123,0.12)" : count > 0 ? "rgba(212,175,55,0.14)" : "rgba(41,61,125,0.08)",
+                      color: isAtMax ? "#dc137b" : count > 0 ? "#d4af37" : "#293d7d"
                     }}>
                       {isAtMax ? "2/2 (Max)" : `${count}/2 arms`}
                     </span>
@@ -180,6 +180,7 @@ export default function AdminClasses() {
 
   const [subjectSearchQuery, setSubjectSearchQuery] = useState("");
   const [subjectDeptFilter, setSubjectDeptFilter] = useState("all");
+  const [allocationSearchQuery, setAllocationSearchQuery] = useState("");
 
   const departmentOptions = ["Science", "Arts & Humanities", "Vocational & Commercial", "General / Core"];
 
@@ -326,8 +327,8 @@ export default function AdminClasses() {
       setNewSubjectTopics("");
       setShowAddSubject(false);
       fetchCourses();
-    } catch (e) {
-      alert("Failed to create subject.");
+    } catch (e: any) {
+      alert(e.error || e.message || "Failed to create subject.");
     }
   };
 
@@ -367,17 +368,42 @@ export default function AdminClasses() {
     }
   };
 
-  const filteredCourses = useMemo(() => {
+  // Deduplicate courses list defensively by canonical id & trimmed lowercase name
+  const distinctCourses = useMemo(() => {
+    const seen = new Set<string>();
     return courses.filter(c => {
+      const key = (c.name || '').trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [courses]);
+
+  const filteredCourses = useMemo(() => {
+    return distinctCourses.filter(c => {
       const q = subjectSearchQuery.toLowerCase();
       const matchesSearch = !q || (c.name || "").toLowerCase().includes(q) ||
         (c.description || "").toLowerCase().includes(q) ||
         (c.department || "").toLowerCase().includes(q) ||
         (c.topics || "").toLowerCase().includes(q);
-      const matchesDept = subjectDeptFilter === 'all' || (c.department || 'Science') === subjectDeptFilter;
+      const matchesDept = subjectDeptFilter === 'all' || 
+        (c.department || 'Science') === subjectDeptFilter ||
+        (subjectDeptFilter === 'Science' && (c.department === 'Sciences' || c.department === 'Mathematics')) ||
+        (subjectDeptFilter === 'Arts & Humanities' && (c.department?.includes('Art') || c.department?.includes('Humanities') || c.department?.includes('Social') || c.department === 'Languages')) ||
+        (subjectDeptFilter === 'Vocational & Commercial' && (c.department?.includes('Vocational') || c.department?.includes('Commercial'))) ||
+        (subjectDeptFilter === 'General / Core' && (c.department?.includes('General') || c.department?.includes('Core')));
       return matchesSearch && matchesDept;
     });
-  }, [courses, subjectSearchQuery, subjectDeptFilter]);
+  }, [distinctCourses, subjectSearchQuery, subjectDeptFilter]);
+
+  const filteredAllocationCourses = useMemo(() => {
+    const q = allocationSearchQuery.trim().toLowerCase();
+    if (!q) return distinctCourses;
+    return distinctCourses.filter(c => 
+      (c.name || "").toLowerCase().includes(q) || 
+      (c.department || "").toLowerCase().includes(q)
+    );
+  }, [distinctCourses, allocationSearchQuery]);
 
   const handleDeleteClass = async (id: number) => {
     if (!confirm("Are you sure you want to delete this class? This will also delete subject allocations.")) return;
@@ -391,16 +417,21 @@ export default function AdminClasses() {
   };
 
   const toggleSubject = (course: any) => {
-    const exists = subjects.find(s => s.course_id === course.id);
+    const exists = subjects.find(s => s.course_id === course.id || (s.name && s.name.trim().toLowerCase() === course.name.trim().toLowerCase()));
     if (exists) {
-      setSubjects(subjects.filter(s => s.course_id !== course.id));
+      setSubjects(subjects.filter(s => s.course_id !== course.id && (s.name ? s.name.trim().toLowerCase() !== course.name.trim().toLowerCase() : true)));
     } else {
       setSubjects([...subjects, { course_id: course.id, name: course.name, type: 'core', elective_group: '', teacher_id: '' }]);
     }
   };
 
-  const updateSubjectField = (courseId: number, field: string, value: any) => {
-    setSubjects(subjects.map(s => s.course_id === courseId ? { ...s, [field]: value } : s));
+  const updateSubjectField = (courseId: number, courseName: string, field: string, value: any) => {
+    setSubjects(subjects.map(s => {
+      if (s.course_id === courseId || (s.name && s.name.trim().toLowerCase() === courseName.trim().toLowerCase())) {
+        return { ...s, course_id: courseId, [field]: value };
+      }
+      return s;
+    }));
   };
 
   const handleSaveSubjects = async () => {
@@ -457,24 +488,24 @@ export default function AdminClasses() {
     <div>
       <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 14 }}>
         <div>
-          <div style={{ fontSize: 11, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Academic Setup</div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--heading)", margin: 0 }}>Classes & Subjects</h1>
+          <div style={{ fontSize: 11, color: "#dc137b", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800, marginBottom: 4, fontFamily: "'Raleway', sans-serif" }}>Academic Governance</div>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: "var(--heading)", margin: 0, fontFamily: "'Raleway', sans-serif" }}>Classes, Arms &amp; Subjects</h1>
         </div>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ background: "var(--muted)", padding: 4, borderRadius: 10, display: "flex" }}>
+          <div style={{ background: "var(--muted)", padding: 4, borderRadius: 8, display: "flex", border: "1px solid var(--border)" }}>
             <button
               onClick={() => setActiveTab('classes')}
-              style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: activeTab === 'classes' ? "var(--background)" : "transparent", color: activeTab === 'classes' ? "var(--heading)" : "var(--subtext)", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: activeTab === 'classes' ? "0 2px 5px rgba(0,0,0,0.05)" : "none" }}
-            >Classes</button>
+              style={{ padding: "8px 18px", borderRadius: 6, border: "none", background: activeTab === 'classes' ? "#293d7d" : "transparent", color: activeTab === 'classes' ? "#ffffff" : "var(--subtext)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Raleway', sans-serif", transition: "all 0.15s" }}
+            >Classes &amp; Arms</button>
             <button
               onClick={() => setActiveTab('subjects')}
-              style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: activeTab === 'subjects' ? "var(--background)" : "transparent", color: activeTab === 'subjects' ? "var(--heading)" : "var(--subtext)", fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: activeTab === 'subjects' ? "0 2px 5px rgba(0,0,0,0.05)" : "none" }}
-            >Subjects</button>
+              style={{ padding: "8px 18px", borderRadius: 6, border: "none", background: activeTab === 'subjects' ? "#293d7d" : "transparent", color: activeTab === 'subjects' ? "#ffffff" : "var(--subtext)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Raleway', sans-serif", transition: "all 0.15s" }}
+            >Subject Syllabi</button>
           </div>
           {activeTab === 'classes' ? (
             <button
               onClick={() => setShowAddClass(true)}
-              style={{ padding: "10px 18px", borderRadius: 10, background: "linear-gradient(135deg, #FB8500, #E85D04)", border: "none", color: "#fff", fontSize: 13, fontWeight: 600, display: "flex", gap: 8, alignItems: "center", cursor: "pointer" }}
+              style={{ padding: "10px 18px", borderRadius: 6, background: "#dc137b", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, display: "flex", gap: 8, alignItems: "center", cursor: "pointer", fontFamily: "'Raleway', sans-serif", boxShadow: "0 2px 8px rgba(220,19,123,0.25)" }}
             >
               <Plus size={16} /> New Class
             </button>
@@ -484,9 +515,9 @@ export default function AdminClasses() {
                 type="button"
                 onClick={handleDownloadSubjectsTemplate}
                 style={{
-                  padding: "9px 14px", borderRadius: 10, background: "rgba(33,158,188,0.1)",
-                  border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 12.5, fontWeight: 600,
-                  display: "flex", gap: 6, alignItems: "center", cursor: "pointer"
+                  padding: "9px 14px", borderRadius: 6, background: "rgba(41,61,125,0.06)",
+                  border: "1px solid rgba(41,61,125,0.2)", color: "#293d7d", fontSize: 12.5, fontWeight: 700,
+                  display: "flex", gap: 6, alignItems: "center", cursor: "pointer", fontFamily: "'Raleway', sans-serif"
                 }}
               >
                 <Download size={14} /> Template (.csv)
@@ -505,10 +536,10 @@ export default function AdminClasses() {
                 disabled={csvImporting}
                 onClick={() => subjectFileInputRef.current?.click()}
                 style={{
-                  padding: "9px 14px", borderRadius: 10, background: "linear-gradient(135deg, #FB8500, #E76F51)",
-                  border: "none", color: "#fff", fontSize: 12.5, fontWeight: 600,
+                  padding: "9px 14px", borderRadius: 6, background: "#293d7d",
+                  border: "none", color: "#fff", fontSize: 12.5, fontWeight: 700,
                   display: "flex", gap: 6, alignItems: "center", cursor: csvImporting ? "not-allowed" : "pointer",
-                  boxShadow: "0 4px 12px rgba(251,133,0,0.25)"
+                  fontFamily: "'Raleway', sans-serif", boxShadow: "0 2px 8px rgba(41,61,125,0.25)"
                 }}
               >
                 <Upload size={14} /> {csvImporting ? "Importing…" : "Import CSV"}
@@ -516,7 +547,7 @@ export default function AdminClasses() {
 
               <button
                 onClick={() => setShowAddSubject(true)}
-                style={{ padding: "9px 16px", borderRadius: 10, background: "linear-gradient(135deg, #219EBC, #023047)", border: "none", color: "#fff", fontSize: 12.5, fontWeight: 600, display: "flex", gap: 8, alignItems: "center", cursor: "pointer" }}
+                style={{ padding: "9px 16px", borderRadius: 6, background: "#dc137b", border: "none", color: "#fff", fontSize: 12.5, fontWeight: 700, display: "flex", gap: 8, alignItems: "center", cursor: "pointer", fontFamily: "'Raleway', sans-serif", boxShadow: "0 2px 8px rgba(220,19,123,0.25)" }}
               >
                 <Plus size={16} /> New Subject
               </button>
@@ -526,13 +557,13 @@ export default function AdminClasses() {
       </div>
 
       {csvMessage && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 9, background: "rgba(42,157,143,0.12)", border: "1px solid rgba(42,157,143,0.3)", color: "#2a9d8f", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 9, background: "rgba(41,61,125,0.08)", border: "1px solid rgba(42,157,143,0.3)", color: "#293d7d", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
           <CheckCircle size={15} style={{ flexShrink: 0 }} />
           <span>{csvMessage}</span>
         </div>
       )}
       {csvError && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 9, background: "rgba(231,111,81,0.12)", border: "1px solid rgba(231,111,81,0.3)", color: "#e76f51", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", borderRadius: 9, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(231,111,81,0.3)", color: "#dc137b", marginBottom: 16, fontSize: 12.5, fontWeight: 600 }}>
           <AlertCircle size={15} style={{ flexShrink: 0 }} />
           <span>{csvError}</span>
         </div>
@@ -543,8 +574,8 @@ export default function AdminClasses() {
           {/* Quick mobile class switcher so user never has to scroll past classes to reach subjects */}
           <div className="md-hidden" style={{ marginBottom: 14 }}>
             <Glass style={{ padding: "12px 16px" }}>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-                Select Class to Manage:
+              <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: "#293d7d", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6, fontFamily: "'Raleway', sans-serif" }}>
+                Select Class Arm to Manage:
               </label>
               <select
                 value={activeClass?.id || ""}
@@ -553,8 +584,8 @@ export default function AdminClasses() {
                   if (found) handleSelectClass(found);
                 }}
                 style={{
-                  width: "100%", padding: "9px 12px", borderRadius: 8,
-                  background: "var(--background)", border: "1.5px solid rgba(251,133,0,0.4)",
+                  width: "100%", padding: "9px 12px", borderRadius: 6,
+                  background: "var(--background)", border: "1.5px solid rgba(41,61,125,0.3)",
                   color: "var(--heading)", fontSize: 13, fontWeight: 700, outline: "none", boxSizing: "border-box"
                 }}
               >
@@ -571,11 +602,11 @@ export default function AdminClasses() {
           <div className="responsive-grid-2" style={{ alignItems: "start", gap: 20 }}>
             {/* Classes List */}
             <Glass style={{ padding: 20 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 16px", color: "var(--heading)" }}>Grade Levels</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: "0 0 16px", color: "var(--heading)", fontFamily: "'Raleway', sans-serif" }}>Class Arms</h3>
               {loading ? (
-                <div style={{ color: "var(--subtext)", fontSize: 13 }}>Loading...</div>
+                <div style={{ color: "var(--subtext)", fontSize: 13 }}>Loading class arms...</div>
               ) : classes.length === 0 ? (
-                <div style={{ color: "var(--subtext)", fontSize: 13 }}>No classes found. Create one.</div>
+                <div style={{ color: "var(--subtext)", fontSize: 13 }}>No class arms found. Create one above.</div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {classes.map(c => (
@@ -583,28 +614,29 @@ export default function AdminClasses() {
                       key={c.id}
                       onClick={() => handleSelectClass(c)}
                       style={{
-                        padding: "12px 16px", borderRadius: 10, border: "1px solid var(--glass-border)", cursor: "pointer",
-                        background: activeClass?.id === c.id ? "rgba(251,133,0,0.1)" : "var(--muted)",
-                        borderColor: activeClass?.id === c.id ? "rgba(251,133,0,0.5)" : "var(--glass-border)",
-                        display: "flex", justifyContent: "space-between", alignItems: "center"
+                        padding: "12px 16px", borderRadius: 8, border: "1px solid var(--border)", cursor: "pointer",
+                        background: activeClass?.id === c.id ? "rgba(41,61,125,0.08)" : "var(--muted)",
+                        borderColor: activeClass?.id === c.id ? "#293d7d" : "var(--border)",
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        transition: "all 0.15s"
                       }}
                     >
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: activeClass?.id === c.id ? "#FB8500" : "var(--heading)" }}>{c.name}</div>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 3 }}>
-                          {c.department && <span style={{ fontSize: 10.5, color: "var(--subtext)" }}>{c.department}</span>}
+                        <div style={{ fontSize: 14, fontWeight: 800, color: activeClass?.id === c.id ? "#293d7d" : "var(--heading)", fontFamily: "'Raleway', sans-serif" }}>{c.name}</div>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 4 }}>
+                          {c.department && <span style={{ fontSize: 10.5, color: "var(--subtext)", fontWeight: 600 }}>{c.department}</span>}
                           {c.form_teacher_name ? (
-                            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "rgba(33,158,188,0.15)", color: "#219EBC", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
-                              🎓 {c.form_teacher_name}
+                            <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 4, background: "rgba(0,147,221,0.12)", color: "#0093dd", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                              <Award size={11} /> {c.form_teacher_name}
                             </span>
                           ) : (
-                            <span style={{ fontSize: 9.5, padding: "1px 6px", borderRadius: 4, background: "rgba(231,111,81,0.1)", color: "#e76f51", fontWeight: 600 }}>
-                              No Form Teacher
+                            <span style={{ fontSize: 9.5, padding: "2px 7px", borderRadius: 4, background: "rgba(220,19,123,0.1)", color: "#dc137b", fontWeight: 700 }}>
+                              Unassigned Form Teacher
                             </span>
                           )}
                         </div>
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); handleDeleteClass(c.id); }} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer" }}>
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteClass(c.id); }} style={{ background: "none", border: "none", color: "#be123c", cursor: "pointer", padding: 4 }}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -619,22 +651,22 @@ export default function AdminClasses() {
                 {!activeClass ? (
                   <div style={{ textAlign: "center", padding: "40px 0", color: "var(--subtext)" }}>
                     <Settings size={40} style={{ opacity: 0.3, marginBottom: 12 }} />
-                    <div style={{ fontSize: 14 }}>Select a class to allocate subjects and assign a Form Teacher.</div>
+                    <div style={{ fontSize: 14, fontFamily: "'Raleway', sans-serif", fontWeight: 700 }}>Select a class to allocate subjects and assign a Form Teacher.</div>
                   </div>
                 ) : (
                   <div>
                     {/* Form Teacher Assignment Panel */}
-                    <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(251,133,0,0.07)", border: "1px solid rgba(251,133,0,0.25)", marginBottom: 20 }}>
+                    <div style={{ padding: "14px 16px", borderRadius: 8, background: "rgba(41,61,125,0.06)", border: "1px solid rgba(41,61,125,0.2)", marginBottom: 20 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10, marginBottom: 10 }}>
                         <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 800, color: "#FB8500" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 800, color: "#293d7d", fontFamily: "'Raleway', sans-serif" }}>
                             <Award size={15} /> Form Teacher for {activeClass.name}
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: "rgba(251,133,0,0.18)", color: "#FB8500" }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4, background: "rgba(220,19,123,0.1)", color: "#dc137b" }}>
                               Max 2 arms / teacher
                             </span>
                           </div>
                           <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 3 }}>
-                            The form teacher manages report comments, behavioral &amp; psychomotor domains, attendance, awards, and student names.
+                            The form teacher manages report comments, behavioral &amp; psychomotor domains, attendance, awards, and student records.
                           </div>
                         </div>
                       </div>
@@ -649,31 +681,47 @@ export default function AdminClasses() {
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
                       <div>
                         <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--heading)" }}>
                           Subjects for {activeClass.name} {activeClass.department ? `(${activeClass.department})` : ''}
                         </h3>
                         <div style={{ fontSize: 12, color: "var(--subtext)", marginTop: 4 }}>
-                          Select subjects and mark them as core or elective.
+                          Select subjects and mark them as core or elective ({subjects.length} allocated).
                         </div>
                       </div>
                       <button
                         onClick={handleSaveSubjects}
                         disabled={savingSubjects}
-                        style={{ padding: "8px 16px", borderRadius: 8, background: "#219EBC", border: "none", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                        style={{ padding: "8px 16px", borderRadius: 6, background: "#dc137b", border: "none", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'Raleway', sans-serif" }}
                       >
                         <Save size={14} /> {savingSubjects ? "Saving..." : "Save Allocations"}
                       </button>
                     </div>
 
+                    {/* Filter subjects in allocation list */}
+                    <div style={{ position: "relative", marginBottom: 14 }}>
+                      <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--subtext)" }} />
+                      <input
+                        type="text"
+                        placeholder="Search subjects to allocate..."
+                        value={allocationSearchQuery}
+                        onChange={e => setAllocationSearchQuery(e.target.value)}
+                        style={{
+                          width: "100%", padding: "7px 10px 7px 30px", borderRadius: 7,
+                          background: "var(--background)", border: "1px solid var(--border)",
+                          color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box"
+                        }}
+                      />
+                    </div>
+
               <div className="responsive-grid-2" style={{ maxHeight: 600, overflowY: "auto", gap: 12 }}>
-                {courses.map(course => {
-                  const sub = subjects.find(s => s.course_id === course.id);
+                {filteredAllocationCourses.map(course => {
+                  const sub = subjects.find(s => s.course_id === course.id || (s.name && s.name.trim().toLowerCase() === course.name.trim().toLowerCase()));
                   const isSelected = !!sub;
 
                   return (
-                    <div key={course.id} style={{ padding: 16, borderRadius: 10, background: isSelected ? "rgba(33,158,188,0.05)" : "var(--muted)", border: `1px solid ${isSelected ? "#219EBC" : "var(--glass-border)"}` }}>
+                    <div key={course.id} style={{ padding: 16, borderRadius: 8, background: isSelected ? "rgba(41,61,125,0.06)" : "var(--muted)", border: `1px solid ${isSelected ? "#293d7d" : "var(--border)"}` }}>
                       <div style={{ display: "flex", gap: 12 }}>
                         <input
                           type="checkbox"
@@ -682,12 +730,19 @@ export default function AdminClasses() {
                           style={{ marginTop: 4, cursor: "pointer" }}
                         />
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", marginBottom: 2 }}>{course.name}</div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6, marginBottom: 2 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)" }}>{course.name}</div>
+                            {course.department && (
+                              <span style={{ fontSize: 9.5, padding: "1px 6px", borderRadius: 4, background: "rgba(41,61,125,0.08)", color: "#293d7d", fontWeight: 600, whiteSpace: "nowrap" }}>
+                                {course.department}
+                              </span>
+                            )}
+                          </div>
                           {isSelected && (
                             <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
                               <select
                                 value={sub.type}
-                                onChange={e => updateSubjectField(course.id, 'type', e.target.value)}
+                                onChange={e => updateSubjectField(course.id, course.name, 'type', e.target.value)}
                                 style={{ padding: "4px 8px", fontSize: 11, borderRadius: 6, background: "var(--background)", border: "1px solid var(--glass-border)", color: "var(--heading)" }}
                               >
                                 <option value="core">Core Subject (Mandatory)</option>
@@ -698,14 +753,14 @@ export default function AdminClasses() {
                                   type="text"
                                   placeholder="Elective Group (e.g. Science Options)"
                                   value={sub.elective_group || ""}
-                                  onChange={e => updateSubjectField(course.id, 'elective_group', e.target.value)}
+                                  onChange={e => updateSubjectField(course.id, course.name, 'elective_group', e.target.value)}
                                   style={{ padding: "4px 8px", fontSize: 11, borderRadius: 6, background: "var(--background)", border: "1px solid var(--glass-border)", color: "var(--heading)" }}
                                 />
                               )}
                               <SearchableTeacherSelect
                                 teachers={teachers}
                                 value={sub.teacher_id || ""}
-                                onChange={v => updateSubjectField(course.id, 'teacher_id', v)}
+                                onChange={v => updateSubjectField(course.id, course.name, 'teacher_id', v)}
                               />
                             </div>
                           )}
@@ -752,9 +807,9 @@ export default function AdminClasses() {
                   onClick={() => setSubjectDeptFilter(dept)}
                   style={{
                     padding: "6px 12px", borderRadius: 8, fontSize: 11.5, fontWeight: 600, cursor: "pointer",
-                    background: subjectDeptFilter === dept ? "#219EBC" : "var(--muted)",
+                    background: subjectDeptFilter === dept ? "#293d7d" : "var(--muted)",
                     color: subjectDeptFilter === dept ? "#fff" : "var(--subtext)",
-                    border: "1px solid var(--glass-border)"
+                    border: "1px solid var(--border)"
                   }}
                 >
                   {dept}
@@ -773,7 +828,7 @@ export default function AdminClasses() {
               onChange={e => setSubjectSearchQuery(e.target.value)}
               style={{
                 width: "100%", padding: "10px 14px 10px 36px", borderRadius: 10,
-                background: "var(--muted)", border: "1px solid var(--glass-border)",
+                background: "var(--muted)", border: "1px solid var(--border)",
                 color: "var(--heading)", fontSize: 13, outline: "none", boxSizing: "border-box"
               }}
             />
@@ -785,7 +840,7 @@ export default function AdminClasses() {
               const isScience = dept === "Science";
               const isArts = dept.includes("Arts");
               const isVoc = dept.includes("Vocational") || dept.includes("Commercial");
-              const deptColor = isScience ? "#219EBC" : isArts ? "#FB8500" : isVoc ? "#8338EC" : "#023047";
+              const deptColor = isScience ? "#0093dd" : isArts ? "#dc137b" : isVoc ? "#d4af37" : "#293d7d";
 
               return (
                 <div key={course.id} style={{ padding: 18, borderRadius: 12, background: "var(--muted)", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
@@ -816,9 +871,9 @@ export default function AdminClasses() {
                     <button
                       onClick={() => handleOpenEditSubject(course)}
                       style={{
-                        padding: "6px 10px", borderRadius: 7, background: "rgba(33,158,188,0.1)",
-                        border: "1px solid rgba(33,158,188,0.3)", color: "#219EBC", fontSize: 11.5,
-                        fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer"
+                        padding: "6px 10px", borderRadius: 7, background: "rgba(41,61,125,0.08)",
+                        border: "1px solid rgba(41,61,125,0.25)", color: "#293d7d", fontSize: 11.5,
+                        fontWeight: 700, display: "flex", alignItems: "center", gap: 5, cursor: "pointer"
                       }}
                     >
                       <Edit2 size={12} /> Edit
@@ -827,7 +882,7 @@ export default function AdminClasses() {
                       onClick={() => handleDeleteSubject(course.id, course.name)}
                       style={{
                         padding: "6px 10px", borderRadius: 7, background: "rgba(231,111,81,0.1)",
-                        border: "1px solid rgba(231,111,81,0.3)", color: "#e76f51", fontSize: 11.5,
+                        border: "1px solid rgba(231,111,81,0.3)", color: "#dc137b", fontSize: 11.5,
                         fontWeight: 600, display: "flex", alignItems: "center", gap: 5, cursor: "pointer"
                       }}
                     >
@@ -900,8 +955,8 @@ export default function AdminClasses() {
                 <textarea rows={2} value={newSubjectTopics} onChange={e => setNewSubjectTopics(e.target.value)} placeholder="e.g. Algebra, Calculus, Trigonometry" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box", resize: "none" }} />
               </div>
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-                <button type="button" onClick={() => setShowAddSubject(false)} style={{ flex: 1, padding: 10, borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" style={{ flex: 1, padding: 10, borderRadius: 8, background: "#219EBC", border: "none", color: "#fff", cursor: "pointer", fontWeight: 600 }}>Create Subject</button>
+                <button type="button" onClick={() => setShowAddSubject(false)} style={{ flex: 1, padding: 10, borderRadius: 6, background: "var(--muted)", border: "1px solid var(--border)", color: "var(--heading)", cursor: "pointer", fontFamily: "'Raleway', sans-serif", fontWeight: 700 }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: 10, borderRadius: 6, background: "#dc137b", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700, fontFamily: "'Raleway', sans-serif" }}>Create Subject</button>
               </div>
             </form>
           </Glass>
@@ -939,8 +994,8 @@ export default function AdminClasses() {
                 <textarea rows={2} value={editSubjectTopics} onChange={e => setEditSubjectTopics(e.target.value)} placeholder="e.g. Algebra, Calculus, Trigonometry" style={{ width: "100%", padding: "8px 12px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", outline: "none", boxSizing: "border-box", resize: "none" }} />
               </div>
               <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
-                <button type="button" onClick={() => setEditingSubject(null)} style={{ flex: 1, padding: 10, borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" style={{ flex: 1, padding: 10, borderRadius: 8, background: "#219EBC", border: "none", color: "#fff", cursor: "pointer", fontWeight: 600 }}>Save Changes</button>
+                <button type="button" onClick={() => setEditingSubject(null)} style={{ flex: 1, padding: 10, borderRadius: 6, background: "var(--muted)", border: "1px solid var(--border)", color: "var(--heading)", cursor: "pointer", fontFamily: "'Raleway', sans-serif", fontWeight: 700 }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: 10, borderRadius: 6, background: "#dc137b", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700, fontFamily: "'Raleway', sans-serif" }}>Save Changes</button>
               </div>
             </form>
           </Glass>

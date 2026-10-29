@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Save, CheckCircle, TrendingUp, Sparkles, BookOpen, Send, Lock, AlertCircle, RotateCcw, X, Download, Upload, FileSpreadsheet } from "lucide-react";
+import { Save, CheckCircle, TrendingUp, Award, BookOpen, Send, Lock, AlertCircle, RotateCcw, X, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 
 const getMidRemark = (total: number) => {
@@ -26,7 +26,11 @@ const Glass = ({ children, style }: { children: React.ReactNode; style?: React.C
 export default function Grades() {
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
-  const [selectedTerm, setSelectedTerm] = useState<string>("2nd Term");
+  const [selectedTerm, setSelectedTerm] = useState<string>("3rd Term");
+  const [sessions] = useState<string[]>(["2026/2027", "2025/2026", "2024/2025", "2023/2024"]);
+  const [selectedSession, setSelectedSession] = useState<string>("2026/2027");
+  const [classes, setClasses] = useState<any[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
@@ -42,10 +46,11 @@ export default function Grades() {
 
   const loadGrades = () => {
     setLoading(true);
-    const query = `?term=${encodeURIComponent(selectedTerm)}${selectedCourseId ? `&course_id=${selectedCourseId}` : ""}`;
+    const query = `?term=${encodeURIComponent(selectedTerm)}&session=${encodeURIComponent(selectedSession)}${selectedCourseId ? `&course_id=${selectedCourseId}` : ""}${selectedClassId ? `&class_id=${selectedClassId}` : ""}`;
     apiClient.get(`/teacher/grades${query}`)
       .then((res: any) => {
         setCourses(res.courses || []);
+        setClasses(res.classes || []);
         if (res.selected_course_id) {
           setSelectedCourseId(res.selected_course_id);
         } else if (res.courses && res.courses.length > 0 && !selectedCourseId) {
@@ -65,7 +70,7 @@ export default function Grades() {
 
   useEffect(() => {
     loadGrades();
-  }, [selectedCourseId, selectedTerm]);
+  }, [selectedCourseId, selectedTerm, selectedSession, selectedClassId]);
 
   const SCORE_LIMITS: Record<string, { max: number; label: string }> = {
     assignment_score: { max: 5, label: "Assignment (/5)" },
@@ -150,10 +155,13 @@ export default function Grades() {
 
     apiClient.post("/teacher/grades/save", {
       course_id: selectedCourseId,
+      class_id: selectedClassId,
       term: selectedTerm,
+      session: selectedSession,
       status: targetStatus,
       grades: students.map(s => ({
         student_id: s.id,
+        class_id: s.class_id,
         assignment_score: s.assignment_score !== "" && s.assignment_score !== null ? Number(parseFloat(s.assignment_score).toFixed(2)) : "",
         project_score: s.project_score !== "" && s.project_score !== null ? Number(parseFloat(s.project_score).toFixed(2)) : "",
         mid_term_test: s.mid_term_test !== "" && s.mid_term_test !== null ? Number(parseFloat(s.mid_term_test).toFixed(2)) : "",
@@ -183,10 +191,13 @@ export default function Grades() {
     // First save then submit
     apiClient.post("/teacher/grades/save", {
       course_id: selectedCourseId,
+      class_id: selectedClassId,
       term: selectedTerm,
+      session: selectedSession,
       status: "submitted",
       grades: students.map(s => ({
         student_id: s.id,
+        class_id: s.class_id,
         assignment_score: s.assignment_score,
         project_score: s.project_score,
         mid_term_test: s.mid_term_test,
@@ -198,7 +209,9 @@ export default function Grades() {
       .then(() => {
         return apiClient.post("/teacher/grades/submit", {
           course_id: selectedCourseId,
-          term: selectedTerm
+          class_id: selectedClassId,
+          term: selectedTerm,
+          session: selectedSession
         });
       })
       .then(() => {
@@ -215,7 +228,9 @@ export default function Grades() {
     try {
       const res: any = await apiClient.post("/teacher/grades/request-reopen", {
         course_id: selectedCourseId,
+        class_id: selectedClassId,
         term: selectedTerm,
+        session: selectedSession,
         reason: reopenReason.trim() || "Teacher requested grade sheet reopening for adjustments."
       });
       if (res.success) {
@@ -486,6 +501,19 @@ export default function Grades() {
         {/* Controls row — wraps on mobile */}
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
 
+          {/* Session Selector */}
+          <select
+            value={selectedSession}
+            onChange={e => {
+              setSelectedSession(e.target.value);
+              setSelectedClassId(null);
+            }}
+            style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, fontWeight: 600, color: "var(--heading)", outline: "none", minWidth: 120 }}
+            title="Academic Session"
+          >
+            {sessions.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+
           {/* Term Selector */}
           <div style={{ display: "flex", background: "var(--muted)", borderRadius: 8, padding: 3, border: "1px solid var(--glass-border)" }}>
             {["1st Term", "2nd Term", "3rd Term"].map(t => (
@@ -509,10 +537,26 @@ export default function Grades() {
           {courses.length > 0 && (
             <select
               value={selectedCourseId || ""}
-              onChange={e => setSelectedCourseId(parseInt(e.target.value))}
-              style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, color: "var(--heading)", outline: "none", flex: 1, minWidth: 140, maxWidth: 260 }}
+              onChange={e => {
+                setSelectedCourseId(parseInt(e.target.value));
+                setSelectedClassId(null);
+              }}
+              style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, color: "var(--heading)", outline: "none", flex: 1, minWidth: 140, maxWidth: 240 }}
             >
               {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          )}
+
+          {/* Class filter */}
+          {classes.length > 0 && (
+            <select
+              value={selectedClassId || ""}
+              onChange={e => setSelectedClassId(e.target.value ? parseInt(e.target.value) : null)}
+              style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, color: "var(--heading)", outline: "none", minWidth: 140, maxWidth: 220 }}
+              title="Class Filter"
+            >
+              <option value="">All Classes ({students.length})</option>
+              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           )}
 
@@ -712,7 +756,7 @@ export default function Grades() {
               }}
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${activeTab === "end_of_term" ? "#219EBC" : "var(--glass-border)"}`, background: activeTab === "end_of_term" ? "rgba(33,158,188,0.15)" : "var(--muted)", color: activeTab === "end_of_term" ? "#219EBC" : "var(--subtext)", fontWeight: 700, fontSize: 12.5, cursor: "pointer", transition: "all 0.2s" }}
             >
-              <Sparkles size={13} /> Full Term Scores (/100)
+              <Award size={13} /> Full Term Scores (/100)
             </button>
           </div>
 
@@ -739,7 +783,7 @@ export default function Grades() {
                   {courses.find(c => c.id === selectedCourseId)?.name || "Course"} · Mark Sheet ({selectedTerm} · {activeTab === "mid_term" ? "Mid-Term" : "Full Term"})
                 </span>
               </div>
-              <span style={{ fontSize: 11, color: "var(--subtext)" }}>Session: 2026/2027</span>
+              <span style={{ fontSize: 11, color: "var(--subtext)" }}>Session: {selectedSession}</span>
             </div>
 
             {/* DESKTOP TABLE VIEW */}
@@ -774,7 +818,14 @@ export default function Grades() {
                   <div key={s.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 100px 100px 100px 80px 1fr 110px", padding: "10px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
                     <div>
                       <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--heading)" }}>{s.name}</div>
-                      <div style={{ fontSize: 10, color: "var(--subtext)" }}>{s.student_number}</div>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
+                        <span style={{ fontSize: 10, color: "var(--subtext)" }}>{s.student_number}</span>
+                        {s.class_name && (
+                          <span style={{ fontSize: 9.5, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(33,158,188,0.12)", color: "#219EBC" }}>
+                            {s.class_name}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {/* Assignment */}
                     <input type="text" value={s.assignment_score} onChange={e => updateField(s.id, "assignment_score", e.target.value)} disabled={isLocked}
@@ -805,7 +856,14 @@ export default function Grades() {
                   <div key={s.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 100px 100px 100px 80px 1fr 110px", padding: "10px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center" }}>
                     <div>
                       <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--heading)" }}>{s.name}</div>
-                      <div style={{ fontSize: 10, color: "var(--subtext)" }}>{s.student_number}</div>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
+                        <span style={{ fontSize: 10, color: "var(--subtext)" }}>{s.student_number}</span>
+                        {s.class_name && (
+                          <span style={{ fontSize: 9.5, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(33,158,188,0.12)", color: "#219EBC" }}>
+                            {s.class_name}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {/* CA1 (Mid-Term total, Read-Only) */}
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--subtext)", width: 60, textAlign: "center", display: "inline-block" }}>{midTotal.toFixed(2)}</span>
@@ -851,7 +909,14 @@ export default function Grades() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                           <div>
                             <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>{s.name}</div>
-                            <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{s.student_number}</div>
+                            <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
+                              <span style={{ fontSize: 11, color: "var(--subtext)" }}>{s.student_number}</span>
+                              {s.class_name && (
+                                <span style={{ fontSize: 9.5, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(33,158,188,0.12)", color: "#219EBC" }}>
+                                  {s.class_name}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div style={{ textAlign: "right" }}>
                             <span style={{ fontSize: 16, fontWeight: 800, color: rmk.color }}>{s.score.toFixed(2)} <span style={{ fontSize: 11, fontWeight: 500, color: "var(--subtext)" }}>/20</span></span>
@@ -929,7 +994,14 @@ export default function Grades() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                           <div>
                             <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>{s.name}</div>
-                            <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{s.student_number}</div>
+                            <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}>
+                              <span style={{ fontSize: 11, color: "var(--subtext)" }}>{s.student_number}</span>
+                              {s.class_name && (
+                                <span style={{ fontSize: 9.5, fontWeight: 700, padding: "1px 6px", borderRadius: 4, background: "rgba(33,158,188,0.12)", color: "#219EBC" }}>
+                                  {s.class_name}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div style={{ textAlign: "right" }}>
                             <span style={{ fontSize: 16, fontWeight: 800, color: gl.color }}>{s.score.toFixed(2)} <span style={{ fontSize: 11, fontWeight: 500, color: "var(--subtext)" }}>/100</span></span>

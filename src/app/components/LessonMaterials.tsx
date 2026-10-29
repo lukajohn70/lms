@@ -22,20 +22,20 @@ const materials: Material[] = [
 
 const typeIcon = (type: Material["type"]) => {
   const icons = {
-    pdf: <FileText size={16} />,
-    video: <Film size={16} />,
-    image: <Image size={16} />,
-    doc: <FileText size={16} />,
+    pdf: <FileText size={15} />,
+    video: <Film size={15} />,
+    image: <Image size={15} />,
+    doc: <FileText size={15} />,
   };
   return icons[type];
 };
 
 const typeColor = (type: Material["type"]) => {
   const map = {
-    pdf: { bg: "rgba(142,202,230,0.12)", border: "rgba(142,202,230,0.3)", color: "#8ECAE6" },
-    video: { bg: "rgba(33,158,188,0.1)", border: "rgba(33,158,188,0.25)", color: "#219EBC" },
-    image: { bg: "rgba(255,183,3,0.08)", border: "rgba(255,183,3,0.2)", color: "#FFB703" },
-    doc: { bg: "rgba(251,133,0,0.08)", border: "rgba(251,133,0,0.2)", color: "#FB8500" },
+    pdf: { bg: "rgba(220,19,123,0.08)", border: "rgba(220,19,123,0.2)", color: "#dc137b" },
+    video: { bg: "rgba(41,61,125,0.08)", border: "rgba(41,61,125,0.2)", color: "#293d7d" },
+    image: { bg: "rgba(0,147,221,0.08)", border: "rgba(0,147,221,0.2)", color: "#0093dd" },
+    doc: { bg: "rgba(212,175,55,0.08)", border: "rgba(212,175,55,0.2)", color: "#d4af37" },
   };
   return map[type];
 };
@@ -49,42 +49,42 @@ export function LessonMaterials() {
 
   return (
     <div
-      className="rounded-2xl overflow-hidden"
+      className="rounded-xl overflow-hidden"
       style={{
-        background: "rgba(2,48,71,0.5)",
-        border: "1px solid rgba(142,202,230,0.15)",
-        backdropFilter: "blur(20px)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+        background: "var(--card)",
+        border: "1px solid var(--border)",
+        boxShadow: "0 2px 8px rgba(16, 28, 50, 0.04)",
+        fontFamily: "'Lato', 'Plus Jakarta Sans', sans-serif"
       }}
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: "1px solid rgba(142,202,230,0.1)" }}
+        className="flex items-center justify-between px-5 py-4 border-b"
+        style={{ borderColor: "var(--border)" }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: "rgba(142,202,230,0.1)", border: "1px solid rgba(142,202,230,0.2)" }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: "rgba(0,147,221,0.08)", color: "#0093dd" }}
           >
-            <Folder size={15} style={{ color: "#8ECAE6" }} />
+            <Folder size={16} />
           </div>
           <div>
-            <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "14px", fontWeight: 600, color: "#e8f4f8" }}>
-              Lesson Materials
+            <span style={{ fontFamily: "'Raleway',sans-serif", fontSize: "14px", fontWeight: 700, color: "var(--heading)" }}>
+              Lesson Materials &amp; Syllabi
             </span>
-            <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: "10px", color: "#8ECAE6" }}>
-              {materials.filter((m) => !viewed[m.id]).length} unviewed items
+            <div style={{ fontSize: "11px", color: "var(--subtext)" }}>
+              {materials.filter((m) => !viewed[m.id]).length} unviewed resources
             </div>
           </div>
         </div>
-        <button className="flex items-center gap-1" style={{ fontFamily: "'Poppins',sans-serif", fontSize: "11px", color: "#219EBC" }}>
+        <button className="flex items-center gap-1" style={{ fontFamily: "'Raleway',sans-serif", fontSize: "11.5px", fontWeight: 700, color: "#dc137b" }}>
           All files <ChevronRight size={12} />
         </button>
       </div>
 
       {/* File list */}
-      <div className="divide-y" style={{ borderColor: "rgba(142,202,230,0.06)" }}>
+      <div className="divide-y" style={{ borderColor: "var(--border)" }}>
         {materials.map((m) => {
           const tc = typeColor(m.type);
           const isViewed = viewed[m.id];
@@ -92,11 +92,11 @@ export function LessonMaterials() {
             <div
               key={m.id}
               className="flex items-center gap-3 px-5 py-3 transition-all duration-150"
-              style={{ background: isViewed ? "transparent" : "rgba(33,158,188,0.03)" }}
+              style={{ background: isViewed ? "transparent" : "rgba(41,61,125,0.02)" }}
             >
               {/* File type icon */}
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{ background: tc.bg, border: `1px solid ${tc.border}`, color: tc.color }}
               >
                 {typeIcon(m.type)}
@@ -107,10 +107,10 @@ export function LessonMaterials() {
                 <div className="flex items-center gap-2">
                   <span
                     style={{
-                      fontFamily: "'Poppins',sans-serif",
-                      fontSize: "12px",
-                      fontWeight: isViewed ? 400 : 600,
-                      color: isViewed ? "#8ECAE6" : "#e8f4f8",
+                      fontFamily: "'Raleway',sans-serif",
+                      fontSize: "12.5px",
+                      fontWeight: isViewed ? 600 : 700,
+                      color: "var(--heading)",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -121,13 +121,13 @@ export function LessonMaterials() {
                   {!isViewed && (
                     <span
                       className="px-1.5 py-0.5 rounded"
-                      style={{ background: "rgba(33,158,188,0.15)", fontSize: "9px", color: "#219EBC", fontFamily: "'Poppins',sans-serif", fontWeight: 600, whiteSpace: "nowrap" }}
+                      style={{ background: "rgba(220,19,123,0.1)", fontSize: "9px", color: "#dc137b", fontFamily: "'Raleway',sans-serif", fontWeight: 800, whiteSpace: "nowrap" }}
                     >
                       NEW
                     </span>
                   )}
                 </div>
-                <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: "10px", color: "rgba(142,202,230,0.5)", marginTop: "1px" }}>
+                <div style={{ fontSize: "11px", color: "var(--subtext)", marginTop: "1px" }}>
                   {m.teacher} · {m.date} · {m.size}
                 </div>
               </div>
@@ -137,25 +137,25 @@ export function LessonMaterials() {
                 {/* Viewed toggle */}
                 <button
                   onClick={() => toggleViewed(m.id)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150"
+                  className="w-7 h-7 rounded-md flex items-center justify-center transition-all duration-150"
                   style={{
-                    background: isViewed ? "rgba(142,202,230,0.08)" : "rgba(33,158,188,0.12)",
-                    border: isViewed ? "1px solid rgba(142,202,230,0.15)" : "1px solid rgba(33,158,188,0.25)",
+                    background: isViewed ? "var(--muted)" : "rgba(220,19,123,0.08)",
+                    border: isViewed ? "1px solid var(--border)" : "1px solid rgba(220,19,123,0.2)",
                   }}
                   title={isViewed ? "Mark as unviewed" : "Mark as viewed"}
                 >
                   {isViewed ? (
-                    <EyeOff size={11} style={{ color: "rgba(142,202,230,0.5)" }} />
+                    <EyeOff size={12} style={{ color: "var(--subtext)" }} />
                   ) : (
-                    <Eye size={11} style={{ color: "#219EBC" }} />
+                    <Eye size={12} style={{ color: "#dc137b" }} />
                   )}
                 </button>
                 <button
-                  className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: "rgba(142,202,230,0.06)", border: "1px solid rgba(142,202,230,0.12)" }}
+                  className="w-7 h-7 rounded-md flex items-center justify-center"
+                  style={{ background: "var(--muted)", border: "1px solid var(--border)" }}
                   title="Download"
                 >
-                  <Download size={11} style={{ color: "#8ECAE6" }} />
+                  <Download size={12} style={{ color: "var(--subtext)" }} />
                 </button>
               </div>
             </div>
@@ -165,24 +165,24 @@ export function LessonMaterials() {
 
       {/* Footer stats */}
       <div
-        className="flex items-center justify-between px-5 py-3"
-        style={{ borderTop: "1px solid rgba(142,202,230,0.08)", background: "rgba(1,16,28,0.3)" }}
+        className="flex items-center justify-between px-5 py-3 border-t"
+        style={{ borderColor: "var(--border)", background: "var(--muted)" }}
       >
-        <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "11px", color: "rgba(142,202,230,0.5)" }}>
-          {materials.filter((m) => viewed[m.id]).length}/{materials.length} materials viewed
+        <span style={{ fontSize: "11px", color: "var(--subtext)" }}>
+          {materials.filter((m) => viewed[m.id]).length}/{materials.length} resources completed
         </span>
         {/* Progress bar */}
         <div className="flex items-center gap-2">
-          <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(142,202,230,0.1)" }}>
+          <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
                 width: `${(Object.values(viewed).filter(Boolean).length / materials.length) * 100}%`,
-                background: "linear-gradient(90deg, #219EBC, #8ECAE6)",
+                background: "#0093dd",
               }}
             />
           </div>
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "10px", color: "#219EBC" }}>
+          <span style={{ fontFamily: "'Raleway',sans-serif", fontSize: "11px", fontWeight: 700, color: "#0093dd" }}>
             {Math.round((Object.values(viewed).filter(Boolean).length / materials.length) * 100)}%
           </span>
         </div>

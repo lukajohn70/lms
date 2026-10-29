@@ -10,37 +10,107 @@ class AttendanceController {
         $this->conn = $db->getConnection();
     }
 
-    // Teacher: Get attendance grid for a course and week
+    private function getSetting($key, $default = "") {
+        $stmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = :k LIMIT 1");
+        $stmt->execute([':k' => $key]);
+        $val = $stmt->fetchColumn();
+        return $val !== false ? $val : $default;
+    }
+
+    // Teacher: Get attendance grid for a course, class arm, and week
     public function getTeacherAttendance() {
         $teacher = Auth::requireRole(['teacher']);
         
         $courseId = isset($_GET['course_id']) ? intval($_GET['course_id']) : null;
-        $dateStr = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
+        $classId  = isset($_GET['class_id']) ? intval($_GET['class_id']) : null;
+        $session  = isset($_GET['session']) && !empty($_GET['session']) ? trim($_GET['session']) : $this->getSetting('academic_session', '2026/2027');
+        $dateStr  = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+        $isCurr = ($session === $currentSession ? 1 : 0);
         
-        // Teacher sees courses assigned directly OR via class subject allocation
+        // 1. Teacher sees courses assigned to them for this session
         $coursesQuery = "
             SELECT DISTINCT c.id, c.name FROM courses c
-            WHERE c.teacher_id = :tid
-               OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)
+            WHERE c.id IN (
+                SELECT DISTINCT course_id FROM teacher_allocations 
+                WHERE teacher_id = :tid AND academic_session = :session
+                UNION
+                SELECT DISTINCT course_id FROM class_subjects 
+                WHERE teacher_id = :tid2 AND :is_curr = 1
+            )
             ORDER BY c.name
         ";
         $coursesStmt = $this->conn->prepare($coursesQuery);
-        $coursesStmt->execute([':tid' => $teacher['id'], ':tid2' => $teacher['id']]);
+        $coursesStmt->execute([
+            ':tid' => $teacher['id'],
+            ':session' => $session,
+            ':tid2' => $teacher['id'],
+            ':is_curr' => $isCurr
+        ]);
         $courses = $coursesStmt->fetchAll();
         
         if (empty($courses)) {
-            echo json_encode(["courses" => [], "students" => [], "dates" => []]);
+            echo json_encode([
+                "courses" => [],
+                "classes" => [],
+                "selected_course_id" => null,
+                "selected_class_id" => null,
+                "selected_session" => $session,
+                "students" => [],
+                "dates" => []
+            ]);
             return;
         }
         
-        if (!$courseId) {
+        $courseIds = array_column($courses, 'id');
+        if (!$courseId || !in_array($courseId, $courseIds)) {
             $courseId = $courses[0]['id'];
         }
+
+        // 2. Classes assigned to teacher for this course and session
+        $classesStmt = $this->conn->prepare("
+            SELECT DISTINCT cl.id, cl.name 
+            FROM classes cl
+            WHERE cl.id IN (
+                SELECT DISTINCT class_id FROM teacher_allocations 
+                WHERE teacher_id = :tid AND course_id = :cid AND academic_session = :session
+                UNION
+                SELECT DISTINCT class_id FROM class_subjects 
+                WHERE teacher_id = :tid2 AND course_id = :cid2 AND :is_curr = 1
+            )
+            ORDER BY cl.name ASC
+        ");
+        $classesStmt->execute([
+            ':tid' => $teacher['id'],
+            ':cid' => $courseId,
+            ':session' => $session,
+            ':tid2' => $teacher['id'],
+            ':cid2' => $courseId,
+            ':is_curr' => $isCurr
+        ]);
+        $availableClasses = $classesStmt->fetchAll();
+
+        if (empty($availableClasses)) {
+            echo json_encode([
+                "courses" => $courses,
+                "classes" => [],
+                "selected_course_id" => $courseId,
+                "selected_class_id" => null,
+                "selected_session" => $session,
+                "students" => [],
+                "dates" => []
+            ]);
+            return;
+        }
+
+        $allowedClassIds = array_column($availableClasses, 'id');
+        if (!$classId || !in_array($classId, $allowedClassIds)) {
+            $classId = $availableClasses[0]['id'];
+        }
         
-        // 2. Calculate the 5 weekdays of the week containing $dateStr
+        // 3. Calculate the 5 weekdays of the week containing $dateStr
         $ts = strtotime($dateStr);
         $dayOfWeek = date('N', $ts); // 1 = Mon, 7 = Sun
-        // Start from Monday (subtract dayOfWeek - 1 days)
         $mon = $ts - (($dayOfWeek - 1) * 86400);
         
         $dates = [];
@@ -48,55 +118,64 @@ class AttendanceController {
             $dates[] = date('Y-m-d', $mon + ($i * 86400));
         }
         
-        // 3. Get students enrolled in the course
+        // 4. Get students strictly enrolled in the course AND belonging to the selected class arm
         $studentsQuery = "
-            SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) as name 
+            SELECT u.id, CONCAT(u.first_name, ' ', u.last_name) as name, cl.name as class_name 
             FROM users u
             JOIN enrollments e ON u.id = e.student_id
-            WHERE e.course_id = :cid
+            JOIN classes cl ON u.class_id = cl.id
+            WHERE e.course_id = :cid AND u.class_id = :clid
             ORDER BY u.first_name, u.last_name
         ";
         $studentsStmt = $this->conn->prepare($studentsQuery);
-        $studentsStmt->execute([':cid' => $courseId]);
+        $studentsStmt->execute([':cid' => $courseId, ':clid' => $classId]);
         $students = $studentsStmt->fetchAll();
         
-        // 4. Get attendance records for these students, this course, and these dates
-        $datePlaceholder = implode(',', array_fill(0, count($dates), '?'));
-        $attQuery = "
-            SELECT student_id, attendance_date, status 
-            FROM attendance 
-            WHERE course_id = ? AND attendance_date IN ($datePlaceholder)
-        ";
-        
-        $params = array_merge([$courseId], $dates);
-        $attStmt = $this->conn->prepare($attQuery);
-        $attStmt->execute($params);
-        $attRecords = $attStmt->fetchAll();
-        
-        // Structure attendance mapping
-        $attMap = [];
-        foreach ($attRecords as $r) {
-            $attMap[$r['student_id']][$r['attendance_date']] = ($r['status'] === 'present');
-        }
-        
-        // Populate attendance status for each student/date
+        // 5. Get attendance records for these students, this course, and these dates
         $studentAttendance = [];
-        foreach ($students as $s) {
-            $sAtt = [];
-            foreach ($dates as $d) {
-                // Default to false (unchecked) until teacher marks present
-                $sAtt[$d] = isset($attMap[$s['id']][$d]) ? $attMap[$s['id']][$d] : false;
+        if (!empty($students)) {
+            $studentIds = array_column($students, 'id');
+            $sPlaceholder = implode(',', array_fill(0, count($studentIds), '?'));
+            $datePlaceholder = implode(',', array_fill(0, count($dates), '?'));
+
+            $attQuery = "
+                SELECT student_id, attendance_date, status 
+                FROM attendance 
+                WHERE course_id = ? AND student_id IN ($sPlaceholder) AND attendance_date IN ($datePlaceholder)
+            ";
+            
+            $params = array_merge([$courseId], $studentIds, $dates);
+            $attStmt = $this->conn->prepare($attQuery);
+            $attStmt->execute($params);
+            $attRecords = $attStmt->fetchAll();
+            
+            // Structure attendance mapping
+            $attMap = [];
+            foreach ($attRecords as $r) {
+                $attMap[$r['student_id']][$r['attendance_date']] = ($r['status'] === 'present');
             }
-            $studentAttendance[] = [
-                "id" => $s['id'],
-                "name" => $s['name'],
-                "attendance" => $sAtt
-            ];
+            
+            // Populate attendance status for each student/date
+            foreach ($students as $s) {
+                $sAtt = [];
+                foreach ($dates as $d) {
+                    $sAtt[$d] = isset($attMap[$s['id']][$d]) ? $attMap[$s['id']][$d] : false;
+                }
+                $studentAttendance[] = [
+                    "id" => $s['id'],
+                    "name" => $s['name'],
+                    "class_name" => $s['class_name'],
+                    "attendance" => $sAtt
+                ];
+            }
         }
         
         echo json_encode([
             "courses" => $courses,
+            "classes" => $availableClasses,
             "selected_course_id" => $courseId,
+            "selected_class_id" => $classId,
+            "selected_session" => $session,
             "dates" => $dates,
             "students" => $studentAttendance
         ]);
@@ -114,6 +193,52 @@ class AttendanceController {
         }
         
         $courseId = intval($data->course_id);
+        $classId = isset($data->class_id) ? intval($data->class_id) : 0;
+        $session = !empty($data->session) ? trim($data->session) : $this->getSetting('academic_session', '2026/2027');
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+        $isCurr = ($session === $currentSession ? 1 : 0);
+
+        // Verify teacher allocation
+        if ($classId > 0) {
+            $authStmt = $this->conn->prepare("
+                SELECT 1 FROM (
+                    SELECT course_id, class_id FROM teacher_allocations 
+                    WHERE teacher_id = :tid AND course_id = :cid AND class_id = :clid AND academic_session = :session
+                    UNION
+                    SELECT course_id, class_id FROM class_subjects 
+                    WHERE teacher_id = :tid2 AND course_id = :cid2 AND class_id = :clid2 AND :is_curr = 1
+                ) t LIMIT 1
+            ");
+            $authStmt->execute([
+                ':tid' => $teacher['id'], ':cid' => $courseId, ':clid' => $classId, ':session' => $session,
+                ':tid2' => $teacher['id'], ':cid2' => $courseId, ':clid2' => $classId, ':is_curr' => $isCurr
+            ]);
+            if (!$authStmt->fetchColumn()) {
+                http_response_code(403);
+                echo json_encode(["error" => "Access Denied: You are not assigned to take attendance for this class and subject in session $session."]);
+                return;
+            }
+        } else {
+            // Check course level allocation
+            $authStmt = $this->conn->prepare("
+                SELECT 1 FROM (
+                    SELECT course_id FROM teacher_allocations 
+                    WHERE teacher_id = :tid AND course_id = :cid AND academic_session = :session
+                    UNION
+                    SELECT course_id FROM class_subjects 
+                    WHERE teacher_id = :tid2 AND course_id = :cid2 AND :is_curr = 1
+                ) t LIMIT 1
+            ");
+            $authStmt->execute([
+                ':tid' => $teacher['id'], ':cid' => $courseId, ':session' => $session,
+                ':tid2' => $teacher['id'], ':cid2' => $courseId, ':is_curr' => $isCurr
+            ]);
+            if (!$authStmt->fetchColumn()) {
+                http_response_code(403);
+                echo json_encode(["error" => "Access Denied: You are not assigned to this subject in session $session."]);
+                return;
+            }
+        }
         
         try {
             $this->conn->beginTransaction();

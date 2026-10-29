@@ -1,108 +1,127 @@
 @custom-variant dark (&:is(.dark *));
 
-/* ===== DEEPER LIFE HIGH SCHOOL — LIGHT MODE (default) ===== */
+/* ===== DEEPER LIFE HIGH SCHOOL — BESPOKE INSTITUTIONAL DESIGN TOKENS ===== */
 :root {
   --font-size: 15px;
-  --font-family: 'Poppins', sans-serif;
+  --font-family: 'Lato', 'Plus Jakarta Sans', sans-serif;
+  --font-heading: 'Raleway', sans-serif;
 
-  /* Brand palette */
-  --prussian: #023047;
-  --cerulean: #219EBC;
-  --sky: #8ECAE6;
-  --yellow: #FFB703;
-  --orange: #FB8500;
+  /* Official DLHS Brand Palette (extracted from deeperlifehighschool.org) */
+  --dlhs-navy: #293d7d;
+  --dlhs-navy-dark: #16234b;
+  --dlhs-crimson: #dc137b;
+  --dlhs-crimson-hover: #b80f66;
+  --dlhs-rose: #f24080;
+  --dlhs-blue: #0093dd;
+  --dlhs-periwinkle: #bfd1ff;
+  --dlhs-periwinkle-light: #ebf2ff;
+  --dlhs-slate: #3a4244;
+  --dlhs-gold: #d4af37;
+  --dlhs-gold-dark: #b8921e;
 
-  --background: #eef6fa;
-  --foreground: #012030;
-  --card: rgba(255, 255, 255, 0.88);
-  --card-foreground: #012030;
+  /* Legacy variable mappings (mapped to authentic DLHS tones) */
+  --prussian: #16234b;
+  --cerulean: #0093dd;
+  --sky: #bfd1ff;
+  --yellow: #d4af37;
+  --orange: #dc137b;
+
+  /* Light Canvas & Surfaces */
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --text: #1e293b;
+  --card: #ffffff;
+  --card-bg: #ffffff;
+  --card-foreground: #1e293b;
   --popover: #ffffff;
-  --popover-foreground: #012030;
-  --primary: #219EBC;
+  --popover-foreground: #1e293b;
+  --primary: #dc137b;
   --primary-foreground: #ffffff;
-  --secondary: rgba(33, 158, 188, 0.1);
-  --secondary-foreground: #023047;
-  --muted: rgba(2, 48, 71, 0.06);
-  --muted-foreground: #5a7f92;
-  --accent: rgba(33, 158, 188, 0.12);
-  --accent-foreground: #023047;
-  --destructive: #d4183d;
+  --secondary: rgba(41, 61, 125, 0.08);
+  --secondary-foreground: #293d7d;
+  --muted: rgba(41, 61, 125, 0.05);
+  --muted-foreground: #64748b;
+  --accent: rgba(220, 19, 123, 0.08);
+  --accent-foreground: #dc137b;
+  --destructive: #be123c;
   --destructive-foreground: #ffffff;
-  --border: rgba(2, 48, 71, 0.12);
-  --input: rgba(2, 48, 71, 0.06);
-  --input-background: #f5f9fc;
-  --switch-background: rgba(33, 158, 188, 0.3);
+  --border: rgba(41, 61, 125, 0.12);
+  --input: rgba(41, 61, 125, 0.08);
+  --input-background: #ffffff;
+  --switch-background: rgba(41, 61, 125, 0.25);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #219EBC;
-  --chart-1: #219EBC;
-  --chart-2: #8ECAE6;
-  --chart-3: #FFB703;
-  --chart-4: #FB8500;
-  --chart-5: #023047;
-  --radius: 0.75rem;
+  --ring: #0093dd;
+  --chart-1: #293d7d;
+  --chart-2: #dc137b;
+  --chart-3: #0093dd;
+  --chart-4: #d4af37;
+  --chart-5: #3a4244;
+  --radius: 0.625rem;
 
-  /* Sidebar */
-  --sidebar: #023047;
-  --sidebar-foreground: #e8f4f8;
-  --sidebar-primary: #219EBC;
+  /* Executive Sidebar (Stately Deep Institutional Navy) */
+  --sidebar: #16234b;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #dc137b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(33, 158, 188, 0.15);
-  --sidebar-accent-foreground: #8ECAE6;
-  --sidebar-border: rgba(142, 202, 230, 0.12);
-  --sidebar-ring: #219EBC;
+  --sidebar-accent: rgba(220, 19, 123, 0.14);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(191, 209, 255, 0.12);
+  --sidebar-ring: #0093dd;
 
-  /* Glass card surface for light mode */
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: rgba(2, 48, 71, 0.1);
-  --glass-shadow: 0 4px 24px rgba(2, 48, 71, 0.08);
-  --subtext: #5a7f92;
-  --heading: #012030;
+  /* Subtle Crisp Card Elevation */
+  --glass-bg: #ffffff;
+  --glass-border: rgba(41, 61, 125, 0.12);
+  --glass-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 20px -4px rgba(22, 35, 75, 0.06);
+  --subtext: #64748b;
+  --heading: #16234b;
 }
 
-/* ===== DARK MODE ===== */
+/* ===== DARK MODE (Midnight Academic Navy) ===== */
 .dark {
-  --background: #011d2f;
-  --foreground: #e8f4f8;
-  --card: rgba(2, 48, 71, 0.55);
-  --card-foreground: #e8f4f8;
-  --popover: #012436;
-  --popover-foreground: #e8f4f8;
-  --primary: #219EBC;
+  --background: #0d1627;
+  --foreground: #f1f5f9;
+  --text: #f1f5f9;
+  --card: #142038;
+  --card-bg: #142038;
+  --card-foreground: #f1f5f9;
+  --popover: #121c32;
+  --popover-foreground: #f1f5f9;
+  --primary: #dc137b;
   --primary-foreground: #ffffff;
-  --secondary: rgba(142, 202, 230, 0.12);
-  --secondary-foreground: #8ECAE6;
-  --muted: rgba(142, 202, 230, 0.08);
-  --muted-foreground: #8ECAE6;
-  --accent: rgba(33, 158, 188, 0.15);
-  --accent-foreground: #8ECAE6;
-  --destructive: #FB8500;
+  --secondary: rgba(191, 209, 255, 0.1);
+  --secondary-foreground: #bfd1ff;
+  --muted: rgba(191, 209, 255, 0.06);
+  --muted-foreground: #94a3b8;
+  --accent: rgba(220, 19, 123, 0.15);
+  --accent-foreground: #f24080;
+  --destructive: #f43f5e;
   --destructive-foreground: #ffffff;
-  --border: rgba(142, 202, 230, 0.15);
-  --input: rgba(142, 202, 230, 0.08);
-  --input-background: rgba(2, 48, 71, 0.8);
-  --switch-background: rgba(33, 158, 188, 0.3);
-  --ring: #219EBC;
-  --chart-1: #219EBC;
-  --chart-2: #8ECAE6;
-  --chart-3: #FFB703;
-  --chart-4: #FB8500;
-  --chart-5: #023047;
+  --border: rgba(191, 209, 255, 0.14);
+  --input: rgba(191, 209, 255, 0.08);
+  --input-background: rgba(20, 32, 56, 0.85);
+  --switch-background: rgba(220, 19, 123, 0.35);
+  --ring: #0093dd;
+  --chart-1: #bfd1ff;
+  --chart-2: #f24080;
+  --chart-3: #0093dd;
+  --chart-4: #d4af37;
+  --chart-5: #f8fafc;
 
-  --sidebar: rgba(1, 14, 24, 0.98);
-  --sidebar-foreground: #e8f4f8;
-  --sidebar-primary: #219EBC;
+  --sidebar: #09101d;
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #dc137b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(33, 158, 188, 0.12);
-  --sidebar-accent-foreground: #8ECAE6;
-  --sidebar-border: rgba(142, 202, 230, 0.08);
-  --sidebar-ring: #219EBC;
+  --sidebar-accent: rgba(220, 19, 123, 0.15);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(191, 209, 255, 0.08);
+  --sidebar-ring: #0093dd;
 
-  --glass-bg: rgba(2, 48, 71, 0.5);
-  --glass-border: rgba(142, 202, 230, 0.15);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  --subtext: #8ECAE6;
-  --heading: #e8f4f8;
+  --glass-bg: #142038;
+  --glass-border: rgba(191, 209, 255, 0.14);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --subtext: #94a3b8;
+  --heading: #f8fafc;
 }
 
 @theme inline {
@@ -132,8 +151,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 3px);
+  --radius-md: calc(var(--radius) - 1px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --color-sidebar: var(--sidebar);
@@ -152,23 +171,28 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Poppins', sans-serif;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    font-family: 'Lato', 'Plus Jakarta Sans', sans-serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
   html {
     font-size: var(--font-size);
   }
-  h1 { font-size: var(--text-2xl); font-weight: var(--font-weight-medium); line-height: 1.4; }
-  h2 { font-size: var(--text-xl); font-weight: var(--font-weight-medium); line-height: 1.4; }
-  h3 { font-size: var(--text-lg); font-weight: var(--font-weight-medium); line-height: 1.4; }
-  h4 { font-size: var(--text-base); font-weight: var(--font-weight-medium); line-height: 1.5; }
-  label { font-size: var(--text-base); font-weight: var(--font-weight-medium); line-height: 1.5; }
-  button { font-size: var(--text-base); font-weight: var(--font-weight-medium); line-height: 1.5; }
-  input { font-size: var(--text-base); font-weight: var(--font-weight-normal); line-height: 1.5; }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Raleway', sans-serif;
+    color: var(--heading);
+    letter-spacing: -0.02em;
+  }
+  h1 { font-size: var(--text-2xl); font-weight: 800; line-height: 1.25; }
+  h2 { font-size: var(--text-xl); font-weight: 700; line-height: 1.3; }
+  h3 { font-size: var(--text-lg); font-weight: 700; line-height: 1.35; }
+  h4 { font-size: var(--text-base); font-weight: 600; line-height: 1.45; }
+  label { font-size: var(--text-base); font-weight: 500; line-height: 1.5; }
+  button { font-size: var(--text-base); font-weight: 600; line-height: 1.5; }
+  input { font-size: var(--text-base); font-weight: 400; line-height: 1.5; }
 
-  /* Hide scrollbars, show on hover */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  /* Refined, dignified scrollbars */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(33, 158, 188, 0.25); border-radius: 4px; }
-  * { scrollbar-width: thin; scrollbar-color: rgba(33,158,188,0.25) transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(41, 61, 125, 0.2); border-radius: 4px; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(41, 61, 125, 0.2) transparent; }
 }

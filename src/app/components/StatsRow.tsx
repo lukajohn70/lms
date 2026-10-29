@@ -7,19 +7,19 @@ const stats = [
     delta: "+3.1%",
     positive: true,
     icon: <TrendingUp size={16} />,
-    color: "#219EBC",
-    bg: "rgba(33,158,188,0.1)",
-    border: "rgba(33,158,188,0.2)",
+    color: "#dc137b",
+    bg: "rgba(220,19,123,0.1)",
+    border: "rgba(220,19,123,0.2)",
   },
   {
     label: "Current Position",
     value: "4th / 38",
-    delta: "↑2",
+    delta: "↑ 2 Places",
     positive: true,
     icon: <Award size={16} />,
-    color: "#FFB703",
-    bg: "rgba(255,183,3,0.08)",
-    border: "rgba(255,183,3,0.2)",
+    color: "#d4af37",
+    bg: "rgba(212,175,55,0.1)",
+    border: "rgba(212,175,55,0.22)",
   },
   {
     label: "Active Courses",
@@ -27,9 +27,9 @@ const stats = [
     delta: "2nd Term",
     positive: true,
     icon: <BookOpen size={16} />,
-    color: "#8ECAE6",
-    bg: "rgba(142,202,230,0.08)",
-    border: "rgba(142,202,230,0.18)",
+    color: "#0093dd",
+    bg: "rgba(0,147,221,0.1)",
+    border: "rgba(0,147,221,0.2)",
   },
   {
     label: "CBTs Completed",
@@ -37,9 +37,9 @@ const stats = [
     delta: "67% done",
     positive: true,
     icon: <CheckSquare size={16} />,
-    color: "#FB8500",
-    bg: "rgba(251,133,0,0.08)",
-    border: "rgba(251,133,0,0.2)",
+    color: "#293d7d",
+    bg: "rgba(41,61,125,0.1)",
+    border: "rgba(41,61,125,0.2)",
   },
 ];
 
@@ -49,38 +49,39 @@ export function StatsRow() {
       {stats.map((s) => (
         <div
           key={s.label}
-          className="rounded-2xl px-5 py-4 flex flex-col gap-3"
+          className="rounded-xl px-5 py-4 flex flex-col gap-3"
           style={{
-            background: "rgba(2,48,71,0.55)",
-            border: `1px solid ${s.border}`,
-            backdropFilter: "blur(20px)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+            background: "var(--card)",
+            border: `1px solid var(--border)`,
+            boxShadow: "0 2px 8px rgba(16, 28, 50, 0.04)",
+            fontFamily: "'Lato', 'Plus Jakarta Sans', sans-serif"
           }}
         >
           <div className="flex items-center justify-between">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center"
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: s.bg, color: s.color }}
             >
               {s.icon}
             </div>
             <span
-              className="px-2 py-0.5 rounded-lg"
+              className="px-2 py-0.5 rounded-md"
               style={{
-                fontFamily: "'Poppins',sans-serif",
-                fontSize: "10px",
-                color: s.positive ? "#8ECAE6" : "#FB8500",
-                background: s.positive ? "rgba(142,202,230,0.08)" : "rgba(251,133,0,0.08)",
+                fontFamily: "'Raleway', sans-serif",
+                fontSize: "10.5px",
+                fontWeight: 700,
+                color: s.color,
+                background: s.bg,
               }}
             >
               {s.delta}
             </span>
           </div>
           <div>
-            <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: "22px", fontWeight: 700, color: s.color, lineHeight: 1 }}>
+            <div style={{ fontFamily: "'Raleway',sans-serif", fontSize: "22px", fontWeight: 800, color: s.color, lineHeight: 1 }}>
               {s.value}
             </div>
-            <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: "11px", color: "rgba(142,202,230,0.6)", marginTop: "4px" }}>
+            <div style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--subtext)", marginTop: "5px" }}>
               {s.label}
             </div>
           </div>

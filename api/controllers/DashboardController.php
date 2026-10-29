@@ -136,25 +136,50 @@ class DashboardController {
     public function getTeacherDashboard() {
         $user = Auth::requireRole(['teacher']);
         
-        // 1. Total Students across all their courses
-        $stmt = $this->conn->prepare("
-            SELECT COUNT(DISTINCT en.student_id) 
-            FROM enrollments en
-            JOIN courses c ON en.course_id = c.id
-            WHERE c.teacher_id = :id
-               OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :id2)
-        ");
-        $stmt->execute([':id' => $user['id'], ':id2' => $user['id']]);
-        $totalStudents = $stmt->fetchColumn();
+        $session = isset($_GET['session']) && !empty($_GET['session']) ? trim($_GET['session']) : $this->getSetting('academic_session', '2026/2027');
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+        $isCurr = ($session === $currentSession ? 1 : 0);
 
-        // 2. Active Classes
+        // 1. Total Students across their assigned classes & courses for this session
         $stmt = $this->conn->prepare("
-            SELECT COUNT(DISTINCT id) FROM courses 
-            WHERE teacher_id = :id 
-               OR id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :id2)
+            SELECT COUNT(DISTINCT u.id) 
+            FROM users u
+            JOIN enrollments en ON u.id = en.student_id
+            WHERE EXISTS (
+                SELECT 1 FROM teacher_allocations ta 
+                WHERE ta.teacher_id = :tid AND ta.academic_session = :session 
+                  AND ta.course_id = en.course_id AND ta.class_id = u.class_id
+            ) OR (:is_curr = 1 AND EXISTS (
+                SELECT 1 FROM class_subjects cs
+                WHERE cs.teacher_id = :tid2
+                  AND cs.course_id = en.course_id AND cs.class_id = u.class_id
+            ))
         ");
-        $stmt->execute([':id' => $user['id'], ':id2' => $user['id']]);
-        $activeClasses = $stmt->fetchColumn();
+        $stmt->execute([
+            ':tid' => $user['id'],
+            ':session' => $session,
+            ':is_curr' => $isCurr,
+            ':tid2' => $user['id']
+        ]);
+        $totalStudents = intval($stmt->fetchColumn());
+
+        // 2. Active Classes assigned to this teacher for this session
+        $stmt = $this->conn->prepare("
+            SELECT COUNT(DISTINCT class_id) FROM (
+                SELECT class_id FROM teacher_allocations 
+                WHERE teacher_id = :tid AND academic_session = :session
+                UNION
+                SELECT class_id FROM class_subjects 
+                WHERE teacher_id = :tid2 AND :is_curr = 1
+            ) t
+        ");
+        $stmt->execute([
+            ':tid' => $user['id'],
+            ':session' => $session,
+            ':tid2' => $user['id'],
+            ':is_curr' => $isCurr
+        ]);
+        $activeClasses = intval($stmt->fetchColumn());
 
         // 3. CBTs Created
         $stmt = $this->conn->prepare("SELECT COUNT(*) FROM exams WHERE created_by = :id");
@@ -166,34 +191,61 @@ class DashboardController {
         $stmt->execute([':id' => $user['id']]);
         $materialsUploaded = $stmt->fetchColumn();
 
-        // 5. My Classes (List with actual averages)
+        // 5. My Classes (List with actual averages per assigned class arm)
         $stmt = $this->conn->prepare("
-            SELECT DISTINCT id, name FROM courses 
-            WHERE teacher_id = :id 
-               OR id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :id2)
-            ORDER BY name
+            SELECT DISTINCT 
+                alloc.course_id, 
+                c.name AS course_name, 
+                alloc.class_id, 
+                cl.name AS class_name
+            FROM (
+                SELECT DISTINCT course_id, class_id FROM teacher_allocations 
+                WHERE teacher_id = :tid AND academic_session = :session
+                UNION
+                SELECT DISTINCT course_id, class_id FROM class_subjects 
+                WHERE teacher_id = :tid2 AND :is_curr = 1
+            ) alloc
+            JOIN courses c ON alloc.course_id = c.id
+            JOIN classes cl ON alloc.class_id = cl.id
+            ORDER BY cl.name ASC, c.name ASC
         ");
-        $stmt->execute([':id' => $user['id'], ':id2' => $user['id']]);
+        $stmt->execute([
+            ':tid' => $user['id'],
+            ':session' => $session,
+            ':tid2' => $user['id'],
+            ':is_curr' => $isCurr
+        ]);
         $classes = $stmt->fetchAll();
         $classDetails = [];
         foreach ($classes as $c) {
-            $s = $this->conn->prepare("SELECT COUNT(*) FROM enrollments WHERE course_id = :cid");
-            $s->execute([':cid' => $c['id']]);
-            $studentCount = $s->fetchColumn();
+            $s = $this->conn->prepare("
+                SELECT COUNT(DISTINCT u.id) 
+                FROM users u 
+                JOIN enrollments en ON u.id = en.student_id 
+                WHERE en.course_id = :cid AND u.class_id = :clid
+            ");
+            $s->execute([':cid' => $c['course_id'], ':clid' => $c['class_id']]);
+            $studentCount = intval($s->fetchColumn());
             
-            $sAvg = $this->conn->prepare("SELECT AVG(score) FROM grades WHERE course_id = :cid");
-            $sAvg->execute([':cid' => $c['id']]);
+            $sAvg = $this->conn->prepare("
+                SELECT AVG(score) FROM grades 
+                WHERE course_id = :cid AND class_id = :clid AND academic_session = :session AND score IS NOT NULL
+            ");
+            $sAvg->execute([':cid' => $c['course_id'], ':clid' => $c['class_id'], ':session' => $session]);
             $avgScoreVal = $sAvg->fetchColumn();
-            $avgScore = $avgScoreVal !== null ? round(floatval($avgScoreVal)) : 75; // default fallback
+            $avgScore = $avgScoreVal !== null ? round(floatval($avgScoreVal)) : 0;
             
             $classDetails[] = [
-                'name' => $c['name'],
+                'name' => $c['course_name'] . ' (' . $c['class_name'] . ')',
+                'course_id' => $c['course_id'],
+                'class_id' => $c['class_id'],
                 'students' => $studentCount,
                 'avg' => $avgScore
             ];
         }
 
         echo json_encode([
+            "academic_session" => $session,
             "stats" => [
                 "totalStudents" => $totalStudents,
                 "activeClasses" => $activeClasses,
@@ -345,113 +397,167 @@ class DashboardController {
         }
     }
 
-    // Teacher: Full class list with real stats per course
+    // Teacher: Full class list with real stats per course and class arm
     public function getTeacherClasses() {
         $user = Auth::requireRole(['teacher']);
+        $session = isset($_GET['session']) && !empty($_GET['session']) ? trim($_GET['session']) : $this->getSetting('academic_session', '2026/2027');
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+        $isCurr = ($session === $currentSession ? 1 : 0);
 
         $stmt = $this->conn->prepare("
             SELECT DISTINCT 
-                c.id, 
-                c.name, 
+                alloc.course_id AS id,
+                c.name,
                 c.description,
-                COALESCE(
-                    (
-                        SELECT GROUP_CONCAT(DISTINCT cl.name ORDER BY cl.name SEPARATOR ', ')
-                        FROM class_subjects cs
-                        JOIN classes cl ON cs.class_id = cl.id
-                        WHERE cs.course_id = c.id
-                          AND (cs.teacher_id = :tid OR c.teacher_id = :tid2)
-                    ),
-                    (
-                        SELECT GROUP_CONCAT(DISTINCT cl.name ORDER BY cl.name SEPARATOR ', ')
-                        FROM enrollments en
-                        JOIN users u ON en.student_id = u.id
-                        JOIN classes cl ON u.class_id = cl.id
-                        WHERE en.course_id = c.id
-                    )
-                ) AS class_name
-            FROM courses c 
-            WHERE c.teacher_id = :tid3 
-               OR c.id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid4)
-            ORDER BY c.name
+                alloc.class_id,
+                cl.name AS class_name
+            FROM (
+                SELECT DISTINCT course_id, class_id FROM teacher_allocations 
+                WHERE teacher_id = :tid AND academic_session = :session
+                UNION
+                SELECT DISTINCT course_id, class_id FROM class_subjects 
+                WHERE teacher_id = :tid2 AND :is_curr = 1
+            ) alloc
+            JOIN courses c ON alloc.course_id = c.id
+            JOIN classes cl ON alloc.class_id = cl.id
+            ORDER BY cl.name ASC, c.name ASC
         ");
         $stmt->execute([
             ':tid' => $user['id'],
+            ':session' => $session,
             ':tid2' => $user['id'],
-            ':tid3' => $user['id'],
-            ':tid4' => $user['id']
+            ':is_curr' => $isCurr
         ]);
-        $courses = $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
 
         $result = [];
-        foreach ($courses as $c) {
-            $cid = $c['id'];
+        foreach ($rows as $r) {
+            $cid = $r['id'];
+            $clid = $r['class_id'];
 
-            // Enrolled count
-            $s = $this->conn->prepare("SELECT COUNT(*) FROM enrollments WHERE course_id = :cid");
-            $s->execute([':cid' => $cid]);
+            // Enrolled count strictly for this class arm
+            $s = $this->conn->prepare("
+                SELECT COUNT(DISTINCT u.id) 
+                FROM users u 
+                JOIN enrollments en ON u.id = en.student_id 
+                WHERE en.course_id = :cid AND u.class_id = :clid
+            ");
+            $s->execute([':cid' => $cid, ':clid' => $clid]);
             $student_count = intval($s->fetchColumn());
 
-            // Avg, highest, lowest scores
-            $s = $this->conn->prepare("SELECT AVG(score), MAX(score), MIN(score) FROM grades WHERE course_id = :cid AND score IS NOT NULL");
-            $s->execute([':cid' => $cid]);
+            // Avg, highest, lowest scores strictly for this class arm and session
+            $s = $this->conn->prepare("
+                SELECT AVG(score), MAX(score), MIN(score) 
+                FROM grades 
+                WHERE course_id = :cid AND class_id = :clid AND academic_session = :session AND score IS NOT NULL
+            ");
+            $s->execute([':cid' => $cid, ':clid' => $clid, ':session' => $session]);
             $scores = $s->fetch(PDO::FETCH_NUM);
-            $avg    = $scores[0] !== null ? round(floatval($scores[0])) : 0;
+            $avg     = $scores[0] !== null ? round(floatval($scores[0])) : 0;
             $highest = $scores[1] !== null ? round(floatval($scores[1])) : 0;
             $lowest  = $scores[2] !== null ? round(floatval($scores[2])) : 0;
 
-            // Absent today count (status = 'absent' most recent date)
+            // Absent count for students in this class arm
             $s = $this->conn->prepare("
-                SELECT COUNT(*) FROM attendance
-                WHERE course_id = :cid AND status = 'absent'
-                  AND attendance_date = (SELECT MAX(attendance_date) FROM attendance WHERE course_id = :cid2)
+                SELECT COUNT(*) FROM attendance a
+                JOIN users u ON a.student_id = u.id
+                WHERE a.course_id = :cid AND u.class_id = :clid AND a.status = 'absent'
+                  AND a.attendance_date = (
+                      SELECT MAX(a2.attendance_date) FROM attendance a2 
+                      JOIN users u2 ON a2.student_id = u2.id 
+                      WHERE a2.course_id = :cid2 AND u2.class_id = :clid2
+                  )
             ");
-            $s->execute([':cid' => $cid, ':cid2' => $cid]);
+            $s->execute([':cid' => $cid, ':clid' => $clid, ':cid2' => $cid, ':clid2' => $clid]);
             $absent = intval($s->fetchColumn());
 
             $result[] = [
                 'id'            => $cid,
-                'name'          => $c['name'],
-                'class_name'    => $c['class_name'] ?: 'General',
-                'description'   => $c['description'] ?? '',
+                'class_id'      => $clid,
+                'name'          => $r['name'],
+                'class_name'    => $r['class_name'],
+                'description'   => $r['description'] ?? '',
                 'student_count' => $student_count,
                 'avg'           => $avg,
                 'highest'       => $highest,
                 'lowest'        => $lowest,
                 'absent'        => $absent,
+                'session'       => $session
             ];
         }
 
-        echo json_encode(['courses' => $result]);
+        echo json_encode(['courses' => $result, 'selected_session' => $session]);
     }
 
-    // Teacher: Detail view for one course (student roster + grades + attendance)
+    // Teacher: Detail view for one course & class arm (student roster + grades + attendance)
     public function getTeacherClassDetail() {
         $user = Auth::requireRole(['teacher']);
 
         $courseId = isset($_GET['course_id']) ? intval($_GET['course_id']) : 0;
+        $classId  = isset($_GET['class_id']) ? intval($_GET['class_id']) : 0;
+        $session  = isset($_GET['session']) && !empty($_GET['session']) ? trim($_GET['session']) : $this->getSetting('academic_session', '2026/2027');
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+        $isCurr = ($session === $currentSession ? 1 : 0);
+
         if (!$courseId) {
             http_response_code(400);
             echo json_encode(['error' => 'course_id required']);
             return;
         }
 
-        // Verify the course belongs to this teacher
-        $s = $this->conn->prepare("
-            SELECT id, name FROM courses 
-            WHERE id = :cid 
-              AND (teacher_id = :tid OR id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)) 
-            LIMIT 1
-        ");
-        $s->execute([':cid' => $courseId, ':tid' => $user['id'], ':tid2' => $user['id']]);
-        $course = $s->fetch();
-        if (!$course) {
-            http_response_code(403);
-            echo json_encode(['error' => 'Access denied or course not found']);
-            return;
+        // Check teacher allocation for this course (and class_id if supplied)
+        if ($classId > 0) {
+            $authStmt = $this->conn->prepare("
+                SELECT 1 FROM (
+                    SELECT course_id, class_id FROM teacher_allocations 
+                    WHERE teacher_id = :tid AND course_id = :cid AND class_id = :clid AND academic_session = :session
+                    UNION
+                    SELECT course_id, class_id FROM class_subjects 
+                    WHERE teacher_id = :tid2 AND course_id = :cid2 AND class_id = :clid2 AND :is_curr = 1
+                ) t LIMIT 1
+            ");
+            $authStmt->execute([
+                ':tid' => $user['id'], ':cid' => $courseId, ':clid' => $classId, ':session' => $session,
+                ':tid2' => $user['id'], ':cid2' => $courseId, ':clid2' => $classId, ':is_curr' => $isCurr
+            ]);
+            if (!$authStmt->fetchColumn()) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Access denied: You are not assigned to teach this subject to this class in session ' . $session]);
+                return;
+            }
+        } else {
+            // Find first assigned class for this course and session
+            $findClass = $this->conn->prepare("
+                SELECT class_id FROM (
+                    SELECT class_id FROM teacher_allocations 
+                    WHERE teacher_id = :tid AND course_id = :cid AND academic_session = :session
+                    UNION
+                    SELECT class_id FROM class_subjects 
+                    WHERE teacher_id = :tid2 AND course_id = :cid2 AND :is_curr = 1
+                ) t LIMIT 1
+            ");
+            $findClass->execute([
+                ':tid' => $user['id'], ':cid' => $courseId, ':session' => $session,
+                ':tid2' => $user['id'], ':cid2' => $courseId, ':is_curr' => $isCurr
+            ]);
+            $classId = intval($findClass->fetchColumn());
+            if (!$classId) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Access denied: No assigned class found for this subject in session ' . $session]);
+                return;
+            }
         }
 
-        // Enrolled students with their grades and attendance
+        // Get course and class name
+        $cStmt = $this->conn->prepare("SELECT name FROM courses WHERE id = :cid LIMIT 1");
+        $cStmt->execute([':cid' => $courseId]);
+        $courseName = $cStmt->fetchColumn() ?: "Subject";
+
+        $clStmt = $this->conn->prepare("SELECT name FROM classes WHERE id = :clid LIMIT 1");
+        $clStmt->execute([':clid' => $classId]);
+        $className = $clStmt->fetchColumn() ?: "Class";
+
+        // Enrolled students strictly belonging to this class arm
         $stmt = $this->conn->prepare("
             SELECT
                 u.id,
@@ -468,14 +574,18 @@ class DashboardController {
                 ) AS days_total
             FROM users u
             JOIN enrollments e ON u.id = e.student_id AND e.course_id = :cid
-            LEFT JOIN grades g ON g.student_id = u.id AND g.course_id = :cid4
+            LEFT JOIN grades g ON (g.student_id = u.id AND g.course_id = :cid4 AND g.class_id = :clid AND g.academic_session = :session)
+            WHERE u.class_id = :clid2
             ORDER BY u.first_name, u.last_name
         ");
         $stmt->execute([
-            ':cid'  => $courseId,
-            ':cid2' => $courseId,
-            ':cid3' => $courseId,
-            ':cid4' => $courseId,
+            ':cid'   => $courseId,
+            ':cid2'  => $courseId,
+            ':cid3'  => $courseId,
+            ':cid4'  => $courseId,
+            ':clid'  => $classId,
+            ':session' => $session,
+            ':clid2' => $classId,
         ]);
         $students = $stmt->fetchAll();
 
@@ -515,7 +625,10 @@ class DashboardController {
 
         echo json_encode([
             'course_id'   => $courseId,
-            'course_name' => $course['name'],
+            'course_name' => $courseName,
+            'class_id'    => $classId,
+            'class_name'  => $className,
+            'session'     => $session,
             'roster'      => $roster,
         ]);
     }

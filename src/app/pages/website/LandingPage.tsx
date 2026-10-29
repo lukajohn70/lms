@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { 
   School, BookOpen, Users, Award, Phone, Mail, MapPin, 
-  ArrowRight, ChevronRight, Menu, X, ShieldCheck, Sparkles, CheckCircle2
+  ArrowRight, ChevronRight, Menu, X, ShieldCheck, CheckCircle2,
+  GraduationCap, Scale, Compass, Check
 } from "lucide-react";
 import { useApp } from "../../contexts/AppContext";
 
@@ -19,108 +20,117 @@ export default function LandingPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-        
         .web-body {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          background-color: ${theme === "dark" ? "#01121d" : "#f8fdff"};
-          color: ${theme === "dark" ? "#e8f4f8" : "#023047"};
-          transition: background-color 0.3s, color 0.3s;
+          font-family: 'Lato', 'Plus Jakarta Sans', sans-serif;
+          background-color: ${theme === "dark" ? "#0a1220" : "#f8fafc"};
+          color: ${theme === "dark" ? "#f1f5f9" : "#1e293b"};
+          transition: background-color 0.25s, color 0.25s;
           overflow-x: hidden;
         }
 
         .web-heading {
-          font-family: 'Outfit', sans-serif;
+          font-family: 'Raleway', sans-serif;
+          letter-spacing: -0.02em;
         }
 
         .glass-nav {
-          background: ${theme === "dark" ? "rgba(1, 18, 29, 0.85)" : "rgba(248, 253, 255, 0.85)"};
+          background: ${theme === "dark" ? "rgba(10, 18, 32, 0.94)" : "rgba(255, 255, 255, 0.95)"};
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
-          border-bottom: 1px solid ${theme === "dark" ? "rgba(142, 202, 230, 0.1)" : "rgba(2, 48, 71, 0.06)"};
+          border-bottom: 1px solid ${theme === "dark" ? "rgba(191, 209, 255, 0.12)" : "rgba(41, 61, 125, 0.1)"};
         }
 
         .hero-banner {
-          background-image: linear-gradient(${theme === "dark" ? "rgba(1,18,29,0.88)" : "rgba(248,253,255,0.82)"}, ${theme === "dark" ? "rgba(1,18,29,0.95)" : "rgba(248,253,255,0.92)"}), url(/school_hero.png);
+          background-image: linear-gradient(${theme === "dark" ? "rgba(10,18,32,0.92)" : "rgba(248,250,252,0.88)"}, ${theme === "dark" ? "rgba(10,18,32,0.97)" : "rgba(248,250,252,0.96)"}), url(/school_hero.png);
           background-size: cover;
           background-position: center;
-          background-attachment: scroll;
         }
 
-        .glow-btn {
-          background: linear-gradient(135deg, #fb8500 0%, #ffb703 100%);
-          box-shadow: 0 4px 15px rgba(251, 133, 0, 0.3);
-          transition: all 0.3s ease;
+        .dlhs-btn-primary {
+          background: #dc137b;
+          color: #ffffff;
+          box-shadow: 0 4px 14px rgba(220, 19, 123, 0.28);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .glow-btn:hover {
+        .dlhs-btn-primary:hover {
+          background: #b80f66;
+          box-shadow: 0 6px 20px rgba(220, 19, 123, 0.4);
+          transform: translateY(-1px);
+        }
+
+        .dlhs-btn-secondary {
+          background: ${theme === "dark" ? "rgba(41, 61, 125, 0.25)" : "#293d7d"};
+          color: #ffffff;
+          box-shadow: 0 4px 14px rgba(41, 61, 125, 0.2);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .dlhs-btn-secondary:hover {
+          background: ${theme === "dark" ? "rgba(41, 61, 125, 0.4)" : "#1e2e60"};
+          transform: translateY(-1px);
+        }
+
+        .dlhs-btn-outline {
+          border: 1.5px solid ${theme === "dark" ? "rgba(191, 209, 255, 0.25)" : "rgba(41, 61, 125, 0.2)"};
+          color: ${theme === "dark" ? "#f1f5f9" : "#293d7d"};
+          background: ${theme === "dark" ? "rgba(255, 255, 255, 0.02)" : "#ffffff"};
+          transition: all 0.2s ease;
+        }
+
+        .dlhs-btn-outline:hover {
+          border-color: #293d7d;
+          background: ${theme === "dark" ? "rgba(41, 61, 125, 0.2)" : "rgba(41, 61, 125, 0.04)"};
+          transform: translateY(-1px);
+        }
+
+        .dlhs-card {
+          background: ${theme === "dark" ? "#142038" : "#ffffff"};
+          border: 1px solid ${theme === "dark" ? "rgba(191, 209, 255, 0.12)" : "rgba(41, 61, 125, 0.1)"};
+          border-radius: 12px;
+          box-shadow: 0 2px 8px -2px rgba(22, 35, 75, 0.04), 0 8px 24px -4px rgba(22, 35, 75, 0.06);
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+        }
+
+        .dlhs-card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(251, 133, 0, 0.5);
-        }
-
-        .portal-btn {
-          background: linear-gradient(135deg, #219EBC 0%, #023047 100%);
-          box-shadow: 0 4px 15px rgba(33, 158, 188, 0.3);
-          transition: all 0.3s ease;
-        }
-
-        .portal-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(33, 158, 188, 0.5);
-        }
-
-        .glass-card {
-          background: ${theme === "dark" ? "rgba(255, 255, 255, 0.03)" : "rgba(255, 255, 255, 0.7)"};
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          border: 1px solid ${theme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(33, 158, 188, 0.12)"};
-          border-radius: 16px;
-          box-shadow: 0 10px 30px rgba(2, 48, 71, 0.04);
-          transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .glass-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 15px 35px rgba(2, 48, 71, 0.08);
+          box-shadow: 0 4px 14px -2px rgba(22, 35, 75, 0.06), 0 12px 30px -4px rgba(22, 35, 75, 0.1);
+          border-color: ${theme === "dark" ? "rgba(191, 209, 255, 0.2)" : "rgba(41, 61, 125, 0.2)"};
         }
 
         .input-style {
-          background: ${theme === "dark" ? "rgba(255, 255, 255, 0.04)" : "#ffffff"};
-          border: 1.5px solid ${theme === "dark" ? "rgba(255, 255, 255, 0.1)" : "#dde3e8"};
-          color: ${theme === "dark" ? "#e8f4f8" : "#023047"};
+          background: ${theme === "dark" ? "#101b30" : "#ffffff"};
+          border: 1.5px solid ${theme === "dark" ? "rgba(191, 209, 255, 0.15)" : "#d8e2ee"};
+          color: ${theme === "dark" ? "#f1f5f9" : "#1e293b"};
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         .input-style:focus {
-          border-color: #219EBC;
-          box-shadow: 0 0 0 3px rgba(33, 158, 188, 0.15);
+          border-color: #0093dd;
+          box-shadow: 0 0 0 3px rgba(0, 147, 221, 0.15);
         }
 
         .tab-btn-active {
-          background: #219EBC;
-          color: white;
+          background: #293d7d;
+          color: #ffffff;
+          box-shadow: 0 2px 8px rgba(41, 61, 125, 0.25);
         }
 
         .tab-btn-inactive {
-          background: ${theme === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(2, 48, 71, 0.04)"};
-          color: ${theme === "dark" ? "#8ECAE6" : "#5a7f92"};
+          background: ${theme === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(41, 61, 125, 0.05)"};
+          color: ${theme === "dark" ? "#94a3b8" : "#64748b"};
         }
-
-        .floating-stat {
-          animation: float 4s ease-in-out infinite;
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
+        .tab-btn-inactive:hover {
+          color: ${theme === "dark" ? "#ffffff" : "#293d7d"};
+          background: ${theme === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(41, 61, 125, 0.09)"};
         }
 
         /* ===== Mobile Navigation & Drawer ===== */
         .landing-desktop-nav {
           display: flex;
           align-items: center;
-          gap: 28px;
+          gap: 32px;
         }
 
         .mobile-menu-trigger {
@@ -144,7 +154,7 @@ export default function LandingPage() {
         .mobile-menu-backdrop {
           position: absolute;
           inset: 0;
-          background: rgba(1, 18, 29, 0.7);
+          background: rgba(10, 18, 32, 0.75);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
         }
@@ -152,8 +162,8 @@ export default function LandingPage() {
         .mobile-menu-content {
           position: relative;
           z-index: 10;
-          background: ${theme === "dark" ? "#011827" : "#ffffff"};
-          border-bottom: 2px solid #219EBC;
+          background: ${theme === "dark" ? "#101c32" : "#ffffff"};
+          border-bottom: 2px solid #dc137b;
           padding: 20px 20px 28px;
           box-shadow: 0 10px 40px rgba(0,0,0,0.3);
           display: flex;
@@ -174,13 +184,14 @@ export default function LandingPage() {
         }
 
         .mobile-nav-item {
-          font-size: 15.5px;
+          font-size: 15px;
           font-weight: 700;
+          font-family: 'Raleway', sans-serif;
           color: inherit;
           text-decoration: none;
           cursor: pointer;
           padding: 12px 14px;
-          border-radius: 10px;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -188,8 +199,8 @@ export default function LandingPage() {
         }
 
         .mobile-nav-item:hover {
-          background: ${theme === "dark" ? "rgba(33,158,188,0.12)" : "rgba(33,158,188,0.08)"};
-          color: #219EBC;
+          background: ${theme === "dark" ? "rgba(220,19,123,0.12)" : "rgba(220,19,123,0.06)"};
+          color: #dc137b;
         }
 
         /* Responsive Layout Overrides */
@@ -292,23 +303,23 @@ export default function LandingPage() {
         {/* ===== HEADER / NAVIGATION ===== */}
         <header className="glass-nav sticky top-0 z-50 transition-all">
           <div className="header-inner" style={{ maxWidth: 1200, margin: "0 auto", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-              <img src="/logo.png" alt="Deeper Life High School" style={{ width: 42, height: 42, borderRadius: 10, objectFit: "contain" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+              <img src="/logo.png" alt="Deeper Life High School" style={{ width: 44, height: 44, borderRadius: 10, objectFit: "contain" }} />
               <div>
-                <span className="web-heading" style={{ fontSize: "clamp(16px, 4vw, 20px)", fontWeight: 800, letterSpacing: "-0.5px", display: "block", lineHeight: 1.2 }}>
+                <span className="web-heading" style={{ fontSize: "clamp(16px, 4vw, 20px)", fontWeight: 900, color: theme === "dark" ? "#f8fafc" : "#16234b", letterSpacing: "-0.5px", display: "block", lineHeight: 1.15 }}>
                   Deeper Life High School
                 </span>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#219EBC", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                  DLHS Portal
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#dc137b", letterSpacing: "0.8px", textTransform: "uppercase" }}>
+                  Kaduna Campus Portal
                 </span>
               </div>
             </div>
 
             {/* Desktop Navigation Links */}
             <nav className="landing-desktop-nav">
-              <a href="#about" style={{ textDecoration: "none", fontSize: 14, fontWeight: 600, color: "inherit" }}>About DLHS</a>
-              <a href="#academics" style={{ textDecoration: "none", fontSize: 14, fontWeight: 600, color: "inherit" }}>Academic Programmes</a>
-              <a href="#contact" style={{ textDecoration: "none", fontSize: 14, fontWeight: 600, color: "inherit" }}>Contact</a>
+              <a href="#about" style={{ textDecoration: "none", fontSize: 14, fontWeight: 700, color: "inherit", fontFamily: "'Raleway', sans-serif" }}>About DLHS</a>
+              <a href="#academics" style={{ textDecoration: "none", fontSize: 14, fontWeight: 700, color: "inherit", fontFamily: "'Raleway', sans-serif" }}>Academic Programmes</a>
+              <a href="#contact" style={{ textDecoration: "none", fontSize: 14, fontWeight: 700, color: "inherit", fontFamily: "'Raleway', sans-serif" }}>Contact</a>
             </nav>
 
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -318,18 +329,19 @@ export default function LandingPage() {
                 aria-label="Toggle Theme"
                 style={{ 
                   background: "none", border: "none", cursor: "pointer", 
-                  color: theme === "dark" ? "#FFB703" : "#219EBC", display: "flex", alignItems: "center", padding: 6
+                  color: theme === "dark" ? "#d4af37" : "#293d7d", display: "flex", alignItems: "center", padding: 6
                 }}
               >
                 {theme === "dark" ? <School size={20} /> : <BookOpen size={20} />}
               </button>
 
               <button 
-                className="portal-btn header-portal-btn" 
+                className="dlhs-btn-primary header-portal-btn" 
                 onClick={() => navigate("/login")}
                 style={{ 
-                  padding: "10px 20px", borderRadius: 10, border: "none", color: "white", 
-                  fontSize: 13.5, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8
+                  padding: "10px 22px", borderRadius: 8, border: "none", 
+                  fontSize: 13.5, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                  fontFamily: "'Raleway', sans-serif"
                 }}
               >
                 Portal Login <ArrowRight size={14} />
@@ -377,16 +389,17 @@ export default function LandingPage() {
                 </a>
               </nav>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 6, borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(2,48,71,0.08)"}` }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 6, borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(41,61,125,0.1)"}` }}>
                 <button 
-                  className="portal-btn" 
+                  className="dlhs-btn-primary" 
                   onClick={() => { setMobileMenuOpen(false); navigate("/login"); }}
                   style={{ 
-                    width: "100%", padding: "13px", borderRadius: 10, border: "none", color: "white", 
-                    fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 
+                    width: "100%", padding: "13px", borderRadius: 8, border: "none", 
+                    fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    fontFamily: "'Raleway', sans-serif"
                   }}
                 >
-                  Access Portal Login <ArrowRight size={16} />
+                  Access School Portal <ArrowRight size={16} />
                 </button>
               </div>
             </div>
@@ -394,46 +407,48 @@ export default function LandingPage() {
         )}
 
         {/* ===== HERO SECTION ===== */}
-        <section className="hero-banner" style={{ padding: "90px 24px 70px", display: "flex", alignItems: "center" }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 40, alignItems: "center" }} className="hero-grid">
+        <section className="hero-banner" style={{ padding: "90px 24px 75px", display: "flex", alignItems: "center" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 48, alignItems: "center" }} className="hero-grid">
             <div>
               <div style={{ 
                 display: "inline-flex", alignItems: "center", gap: 8, 
-                background: "rgba(33, 158, 188, 0.12)", border: "1px solid rgba(33, 158, 188, 0.3)",
+                background: theme === "dark" ? "rgba(220, 19, 123, 0.12)" : "rgba(220, 19, 123, 0.08)", 
+                border: `1px solid ${theme === "dark" ? "rgba(220, 19, 123, 0.28)" : "rgba(220, 19, 123, 0.2)"}`,
                 padding: "6px 16px", borderRadius: 100, marginBottom: 20
               }}>
-                <Sparkles size={14} style={{ color: "#219EBC" }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#219EBC", textTransform: "uppercase", letterSpacing: "1px" }}>
+                <ShieldCheck size={14} style={{ color: "#dc137b" }} />
+                <span style={{ fontSize: 11.5, fontWeight: 800, color: "#dc137b", textTransform: "uppercase", letterSpacing: "1px", fontFamily: "'Raleway', sans-serif" }}>
                   Motto: Leadership with Distinction
                 </span>
               </div>
               
-              <h1 className="web-heading hero-title" style={{ fontSize: "clamp(32px, 5vw, 54px)", fontWeight: 800, lineHeight: 1.15, marginBottom: 18, letterSpacing: "-1.2px" }}>
-                Transforming Minds, Producing <span style={{ color: "#219EBC" }}>Upright Leaders</span>
+              <h1 className="web-heading hero-title" style={{ fontSize: "clamp(34px, 5.2vw, 56px)", fontWeight: 900, lineHeight: 1.12, marginBottom: 18, color: theme === "dark" ? "#f8fafc" : "#16234b" }}>
+                Transforming Minds, Producing <span style={{ color: "#dc137b" }}>Upright Leaders</span>
               </h1>
               
-              <p className="hero-subtitle" style={{ fontSize: "clamp(14.5px, 2vw, 17px)", lineHeight: 1.7, opacity: 0.85, marginBottom: 30, maxWidth: 620 }}>
-                Welcome to Deeper Life High School (DLHS) — where uncompromising academic excellence meets deep moral and spiritual integrity. We are committed to producing students who are academically well-grounded and equipped as future leaders.
+              <p className="hero-subtitle" style={{ fontSize: "clamp(15px, 2vw, 17.5px)", lineHeight: 1.7, opacity: 0.9, marginBottom: 32, maxWidth: 620, color: theme === "dark" ? "#cbd5e1" : "#3a4244" }}>
+                Welcome to Deeper Life High School (DLHS) — where uncompromising academic excellence meets deep moral and spiritual integrity. Producing graduates who are academically well-grounded and equipped as ethical future leaders.
               </p>
               
               <div className="hero-btn-row" style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
                 <button 
-                  className="portal-btn"
+                  className="dlhs-btn-primary"
                   onClick={() => navigate("/login")}
                   style={{ 
-                    padding: "15px 32px", borderRadius: 12, border: "none", color: "white", 
-                    fontSize: 15, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10 
+                    padding: "15px 32px", borderRadius: 8, border: "none", 
+                    fontSize: 15, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10,
+                    fontFamily: "'Raleway', sans-serif"
                   }}
                 >
                   Access School Portal <ArrowRight size={18} />
                 </button>
                 <a 
                   href="#about"
+                  className="dlhs-btn-outline"
                   style={{ 
-                    padding: "15px 26px", borderRadius: 12, border: `1.5px solid ${theme === "dark" ? "rgba(255,255,255,0.15)" : "#dde3e8"}`, 
-                    color: "inherit", textDecoration: "none", fontSize: 14.5, fontWeight: 700, cursor: "pointer",
-                    display: "inline-flex", alignItems: "center", background: theme === "dark" ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.5)",
-                    backdropFilter: "blur(5px)"
+                    padding: "14px 26px", borderRadius: 8, 
+                    textDecoration: "none", fontSize: 14.5, fontWeight: 700, cursor: "pointer",
+                    display: "inline-flex", alignItems: "center", fontFamily: "'Raleway', sans-serif"
                   }}
                 >
                   Learn More About DLHS
@@ -441,51 +456,57 @@ export default function LandingPage() {
               </div>
 
               {/* Mobile Stats Counter */}
-              <div className="md-hidden" style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-                <div className="glass-card" style={{ padding: "12px 6px", textAlign: "center" }}>
-                  <div style={{ fontSize: 19, fontWeight: 800, color: "#219EBC" }} className="web-heading">100%</div>
-                  <div style={{ fontSize: 11, opacity: 0.75, fontWeight: 600, marginTop: 2 }}>WAEC &amp; JAMB Success</div>
+              <div className="md-hidden" style={{ marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div className="dlhs-card" style={{ padding: "14px 10px", textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#293d7d" }} className="web-heading">100%</div>
+                  <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 600, marginTop: 2 }}>WAEC &amp; JAMB Success</div>
                 </div>
-                <div className="glass-card" style={{ padding: "12px 6px", textAlign: "center" }}>
-                  <div style={{ fontSize: 19, fontWeight: 800, color: "#fb8500" }} className="web-heading">5 Core</div>
-                  <div style={{ fontSize: 11, opacity: 0.75, fontWeight: 600, marginTop: 2 }}>Values</div>
+                <div className="dlhs-card" style={{ padding: "14px 10px", textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#dc137b" }} className="web-heading">5 Core</div>
+                  <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 600, marginTop: 2 }}>Pillars of Value</div>
                 </div>
-                <div className="glass-card" style={{ padding: "12px 6px", textAlign: "center" }}>
-                  <div style={{ fontSize: 19, fontWeight: 800, color: "#2a9d8f" }} className="web-heading">JSS &amp; SSS</div>
-                  <div style={{ fontSize: 11, opacity: 0.75, fontWeight: 600, marginTop: 2 }}>Secondary Only</div>
+                <div className="dlhs-card" style={{ padding: "14px 10px", textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#0093dd" }} className="web-heading">JSS &amp; SSS</div>
+                  <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 600, marginTop: 2 }}>Secondary Only</div>
                 </div>
               </div>
             </div>
 
-            {/* Desktop Floating Stats Block */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 18 }} className="desktop-only">
-              <div className="glass-card floating-stat" style={{ padding: 22, display: "flex", alignItems: "center", gap: 16, animationDelay: "0s" }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(33,158,188,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
-                  <Award size={24} />
+            {/* Desktop Highflyer Stat Blocks (Crisp Architectural Cards) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }} className="desktop-only">
+              <div className="dlhs-card" style={{ padding: "22px 24px", display: "flex", alignItems: "center", gap: 18 }}>
+                <div style={{ width: 50, height: 50, borderRadius: 10, background: "rgba(41, 61, 125, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d", flexShrink: 0 }}>
+                  <Award size={26} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 24, fontWeight: 800 }} className="web-heading">Distinction</div>
-                  <div style={{ fontSize: 13, opacity: 0.7, fontWeight: 500 }}>Academic &amp; Moral Excellence</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: theme === "dark" ? "#f8fafc" : "#16234b" }} className="web-heading">
+                    National Highflyers
+                  </div>
+                  <div style={{ fontSize: 13, opacity: 0.8, fontWeight: 600, marginTop: 2 }}>Consistently Top WAEC &amp; UTME Scores in Nigeria</div>
                 </div>
               </div>
 
-              <div className="glass-card floating-stat" style={{ padding: 22, display: "flex", alignItems: "center", gap: 16, animationDelay: "1.5s" }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(251,133,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fb8500" }}>
-                  <ShieldCheck size={24} />
+              <div className="dlhs-card" style={{ padding: "22px 24px", display: "flex", alignItems: "center", gap: 18 }}>
+                <div style={{ width: 50, height: 50, borderRadius: 10, background: "rgba(220, 19, 123, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#dc137b", flexShrink: 0 }}>
+                  <ShieldCheck size={26} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 24, fontWeight: 800 }} className="web-heading">5 Core Values</div>
-                  <div style={{ fontSize: 13, opacity: 0.7, fontWeight: 500 }}>Holiness, Honesty, Hard work</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: theme === "dark" ? "#f8fafc" : "#16234b" }} className="web-heading">
+                    5 Core Values
+                  </div>
+                  <div style={{ fontSize: 13, opacity: 0.8, fontWeight: 600, marginTop: 2 }}>Holiness, Honesty, Hard work, Discipline, Integrity</div>
                 </div>
               </div>
 
-              <div className="glass-card floating-stat" style={{ padding: 22, display: "flex", alignItems: "center", gap: 16, animationDelay: "0.7s" }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(42,157,143,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#2a9d8f" }}>
-                  <School size={24} />
+              <div className="dlhs-card" style={{ padding: "22px 24px", display: "flex", alignItems: "center", gap: 18 }}>
+                <div style={{ width: 50, height: 50, borderRadius: 10, background: "rgba(0, 147, 221, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0093dd", flexShrink: 0 }}>
+                  <School size={26} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 24, fontWeight: 800 }} className="web-heading">JSS 1 – SSS 3</div>
-                  <div style={{ fontSize: 13, opacity: 0.7, fontWeight: 500 }}>Full Secondary Curriculum</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: theme === "dark" ? "#f8fafc" : "#16234b" }} className="web-heading">
+                    Full Boarding Campus
+                  </div>
+                  <div style={{ fontSize: 13, opacity: 0.8, fontWeight: 600, marginTop: 2 }}>Structured 24/7 Academic, Moral &amp; Spiritual Mentorship</div>
                 </div>
               </div>
             </div>
@@ -493,80 +514,83 @@ export default function LandingPage() {
         </section>
 
         {/* ===== ABOUT SECTION ===== */}
-        <section id="about" className="section-padding" style={{ padding: "80px 24px", maxWidth: 1200, margin: "0 auto" }}>
+        <section id="about" className="section-padding" style={{ padding: "85px 24px", maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 48, alignItems: "center" }} className="grid-about">
-            <div className="about-img-container" style={{ borderRadius: 20, overflow: "hidden", border: "1.5px solid rgba(33, 158, 188, 0.15)", position: "relative", height: 440 }}>
+            <div className="about-img-container" style={{ borderRadius: 14, overflow: "hidden", border: `1.5px solid ${theme === "dark" ? "rgba(191, 209, 255, 0.15)" : "rgba(41, 61, 125, 0.15)"}`, position: "relative", height: 450, boxShadow: "0 12px 36px -8px rgba(22, 35, 75, 0.12)" }}>
               <img 
                 src="/school_hero.png" 
                 alt="Deeper Life High School Campus" 
                 style={{ width: "100%", height: "100%", objectFit: "cover" }} 
               />
-              <div style={{ position: "absolute", bottom: 16, left: 16, right: 16, background: "rgba(1,18,29,0.88)", backdropFilter: "blur(8px)", borderRadius: 12, padding: 16, color: "white" }}>
-                <h4 style={{ margin: "0 0 4px", fontSize: 14.5, fontWeight: 700 }} className="web-heading">Leadership with Distinction</h4>
-                <p style={{ margin: 0, fontSize: 12, opacity: 0.85, lineHeight: 1.5 }}>
+              <div style={{ position: "absolute", bottom: 16, left: 16, right: 16, background: "rgba(16, 28, 50, 0.94)", backdropFilter: "blur(10px)", borderRadius: 10, padding: 18, color: "white", border: "1px solid rgba(191, 209, 255, 0.15)" }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "#d4af37", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 3 }} className="web-heading">Institutional Legacy</div>
+                <h4 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 800 }} className="web-heading">Leadership with Distinction</h4>
+                <p style={{ margin: 0, fontSize: 12.5, opacity: 0.85, lineHeight: 1.5 }}>
                   Deeper Life High School is a 21st-century Christian mission, full boarding secondary school dedicated to academic distinction and godly character.
                 </p>
               </div>
             </div>
             
             <div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#fb8500", textTransform: "uppercase", letterSpacing: "1px" }}>Our Identity</span>
-              <h2 className="web-heading" style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight: 800, marginTop: 8, marginBottom: 18 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: "#dc137b", textTransform: "uppercase", letterSpacing: "1.2px", fontFamily: "'Raleway', sans-serif" }}>Our Identity</span>
+              <h2 className="web-heading" style={{ fontSize: "clamp(26px, 4vw, 36px)", fontWeight: 900, marginTop: 8, marginBottom: 18, color: theme === "dark" ? "#f8fafc" : "#16234b", lineHeight: 1.2 }}>
                 Nurturing Academic Excellence and Godly Character
               </h2>
-              <p style={{ lineHeight: 1.7, opacity: 0.8, marginBottom: 22, fontSize: 14.5 }}>
+              <p style={{ lineHeight: 1.75, opacity: 0.85, marginBottom: 24, fontSize: 15, color: theme === "dark" ? "#cbd5e1" : "#3a4244" }}>
                 At Deeper Life High School, we believe that true leadership begins with character. Our holistic secondary school curriculum is designed to stimulate critical inquiry, scientific discovery, and spiritual uprightness, molding students into self-reliant, ethical nation-builders.
               </p>
 
               <div className="about-mission-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 24 }}>
-                <div className="glass-card" style={{ padding: 18 }}>
-                  <h4 className="web-heading" style={{ color: "#219EBC", fontSize: 15.5, fontWeight: 700, margin: "0 0 8px" }}>
+                <div className="dlhs-card" style={{ padding: 22, borderLeft: "4px solid #293d7d" }}>
+                  <h4 className="web-heading" style={{ color: "#293d7d", fontSize: 16, fontWeight: 800, margin: "0 0 8px" }}>
                     Our Vision
                   </h4>
-                  <p style={{ fontSize: 13, lineHeight: 1.6, opacity: 0.85, margin: 0 }}>
+                  <p style={{ fontSize: 13, lineHeight: 1.65, opacity: 0.85, margin: 0 }}>
                     "To transform our nation by producing upright leaders of the future, through high quality and sound education."
                   </p>
                 </div>
                 
-                <div className="glass-card" style={{ padding: 18 }}>
-                  <h4 className="web-heading" style={{ color: "#219EBC", fontSize: 15.5, fontWeight: 700, margin: "0 0 8px" }}>
+                <div className="dlhs-card" style={{ padding: 22, borderLeft: "4px solid #dc137b" }}>
+                  <h4 className="web-heading" style={{ color: "#dc137b", fontSize: 16, fontWeight: 800, margin: "0 0 8px" }}>
                     Our Mission
                   </h4>
-                  <p style={{ fontSize: 13, lineHeight: 1.6, opacity: 0.85, margin: 0 }}>
+                  <p style={{ fontSize: 13, lineHeight: 1.65, opacity: 0.85, margin: 0 }}>
                     "To produce students who are academically well-grounded, morally upright and adequately equipped as future leaders."
                   </p>
                 </div>
               </div>
 
-              {/* Official DLHS Core Values */}
-              <div style={{ marginTop: 24, borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(33,158,188,0.15)"}`, paddingTop: 18 }}>
-                <h4 className="web-heading" style={{ color: "#fb8500", fontSize: 14.5, fontWeight: 700, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  Core Values
+              {/* Official DLHS 5 Core Values (No Emojis, Pure Stroke Vector Badges) */}
+              <div style={{ marginTop: 28, borderTop: `1px solid ${theme === "dark" ? "rgba(191,209,255,0.12)" : "rgba(41,61,125,0.1)"}`, paddingTop: 20 }}>
+                <h4 className="web-heading" style={{ color: theme === "dark" ? "#d4af37" : "#16234b", fontSize: 13.5, fontWeight: 800, margin: "0 0 14px", textTransform: "uppercase", letterSpacing: "1px" }}>
+                  The 5 Core Values
                 </h4>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                   {[
-                    { label: "Honesty", icon: "✨" },
-                    { label: "Hard work", icon: "💪" },
-                    { label: "Holiness", icon: "🕊️" },
-                    { label: "Discipline", icon: "⚖️" },
-                    { label: "Integrity", icon: "🛡️" }
+                    { label: "Holiness", icon: <GraduationCap size={14} style={{ color: "#dc137b" }} /> },
+                    { label: "Honesty", icon: <CheckCircle2 size={14} style={{ color: "#0093dd" }} /> },
+                    { label: "Hard work", icon: <Award size={14} style={{ color: "#d4af37" }} /> },
+                    { label: "Discipline", icon: <Scale size={14} style={{ color: "#293d7d" }} /> },
+                    { label: "Integrity", icon: <ShieldCheck size={14} style={{ color: "#0093dd" }} /> }
                   ].map((val) => (
                     <span 
                       key={val.label} 
                       style={{ 
-                        padding: "7px 16px", 
-                        borderRadius: 100, 
-                        background: theme === "dark" ? "rgba(33, 158, 188, 0.12)" : "rgba(33, 158, 188, 0.08)", 
-                        border: "1px solid rgba(33, 158, 188, 0.25)",
-                        color: theme === "dark" ? "#8ECAE6" : "#023047",
+                        padding: "8px 18px", 
+                        borderRadius: 8, 
+                        background: theme === "dark" ? "rgba(255, 255, 255, 0.04)" : "#ffffff", 
+                        border: `1.5px solid ${theme === "dark" ? "rgba(191, 209, 255, 0.15)" : "rgba(41, 61, 125, 0.14)"}`,
+                        color: theme === "dark" ? "#f1f5f9" : "#16234b",
                         fontSize: 13,
                         fontWeight: 700,
+                        fontFamily: "'Raleway', sans-serif",
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: 6
+                        gap: 8,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
                       }}
                     >
-                      <span>{val.icon}</span>
+                      {val.icon}
                       <span>{val.label}</span>
                     </span>
                   ))}
@@ -576,31 +600,31 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ===== ACADEMICS SECTION (DLHS Secondary Only: Junior & Senior) ===== */}
-        <section id="academics" className="section-padding" style={{ padding: "80px 24px", background: theme === "dark" ? "#011c2f" : "#f0f7fa" }}>
+        {/* ===== ACADEMICS SECTION ===== */}
+        <section id="academics" className="section-padding" style={{ padding: "85px 24px", background: theme === "dark" ? "#0c1527" : "#f1f5f9" }}>
           <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: 36 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#fb8500", textTransform: "uppercase", letterSpacing: "1px" }}>Academic Programmes</span>
-              <h2 className="web-heading" style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight: 800, marginTop: 8, marginBottom: 10 }}>
-                Secondary School Curricula
+            <div style={{ textAlign: "center", marginBottom: 40 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: "#dc137b", textTransform: "uppercase", letterSpacing: "1.2px", fontFamily: "'Raleway', sans-serif" }}>Academic Programmes</span>
+              <h2 className="web-heading" style={{ fontSize: "clamp(26px, 4vw, 36px)", fontWeight: 900, marginTop: 8, marginBottom: 12, color: theme === "dark" ? "#f8fafc" : "#16234b" }}>
+                Pure Secondary School Curricula
               </h2>
-              <p style={{ opacity: 0.75, maxWidth: 650, margin: "0 auto", fontSize: 14.5 }}>
-                Deeper Life High School operates a pure secondary school structure (JSS 1 through SSS 3), combining the national curriculum with advanced modern competencies in science, arts, and technology.
+              <p style={{ opacity: 0.85, maxWidth: 650, margin: "0 auto", fontSize: 15, color: theme === "dark" ? "#cbd5e1" : "#3a4244", lineHeight: 1.7 }}>
+                Deeper Life High School strictly operates a pure secondary school model (JSS 1 through SSS 3), integrating the Nigerian National Curriculum with modern global standards in science, languages, and technical mastery.
               </p>
             </div>
 
-            <div className="academics-tabs" style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 32 }}>
+            <div className="academics-tabs" style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 36 }}>
               <button
-                className={`tab-btn-${academicsTab === "junior" ? "active" : "inactive"}`}
+                className={academicsTab === "junior" ? "tab-btn-active" : "tab-btn-inactive"}
                 onClick={() => setAcademicsTab("junior")}
-                style={{ padding: "11px 26px", borderRadius: 100, border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
+                style={{ padding: "12px 28px", borderRadius: 8, border: "none", fontSize: 14, fontWeight: 800, cursor: "pointer", transition: "all 0.2s", fontFamily: "'Raleway', sans-serif" }}
               >
                 Junior Secondary (JSS 1–3)
               </button>
               <button
-                className={`tab-btn-${academicsTab === "senior" ? "active" : "inactive"}`}
+                className={academicsTab === "senior" ? "tab-btn-active" : "tab-btn-inactive"}
                 onClick={() => setAcademicsTab("senior")}
-                style={{ padding: "11px 26px", borderRadius: 100, border: "none", fontSize: 14, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
+                style={{ padding: "12px 28px", borderRadius: 8, border: "none", fontSize: 14, fontWeight: 800, cursor: "pointer", transition: "all 0.2s", fontFamily: "'Raleway', sans-serif" }}
               >
                 Senior Secondary (SSS 1–3)
               </button>
@@ -609,33 +633,33 @@ export default function LandingPage() {
             <div className="academics-cards-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
               {academicsTab === "junior" && (
                 <>
-                  <div className="glass-card" style={{ padding: "28px 24px" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(33,158,188,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", marginBottom: 18 }}>
-                      <School size={22} />
+                  <div className="dlhs-card" style={{ padding: "30px 26px" }}>
+                    <div style={{ width: 46, height: 46, borderRadius: 10, background: "rgba(41, 61, 125, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d", marginBottom: 18 }}>
+                      <School size={24} />
                     </div>
-                    <h3 className="web-heading" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>
-                      Junior Secondary Education (JSS 1–3)
+                    <h3 className="web-heading" style={{ fontSize: 19, fontWeight: 800, margin: "0 0 10px", color: theme === "dark" ? "#f8fafc" : "#16234b" }}>
+                      Basic Science &amp; General Studies (JSS 1–3)
                     </h3>
-                    <p style={{ fontSize: 13.5, opacity: 0.8, lineHeight: 1.65, margin: "0 0 18px" }}>
-                      Comprehensive grounding in basic sciences, mathematics, pre-vocational studies, computer science, and languages, preparing students for stellar performance in the National Basic Education Certificate Examination (BECE).
+                    <p style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.7, margin: "0 0 20px", color: theme === "dark" ? "#cbd5e1" : "#3a4244" }}>
+                      Comprehensive grounding in core sciences, foundational mathematics, pre-vocational studies, computer science, and languages, preparing students for exemplary performance in the National Basic Education Certificate Examination (BECE).
                     </p>
-                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 14, fontSize: 12, fontWeight: 600, opacity: 0.75 }}>
-                      Focus: Mathematics · Basic Science &amp; Tech · English Studies · French · Agricultural Science · Business Studies
+                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(191,209,255,0.1)" : "#e2e8f0"}`, paddingTop: 16, fontSize: 12.5, fontWeight: 600, color: theme === "dark" ? "#94a3b8" : "#64748b" }}>
+                      Curriculum: Mathematics · Basic Science &amp; Technology · English Studies · French · Agricultural Science · Business Studies
                     </div>
                   </div>
 
-                  <div className="glass-card" style={{ padding: "28px 24px" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(42,157,143,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#2a9d8f", marginBottom: 18 }}>
-                      <Users size={22} />
+                  <div className="dlhs-card" style={{ padding: "30px 26px" }}>
+                    <div style={{ width: 46, height: 46, borderRadius: 10, background: "rgba(0, 147, 221, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0093dd", marginBottom: 18 }}>
+                      <Users size={24} />
                     </div>
-                    <h3 className="web-heading" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>
-                      STEM, Robotics &amp; Computer Clubs
+                    <h3 className="web-heading" style={{ fontSize: 19, fontWeight: 800, margin: "0 0 10px", color: theme === "dark" ? "#f8fafc" : "#16234b" }}>
+                      Digital Literacy &amp; STEM Discovery
                     </h3>
-                    <p style={{ fontSize: 13.5, opacity: 0.8, lineHeight: 1.65, margin: "0 0 18px" }}>
-                      Fostering analytical mindsets and practical ingenuity through hands-on science laboratories, introductory programming, robotics competitions, and digital literacy.
+                    <p style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.7, margin: "0 0 20px", color: theme === "dark" ? "#cbd5e1" : "#3a4244" }}>
+                      Cultivating analytical mindsets and practical ingenuity through hands-on science laboratories, introductory coding, computer-based testing (CBT) mastery, and robotics workshops designed to stimulate early innovation.
                     </p>
-                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 14, fontSize: 12, fontWeight: 600, opacity: 0.75 }}>
-                      Activities: Coding · Robotics · Science Exhibitions · CBT Preparation · Logic Puzzles
+                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(191,209,255,0.1)" : "#e2e8f0"}`, paddingTop: 16, fontSize: 12.5, fontWeight: 600, color: theme === "dark" ? "#94a3b8" : "#64748b" }}>
+                      Modules: Algorithm Design · Science Practical Exhibitions · CBT Diagnostics · Logical Reasoning
                     </div>
                   </div>
                 </>
@@ -643,33 +667,33 @@ export default function LandingPage() {
 
               {academicsTab === "senior" && (
                 <>
-                  <div className="glass-card" style={{ padding: "28px 24px" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(251,133,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fb8500", marginBottom: 18 }}>
-                      <Award size={22} />
+                  <div className="dlhs-card" style={{ padding: "30px 26px" }}>
+                    <div style={{ width: 46, height: 46, borderRadius: 10, background: "rgba(220, 19, 123, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#dc137b", marginBottom: 18 }}>
+                      <Award size={24} />
                     </div>
-                    <h3 className="web-heading" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>
-                      Science &amp; Technology Department
+                    <h3 className="web-heading" style={{ fontSize: 19, fontWeight: 800, margin: "0 0 10px", color: theme === "dark" ? "#f8fafc" : "#16234b" }}>
+                      Science &amp; Technology Faculty (SSS 1–3)
                     </h3>
-                    <p style={{ fontSize: 13.5, opacity: 0.8, lineHeight: 1.65, margin: "0 0 18px" }}>
-                      Advanced and rigorous instruction in Physics, Chemistry, Biology, Further Mathematics, and Technical Drawing. DLHS students consistently lead the nation in WAEC, NECO, and UTME (JAMB) scores.
+                    <p style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.7, margin: "0 0 20px", color: theme === "dark" ? "#cbd5e1" : "#3a4244" }}>
+                      Rigorous and intensive instruction in Physics, Chemistry, Biology, Further Mathematics, and Technical Drawing. DLHS candidates consistently record the highest aggregate scores nationwide in WAEC, NECO, and UTME.
                     </p>
-                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 14, fontSize: 12, fontWeight: 600, opacity: 0.75 }}>
-                      Subjects: Physics · Chemistry · Biology · Further Mathematics · Agricultural Science
+                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(191,209,255,0.1)" : "#e2e8f0"}`, paddingTop: 16, fontSize: 12.5, fontWeight: 600, color: theme === "dark" ? "#94a3b8" : "#64748b" }}>
+                      Specializations: Physics · Chemistry · Biology · Further Mathematics · Agricultural Science
                     </div>
                   </div>
 
-                  <div className="glass-card" style={{ padding: "28px 24px" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(33,158,188,0.12)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", marginBottom: 18 }}>
-                      <BookOpen size={22} />
+                  <div className="dlhs-card" style={{ padding: "30px 26px" }}>
+                    <div style={{ width: 46, height: 46, borderRadius: 10, background: "rgba(41, 61, 125, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d", marginBottom: 18 }}>
+                      <BookOpen size={24} />
                     </div>
-                    <h3 className="web-heading" style={{ fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>
-                      Arts, Humanities &amp; Commercial
+                    <h3 className="web-heading" style={{ fontSize: 19, fontWeight: 800, margin: "0 0 10px", color: theme === "dark" ? "#f8fafc" : "#16234b" }}>
+                      Arts, Humanities &amp; Commercial Sciences
                     </h3>
-                    <p style={{ fontSize: 13.5, opacity: 0.8, lineHeight: 1.65, margin: "0 0 18px" }}>
-                      Cultivating eloquence, economic literacy, and social consciousness in Government, Financial Accounting, Economics, Literature, and CRS, preparing students for legal, financial, and administrative excellence.
+                    <p style={{ fontSize: 14, opacity: 0.85, lineHeight: 1.7, margin: "0 0 20px", color: theme === "dark" ? "#cbd5e1" : "#3a4244" }}>
+                      Instilling critical discourse, economic acumen, and ethical leadership through Financial Accounting, Government, Economics, Literature-in-English, and Christian Religious Studies, preparing scholars for legal, corporate, and public service careers.
                     </p>
-                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(255,255,255,0.06)" : "#dde3e8"}`, paddingTop: 14, fontSize: 12, fontWeight: 600, opacity: 0.75 }}>
-                      Subjects: Literature in English · Economics · Financial Accounting · Commerce · Government
+                    <div style={{ borderTop: `1px solid ${theme === "dark" ? "rgba(191,209,255,0.1)" : "#e2e8f0"}`, paddingTop: 16, fontSize: 12.5, fontWeight: 600, color: theme === "dark" ? "#94a3b8" : "#64748b" }}>
+                      Specializations: Literature in English · Economics · Financial Accounting · Commerce · Government
                     </div>
                   </div>
                 </>
@@ -679,75 +703,84 @@ export default function LandingPage() {
         </section>
 
         {/* ===== CONTACT SECTION ===== */}
-        <section id="contact" className="section-padding" style={{ padding: "80px 24px", maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "0.8fr 1.2fr", gap: 40 }} className="grid-contact">
+        <section id="contact" className="section-padding" style={{ padding: "85px 24px", maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "0.8fr 1.2fr", gap: 48 }} className="grid-contact">
             <div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#fb8500", textTransform: "uppercase", letterSpacing: "1px" }}>Get In Touch</span>
-              <h2 className="web-heading" style={{ fontSize: "clamp(24px, 4vw, 32px)", fontWeight: 800, marginTop: 8, marginBottom: 18 }}>We'd Love to Hear From You</h2>
-              <p style={{ opacity: 0.75, lineHeight: 1.6, marginBottom: 26, fontSize: 14 }}>
-                For inquiries regarding student records, result verification, academic curricula, or administrative support, reach out to us below.
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: "#dc137b", textTransform: "uppercase", letterSpacing: "1.2px", fontFamily: "'Raleway', sans-serif" }}>Official Channels</span>
+              <h2 className="web-heading" style={{ fontSize: "clamp(26px, 4vw, 36px)", fontWeight: 900, marginTop: 8, marginBottom: 18, color: theme === "dark" ? "#f8fafc" : "#16234b" }}>
+                Campus Inquiries &amp; Admissions
+              </h2>
+              <p style={{ opacity: 0.85, lineHeight: 1.7, marginBottom: 28, fontSize: 15, color: theme === "dark" ? "#cbd5e1" : "#3a4244" }}>
+                For inquiries regarding student results, admission verification, transcripts, or academic scheduling, please contact the campus registry below.
               </p>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", flexShrink: 0 }}>
-                    <Phone size={18} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 8, background: "rgba(41, 61, 125, 0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d", flexShrink: 0 }}>
+                    <Phone size={20} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, opacity: 0.6, fontWeight: 600 }}>Phone Inquiries</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>+234 (0) 800 354 7466</div>
+                    <div style={{ fontSize: 11.5, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Admissions &amp; Registry</div>
+                    <div style={{ fontSize: 14.5, fontWeight: 800, color: theme === "dark" ? "#f8fafc" : "#16234b" }}>+234 (0) 800 354 7466</div>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", flexShrink: 0 }}>
-                    <Mail size={18} />
+                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 8, background: "rgba(220, 19, 123, 0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#dc137b", flexShrink: 0 }}>
+                    <Mail size={20} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, opacity: 0.6, fontWeight: 600 }}>Email Address</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>info@deeperlifehighschool.org</div>
+                    <div style={{ fontSize: 11.5, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Official Campus Registry</div>
+                    <div style={{ fontSize: 14.5, fontWeight: 800, color: theme === "dark" ? "#f8fafc" : "#16234b" }}>info@deeperlifehighschool.org</div>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(33,158,188,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC", flexShrink: 0 }}>
-                    <MapPin size={18} />
+                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 8, background: "rgba(0, 147, 221, 0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0093dd", flexShrink: 0 }}>
+                    <MapPin size={20} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, opacity: 0.6, fontWeight: 600 }}>Institution</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>Deeper Life High School (DLHS)</div>
+                    <div style={{ fontSize: 11.5, opacity: 0.7, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Institutional Identity</div>
+                    <div style={{ fontSize: 14.5, fontWeight: 800, color: theme === "dark" ? "#f8fafc" : "#16234b" }}>Deeper Life High School (DLHS)</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Quick message form */}
-            <div className="glass-card contact-form-card" style={{ padding: 28 }}>
-              <h3 className="web-heading" style={{ fontSize: 19, fontWeight: 800, margin: "0 0 16px" }}>Send a Quick Message</h3>
+            <div className="dlhs-card contact-form-card" style={{ padding: 32 }}>
+              <h3 className="web-heading" style={{ fontSize: 20, fontWeight: 800, margin: "0 0 16px", color: theme === "dark" ? "#f8fafc" : "#16234b" }}>
+                Send an Inquiry to Registry
+              </h3>
               <form style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }} className="grid-2">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="grid-2">
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Full Name</label>
-                    <input type="text" placeholder="Your name" className="input-style" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box" }} />
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: theme === "dark" ? "#cbd5e1" : "#16234b" }}>Full Name</label>
+                    <input type="text" placeholder="e.g. Dr. Samuel Adeyemi" className="input-style" style={{ width: "100%", padding: "11px 14px", borderRadius: 6, fontSize: 13.5, boxSizing: "border-box" }} />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Email Address</label>
-                    <input type="email" placeholder="Your email" className="input-style" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box" }} />
+                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: theme === "dark" ? "#cbd5e1" : "#16234b" }}>Email Address</label>
+                    <input type="email" placeholder="name@domain.com" className="input-style" style={{ width: "100%", padding: "11px 14px", borderRadius: 6, fontSize: 13.5, boxSizing: "border-box" }} />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Subject</label>
-                  <input type="text" placeholder="Subject" className="input-style" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box" }} />
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: theme === "dark" ? "#cbd5e1" : "#16234b" }}>Inquiry Category</label>
+                  <input type="text" placeholder="e.g. Result Verification / Admissions Query" className="input-style" style={{ width: "100%", padding: "11px 14px", borderRadius: 6, fontSize: 13.5, boxSizing: "border-box" }} />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Message Body</label>
-                  <textarea rows={4} placeholder="Type your message here..." className="input-style" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, fontSize: 13, boxSizing: "border-box", fontFamily: "inherit" }} />
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: theme === "dark" ? "#cbd5e1" : "#16234b" }}>Message Description</label>
+                  <textarea rows={4} placeholder="State details of your inquiry clearly..." className="input-style" style={{ width: "100%", padding: "11px 14px", borderRadius: 6, fontSize: 13.5, boxSizing: "border-box", fontFamily: "inherit" }} />
                 </div>
 
-                <button type="button" onClick={() => alert("Thank you! Your message has been sent.")} style={{ padding: "12px 24px", background: "#219EBC", color: "white", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: "pointer", alignSelf: "flex-start" }}>
-                  Submit Message
+                <button 
+                  type="button" 
+                  onClick={() => alert("Thank you. Your message has been received by the DLHS Registry.")} 
+                  className="dlhs-btn-primary"
+                  style={{ padding: "13px 28px", border: "none", borderRadius: 6, fontWeight: 800, fontSize: 14, cursor: "pointer", alignSelf: "flex-start", fontFamily: "'Raleway', sans-serif" }}
+                >
+                  Submit Inquiry
                 </button>
               </form>
             </div>
@@ -755,53 +788,57 @@ export default function LandingPage() {
         </section>
 
         {/* ===== FOOTER ===== */}
-        <footer className="footer-padding" style={{ background: theme === "dark" ? "#00080e" : "#022131", color: "#e8f4f8", padding: "60px 24px 20px" }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1.2fr 0.8fr 0.8fr 1.2fr", gap: 32, marginBottom: 36 }} className="footer-grid">
+        <footer className="footer-padding" style={{ background: "#10192e", color: "#f8fafc", padding: "64px 24px 24px" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1.2fr 0.8fr 0.8fr 1.2fr", gap: 36, marginBottom: 40 }} className="footer-grid">
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                <img src="/logo.png" alt="Deeper Life High School" style={{ width: 36, height: 36, borderRadius: 8, objectFit: "contain" }} />
-                <span className="web-heading" style={{ fontSize: 17, fontWeight: 800 }}>Deeper Life High School</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                <img src="/logo.png" alt="Deeper Life High School" style={{ width: 40, height: 40, borderRadius: 8, objectFit: "contain" }} />
+                <div>
+                  <span className="web-heading" style={{ fontSize: 18, fontWeight: 900, display: "block", color: "#ffffff" }}>Deeper Life High School</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#d4af37", textTransform: "uppercase", letterSpacing: "1px" }}>Leadership with Distinction</span>
+                </div>
               </div>
-              <p style={{ fontSize: 12.5, opacity: 0.65, lineHeight: 1.6 }}>
-                A 21st-century Christian mission, full boarding secondary school committed to academic excellence and moral uprightness. Leadership with Distinction.
+              <p style={{ fontSize: 13, opacity: 0.75, lineHeight: 1.7, maxWidth: 360 }}>
+                A 21st-century Christian mission, full boarding secondary school committed to uncompromising academic excellence and godly character.
               </p>
             </div>
 
             <div>
-              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: "#fb8500" }}>Quick Links</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
-                <a href="#about" style={{ color: "inherit", opacity: 0.75, textDecoration: "none" }}>About DLHS</a>
-                <a href="#academics" style={{ color: "inherit", opacity: 0.75, textDecoration: "none" }}>Academic Programmes</a>
-                <a href="#contact" style={{ color: "inherit", opacity: 0.75, textDecoration: "none" }}>Contact Us</a>
+              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 800, marginBottom: 16, color: "#d4af37", textTransform: "uppercase", letterSpacing: "1px" }}>Institution</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 11, fontSize: 13.5 }}>
+                <a href="#about" style={{ color: "inherit", opacity: 0.8, textDecoration: "none" }}>About DLHS</a>
+                <a href="#academics" style={{ color: "inherit", opacity: 0.8, textDecoration: "none" }}>Academic Programmes</a>
+                <a href="#contact" style={{ color: "inherit", opacity: 0.8, textDecoration: "none" }}>Contact Registry</a>
               </div>
             </div>
 
             <div>
-              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: "#fb8500" }}>Portal Access</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
-                <span onClick={() => navigate("/login")} style={{ opacity: 0.75, cursor: "pointer" }}>Student Portal</span>
-                <span onClick={() => navigate("/login")} style={{ opacity: 0.75, cursor: "pointer" }}>Teacher Portal</span>
-                <span onClick={() => navigate("/login")} style={{ opacity: 0.75, cursor: "pointer" }}>Admin Portal</span>
+              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 800, marginBottom: 16, color: "#d4af37", textTransform: "uppercase", letterSpacing: "1px" }}>Portal Portals</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 11, fontSize: 13.5 }}>
+                <span onClick={() => navigate("/login")} style={{ opacity: 0.8, cursor: "pointer" }}>Student Portal</span>
+                <span onClick={() => navigate("/login")} style={{ opacity: 0.8, cursor: "pointer" }}>Teacher Portal</span>
+                <span onClick={() => navigate("/login")} style={{ opacity: 0.8, cursor: "pointer" }}>Administrator Portal</span>
+                <span onClick={() => navigate("/parent/admissions-login")} style={{ opacity: 0.8, cursor: "pointer" }}>Parent Admissions</span>
               </div>
             </div>
 
             <div>
-              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: "#fb8500" }}>School Portal Access</h4>
-              <p style={{ fontSize: 12, opacity: 0.65, marginBottom: 14 }}>
-                Authorized students, teachers, and administrators can sign in directly to access academic results and portal features.
+              <h4 className="web-heading" style={{ fontSize: 14, fontWeight: 800, marginBottom: 16, color: "#d4af37", textTransform: "uppercase", letterSpacing: "1px" }}>Secure Access</h4>
+              <p style={{ fontSize: 12.5, opacity: 0.75, marginBottom: 16, lineHeight: 1.6 }}>
+                Authorized students, parents, teachers, and school administrators can authenticate to access academic records.
               </p>
               <button 
                 onClick={() => navigate("/login")}
-                className="portal-btn"
-                style={{ width: "100%", padding: "12px", border: "none", borderRadius: 8, color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+                className="dlhs-btn-primary"
+                style={{ width: "100%", padding: "13px", border: "none", borderRadius: 6, fontSize: 13.5, fontWeight: 800, cursor: "pointer", fontFamily: "'Raleway', sans-serif" }}
               >
-                Access Portal Login →
+                Access School Portal →
               </button>
             </div>
           </div>
 
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 18, textAlign: "center", fontSize: 11.5, opacity: 0.55 }}>
-            © {new Date().getFullYear()} Deeper Life High School (DLHS). All Rights Reserved. Powered by <a href="https://jlm.com.ng" style={{ color: "inherit", fontWeight: 700 }}>JLM</a>.
+          <div style={{ borderTop: "1px solid rgba(191,209,255,0.12)", paddingTop: 20, textAlign: "center", fontSize: 12, opacity: 0.65 }}>
+            © {new Date().getFullYear()} Deeper Life High School (DLHS). All Rights Reserved. Powered by JLM.
           </div>
         </footer>
       </div>

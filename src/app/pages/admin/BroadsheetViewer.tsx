@@ -11,6 +11,69 @@ const Glass = ({ children, style, className }: { children: React.ReactNode; styl
   </div>
 );
 
+const getShortSubjectName = (name: string): string => {
+  if (!name) return "";
+  const trimmed = name.trim();
+  const upper = trimmed.toUpperCase();
+
+  const map: Record<string, string> = {
+    "LEADERSHIP & ENTREPRENEURSHIP TRAINING (L.E.T.)": "L.E.T.",
+    "LEADERSHIP AND ENTREPRENEURSHIP TRAINING (L.E.T.)": "L.E.T.",
+    "LEADERSHIP & ENTREPRENEURSHIP TRAINING": "L.E.T.",
+    "LEADERSHIP AND ENTREPRENEURSHIP TRAINING": "L.E.T.",
+    "PHYSICAL AND HEALTH EDUCATION (P.H.E.)": "P.H.E.",
+    "PHYSICAL & HEALTH EDUCATION (P.H.E.)": "P.H.E.",
+    "PHYSICAL AND HEALTH EDUCATION": "P.H.E.",
+    "PHYSICAL & HEALTH EDUCATION": "P.H.E.",
+    "CULTURAL AND CREATIVE ART (C.C.A.)": "C.C.A.",
+    "CULTURAL & CREATIVE ART (C.C.A.)": "C.C.A.",
+    "CULTURAL AND CREATIVE ART": "C.C.A.",
+    "CULTURAL & CREATIVE ARTS": "C.C.A.",
+    "CULTURAL AND CREATIVE ARTS": "C.C.A.",
+    "CHRISTIAN RELIGIOUS STUDIES": "C.R.S.",
+    "CHRISTIAN RELIGIOUS KNOWLEDGE": "C.R.K.",
+    "ISLAMIC RELIGIOUS STUDIES": "I.R.S.",
+    "ISLAMIC RELIGIOUS KNOWLEDGE": "I.R.K.",
+    "ROBOTICS AND ARTIFICIAL INTELLIGENCE": "ROBOTICS & A.I.",
+    "ROBOTICS & ARTIFICIAL INTELLIGENCE": "ROBOTICS & A.I.",
+    "ROBOTICS AND A.I.": "ROBOTICS & A.I.",
+    "ROBOTICS & A.I.": "ROBOTICS & A.I.",
+    "AGRICULTURAL SCIENCE": "AGRIC SCIENCE",
+    "INFORMATION & COMMUNICATION TECHNOLOGY": "I.C.T.",
+    "INFORMATION AND COMMUNICATION TECHNOLOGY": "I.C.T.",
+    "COMPUTER HARDWARE AND GSM REPAIRS": "HARDWARE & GSM",
+    "FASHION DESIGN AND GARMENT MAKING": "GARMENT MAKING",
+    "SOLAR PHOTOVOLTAIC INSTALLATION AND MAINTENANCE": "SOLAR PHOTOVOLTAIC",
+    "CITIZENSHIP AND HERITAGE STUDIES": "HERITAGE STUDIES",
+    "SOCIAL AND CITIZENSHIP STUDIES": "CITIZENSHIP STUDIES",
+    "HORTICULTURE AND CROP PRODUCTION": "CROP PRODUCTION",
+    "CATERING CRAFT PRACTICE": "CATERING CRAFT",
+    "LITERATURE IN ENGLISH": "LIT. IN ENGLISH",
+    "FINANCIAL ACCOUNTING": "FIN. ACCOUNTING",
+    "FOOD AND NUTRITION": "FOOD & NUTRITION",
+    "FOOD & NUTRITION": "FOOD & NUTRITION",
+    "TECHNICAL DRAWING": "TECH. DRAWING",
+    "FURTHER MATHEMATICS": "FURTHER MATHS",
+    "ENTRANCE EXAMINATION": "ENTRANCE EXAM",
+    "INTERMEDIATE SCIENCE": "INTERMED. SCIENCE"
+  };
+
+  if (map[upper]) return map[upper];
+
+  const m = trimmed.match(/\(([A-Z\.\s]{2,8})\)/i);
+  if (m) return m[1].toUpperCase().trim();
+
+  if (upper.length <= 16) return upper;
+
+  return upper
+    .replace(/\bAND\b/gi, "&")
+    .replace(/\bMATHEMATICS\b/gi, "MATHS")
+    .replace(/\bEDUCATION\b/gi, "EDU")
+    .replace(/\bTECHNOLOGY\b/gi, "TECH")
+    .replace(/\bLANGUAGE\b/gi, "LANG")
+    .trim();
+};
+
 export default function BroadsheetViewer() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
@@ -20,8 +83,8 @@ export default function BroadsheetViewer() {
   const [availableClasses, setAvailableClasses] = useState<any[]>([]);
   const [cohortOptions, setCohortOptions] = useState<string[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
-  const [selectedTerm, setSelectedTerm] = useState<string>("3rd Term");
-  const [selectedSession, setSelectedSession] = useState<string>("2023/2024");
+  const [selectedTerm, setSelectedTerm] = useState<string>("2nd Term");
+  const [selectedSession, setSelectedSession] = useState<string>("2026/2027");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Load classes initially
@@ -102,12 +165,12 @@ export default function BroadsheetViewer() {
 
   // Score color helper
   const getScoreColor = (sc: number | null) => {
-    if (sc === null || sc === undefined) return { color: "#94a3b8", bg: "transparent" };
-    if (sc >= 70) return { color: "#10b981", bg: "rgba(16, 185, 129, 0.08)" }; // A
-    if (sc >= 60) return { color: "#0ea5e9", bg: "rgba(14, 165, 233, 0.08)" }; // B
-    if (sc >= 50) return { color: "#14b8a6", bg: "rgba(20, 184, 166, 0.08)" }; // C
-    if (sc >= 45) return { color: "#f59e0b", bg: "rgba(245, 158, 11, 0.08)" }; // D
-    return { color: "#ef4444", bg: "rgba(239, 68, 68, 0.08)" }; // F
+    if (sc === null || sc === undefined || Number(sc) <= 0) return { color: "var(--subtext)", bg: "transparent" };
+    if (sc >= 75) return { color: "#293d7d", bg: "rgba(41, 61, 125, 0.08)" }; // A (Distinction)
+    if (sc >= 60) return { color: "#0093dd", bg: "rgba(0, 147, 221, 0.08)" }; // B (Credit)
+    if (sc >= 50) return { color: "var(--heading)", bg: "rgba(41, 61, 125, 0.04)" }; // C (Merit)
+    if (sc >= 40) return { color: "#d4af37", bg: "rgba(212, 175, 55, 0.1)" }; // D (Pass)
+    return { color: "#dc137b", bg: "rgba(220, 19, 123, 0.08)" }; // F (Fail)
   };
 
   // Top statistics
@@ -116,6 +179,11 @@ export default function BroadsheetViewer() {
     ? (data.students.reduce((acc: number, s: any) => acc + (s.average || 0), 0) / totalStudents).toFixed(2)
     : "0.00";
   const topStudent = data?.students?.[0] || null;
+
+  const isCumulative = Boolean(data?.school?.is_cumulative || selectedTerm === "Cumulative");
+  const promotedCount = (data?.students || []).filter((s: any) => s.decision === "PROMOTED").length;
+  const trialCount = (data?.students || []).filter((s: any) => s.decision === "PROMOTED ON TRIAL").length;
+  const repeatCount = (data?.students || []).filter((s: any) => s.decision === "REPEAT").length;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -187,6 +255,7 @@ export default function BroadsheetViewer() {
                 <option value="1st Term">1st Term</option>
                 <option value="2nd Term">2nd Term</option>
                 <option value="3rd Term">3rd Term</option>
+                <option value="Cumulative">Cumulative (Annual)</option>
               </select>
             </div>
 
@@ -209,10 +278,10 @@ export default function BroadsheetViewer() {
                   cursor: "pointer"
                 }}
               >
-                <option value="2023/2024">2023/2024</option>
-                <option value="2024/2025">2024/2025</option>
+                <option value="2026/2027">2026/2027 (Current)</option>
                 <option value="2025/2026">2025/2026</option>
-                <option value="2026/2027">2026/2027</option>
+                <option value="2024/2025">2024/2025</option>
+                <option value="2023/2024">2023/2024</option>
               </select>
             </div>
 
@@ -274,9 +343,10 @@ export default function BroadsheetViewer() {
                 gap: 6,
                 padding: "8px 14px",
                 borderRadius: 8,
-                border: "1px solid rgba(14,165,233,0.3)",
-                background: "rgba(14,165,233,0.12)",
-                color: "#0ea5e9",
+                border: "1px solid rgba(41,61,125,0.25)",
+                background: "rgba(41,61,125,0.06)",
+                color: "#293d7d",
+                fontFamily: "'Raleway', sans-serif",
                 fontSize: 12.5,
                 fontWeight: 700,
                 cursor: "pointer"
@@ -295,12 +365,13 @@ export default function BroadsheetViewer() {
                 padding: "8px 16px",
                 borderRadius: 8,
                 border: "none",
-                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                background: "#293d7d",
                 color: "#fff",
                 fontSize: 12.5,
                 fontWeight: 700,
                 cursor: "pointer",
-                boxShadow: "0 2px 10px rgba(16,185,129,0.3)"
+                boxShadow: "0 2px 8px rgba(41,61,125,0.25)",
+                fontFamily: "'Raleway', sans-serif"
               }}
               title="Print official landscape broadsheet table"
             >
@@ -314,7 +385,7 @@ export default function BroadsheetViewer() {
       {data && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
           <Glass style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(16,185,129,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#10b981" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(41,61,125,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d" }}>
               <Users size={20} />
             </div>
             <div>
@@ -324,17 +395,19 @@ export default function BroadsheetViewer() {
           </Glass>
 
           <Glass style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(14,165,233,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0ea5e9" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(0,147,221,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0093dd" }}>
               <TrendingUp size={20} />
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "var(--subtext)", fontWeight: 700 }}>COHORT AVERAGE</div>
+              <div style={{ fontSize: 11, color: "var(--subtext)", fontWeight: 700 }}>
+                {isCumulative ? "CUMULATIVE AVERAGE" : "COHORT AVERAGE"}
+              </div>
               <div style={{ fontSize: 19, fontWeight: 800, color: "var(--heading)" }}>{classAvg}%</div>
             </div>
           </Glass>
 
           <Glass style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(251,133,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fb8500" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(212,175,55,0.14)", display: "flex", alignItems: "center", justifyContent: "center", color: "#d4af37" }}>
               <Award size={20} />
             </div>
             <div style={{ overflow: "hidden" }}>
@@ -346,12 +419,16 @@ export default function BroadsheetViewer() {
           </Glass>
 
           <Glass style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#8b5cf6" }}>
-              <BookOpen size={20} />
+            <div style={{ width: 40, height: 40, borderRadius: 8, background: isCumulative ? "rgba(220,19,123,0.1)" : "rgba(41,61,125,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: isCumulative ? "#dc137b" : "#293d7d" }}>
+              {isCumulative ? <Users size={20} /> : <BookOpen size={20} />}
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "var(--subtext)", fontWeight: 700 }}>SUBJECTS RECORDED</div>
-              <div style={{ fontSize: 19, fontWeight: 800, color: "var(--heading)" }}>{subjects.length}</div>
+              <div style={{ fontSize: 11, color: "var(--subtext)", fontWeight: 700 }}>
+                {isCumulative ? "PROMOTION STATUS" : "SUBJECTS RECORDED"}
+              </div>
+              <div style={{ fontSize: isCumulative ? 15 : 19, fontWeight: 800, color: "var(--heading)" }}>
+                {isCumulative ? `${promotedCount} Promoted (${repeatCount} Repeat)` : subjects.length}
+              </div>
             </div>
           </Glass>
         </div>
@@ -413,6 +490,9 @@ export default function BroadsheetViewer() {
                   <th colSpan={5} style={{ width: 110, minWidth: 110, fontSize: 9.5, fontWeight: 700, color: "var(--subtext)" }}>
                     GRADES
                   </th>
+                  {isCumulative && (
+                    <th style={{ width: 85, minWidth: 85 }}></th>
+                  )}
                 </tr>
 
                 {/* Vertical subject header row */}
@@ -431,26 +511,35 @@ export default function BroadsheetViewer() {
                   }}>
                     NAME OF STUDENT
                   </th>
-                  {subjects.map((sub: any) => (
-                    <th key={`hdr-${sub.id}`} style={{
-                      height: 130, position: "relative", verticalAlign: "bottom", padding: "0 0 8px 0",
-                      borderRight: "1px solid var(--glass-border)"
-                    }}>
-                      <div style={{
-                        writingMode: "vertical-rl",
-                        transform: "rotate(180deg)",
-                        whiteSpace: "nowrap",
-                        fontSize: 9.5,
-                        fontWeight: 700,
-                        color: "var(--heading)",
-                        letterSpacing: 0.3,
-                        maxHeight: 120,
-                        margin: "0 auto"
+                  {subjects.map((sub: any) => {
+                    const shortName = sub.short_name || getShortSubjectName(sub.name);
+                    return (
+                      <th key={`hdr-${sub.id}`} title={sub.name} style={{
+                        height: 135, maxHeight: 135, position: "relative", verticalAlign: "bottom", padding: "0 1px 6px 1px",
+                        borderRight: "1px solid var(--glass-border)", overflow: "hidden"
                       }}>
-                        {sub.name}
-                      </div>
-                    </th>
-                  ))}
+                        <div style={{
+                          height: 135, maxHeight: 135, overflow: "hidden", display: "flex", alignItems: "flex-end", justifyContent: "center"
+                        }}>
+                          <div style={{
+                            writingMode: "vertical-rl",
+                            transform: "rotate(180deg)",
+                            whiteSpace: "nowrap",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            color: "var(--heading)",
+                            letterSpacing: 0.2,
+                            maxHeight: 125,
+                            margin: "0 auto",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis"
+                          }}>
+                            {shortName}
+                          </div>
+                        </div>
+                      </th>
+                    );
+                  })}
                   <th style={{
                     verticalAlign: "bottom", padding: "0 0 8px 0", borderRight: "2px solid var(--glass-border)",
                     height: 130
@@ -465,20 +554,33 @@ export default function BroadsheetViewer() {
                       letterSpacing: 0.3,
                       margin: "0 auto"
                     }}>
-                      AVERAGE
+                      {isCumulative ? "CUM. AVG" : "AVERAGE"}
                     </div>
                   </th>
-                  <th style={{ width: 22, verticalAlign: "bottom", paddingBottom: 8, fontSize: 10, fontWeight: 800, color: "#10b981" }}>A</th>
-                  <th style={{ width: 22, verticalAlign: "bottom", paddingBottom: 8, fontSize: 10, fontWeight: 800, color: "#0ea5e9" }}>B</th>
-                  <th style={{ width: 22, verticalAlign: "bottom", paddingBottom: 8, fontSize: 10, fontWeight: 800, color: "#14b8a6" }}>C</th>
-                  <th style={{ width: 22, verticalAlign: "bottom", paddingBottom: 8, fontSize: 10, fontWeight: 800, color: "#f59e0b" }}>D</th>
-                  <th style={{ width: 22, verticalAlign: "bottom", paddingBottom: 8, fontSize: 10, fontWeight: 800, color: "#ef4444" }}>F</th>
+                  <th style={{ width: 22, verticalAlign: "bottom", paddingBottom: 8, fontSize: 10, fontWeight: 800, color: "#293d7d" }}>A</th>
+                  <th style={{ width: 22, verticalAlign: "bottom", paddingBottom: 8, fontSize: 10, fontWeight: 800, color: "#0093dd" }}>B</th>
+                  <th style={{ width: 22, verticalAlign: "bottom", paddingBottom: 8, fontSize: 10, fontWeight: 800, color: "var(--heading)" }}>C</th>
+                  <th style={{ width: 22, verticalAlign: "bottom", paddingBottom: 8, fontSize: 10, fontWeight: 800, color: "#d4af37" }}>D</th>
+                  <th style={{ width: 22, verticalAlign: "bottom", paddingBottom: 8, fontSize: 10, fontWeight: 800, color: "#dc137b" }}>F</th>
+                  {isCumulative && (
+                    <th style={{
+                      width: 85,
+                      minWidth: 85,
+                      verticalAlign: "bottom",
+                      paddingBottom: 8,
+                      fontSize: 10,
+                      fontWeight: 900,
+                      color: "var(--heading)"
+                    }}>
+                      DECISION
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={2 + subjects.length + 6} style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>
+                    <td colSpan={2 + subjects.length + (isCumulative ? 7 : 6)} style={{ padding: 40, textAlign: "center", color: "var(--subtext)" }}>
                       {searchQuery ? "No students matching your search criteria." : "No student results compiled for this class and term."}
                     </td>
                   </tr>
@@ -527,8 +629,8 @@ export default function BroadsheetViewer() {
                               background: style.bg
                             }}
                           >
-                            {sc !== null && sc !== undefined ? (
-                              Number.isInteger(sc) ? sc : Number(sc).toFixed(1)
+                            {sc !== null && sc !== undefined && Number(sc) > 0 ? (
+                              Number.isInteger(Number(sc)) ? Number(sc) : Number(sc).toFixed(1)
                             ) : "—"}
                           </td>
                         );
@@ -546,11 +648,34 @@ export default function BroadsheetViewer() {
                       </td>
 
                       {/* Letter Grade Tallies */}
-                      <td style={{ fontSize: 9.5, fontWeight: 700, color: "#10b981" }}>{stu.grades?.A || 0}</td>
-                      <td style={{ fontSize: 9.5, fontWeight: 700, color: "#0ea5e9" }}>{stu.grades?.B || 0}</td>
-                      <td style={{ fontSize: 9.5, fontWeight: 700, color: "#14b8a6" }}>{stu.grades?.C || 0}</td>
-                      <td style={{ fontSize: 9.5, fontWeight: 700, color: "#f59e0b" }}>{stu.grades?.D || 0}</td>
-                      <td style={{ fontSize: 9.5, fontWeight: 700, color: "#ef4444" }}>{stu.grades?.F || 0}</td>
+                      <td style={{ fontSize: 9.5, fontWeight: 700, color: "#293d7d" }}>{stu.grades?.A || 0}</td>
+                      <td style={{ fontSize: 9.5, fontWeight: 700, color: "#0093dd" }}>{stu.grades?.B || 0}</td>
+                      <td style={{ fontSize: 9.5, fontWeight: 700, color: "var(--heading)" }}>{stu.grades?.C || 0}</td>
+                      <td style={{ fontSize: 9.5, fontWeight: 700, color: "#d4af37" }}>{stu.grades?.D || 0}</td>
+                      <td style={{ fontSize: 9.5, fontWeight: 700, color: "#dc137b" }}>{stu.grades?.F || 0}</td>
+                      {isCumulative && (
+                        <td style={{ fontSize: 9.5, fontWeight: 800, whiteSpace: "nowrap", padding: "0 6px" }}>
+                          <span style={{
+                            display: "inline-block",
+                            padding: "2px 8px",
+                            borderRadius: 6,
+                            fontSize: 9,
+                            fontWeight: 800,
+                            background: stu.decision === "PROMOTED" 
+                              ? "rgba(41,61,125,0.08)" 
+                              : stu.decision === "PROMOTED ON TRIAL" 
+                                ? "rgba(212,175,55,0.14)" 
+                                : "rgba(220,19,123,0.1)",
+                            color: stu.decision === "PROMOTED" 
+                              ? "#293d7d" 
+                              : stu.decision === "PROMOTED ON TRIAL" 
+                                ? "#d4af37" 
+                                : "#dc137b"
+                          }}>
+                            {stu.decision || "—"}
+                          </span>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}
@@ -567,7 +692,7 @@ export default function BroadsheetViewer() {
                           {summary[sub.id]?.student_count ?? 0}
                         </td>
                       ))}
-                      <td colSpan={6} style={{ background: "var(--muted)" }}></td>
+                      <td colSpan={isCumulative ? 7 : 6} style={{ background: "var(--muted)" }}></td>
                     </tr>
 
                     <tr style={{ borderTop: "1px solid var(--glass-border)" }}>
@@ -579,7 +704,7 @@ export default function BroadsheetViewer() {
                           {summary[sub.id]?.a_count ?? 0}
                         </td>
                       ))}
-                      <td colSpan={6}></td>
+                      <td colSpan={isCumulative ? 7 : 6}></td>
                     </tr>
 
                     <tr style={{ borderTop: "1px solid var(--glass-border)" }}>
@@ -587,11 +712,11 @@ export default function BroadsheetViewer() {
                         No of B's
                       </td>
                       {subjects.map((sub: any) => (
-                        <td key={`sum-b-${sub.id}`} style={{ fontSize: 9.5, fontWeight: 700, color: "#0ea5e9", borderRight: "1px solid var(--glass-border)" }}>
+                        <td key={`sum-b-${sub.id}`} style={{ fontSize: 9.5, fontWeight: 700, color: "#0093dd", borderRight: "1px solid var(--glass-border)" }}>
                           {summary[sub.id]?.b_count ?? 0}
                         </td>
                       ))}
-                      <td colSpan={6}></td>
+                      <td colSpan={isCumulative ? 7 : 6}></td>
                     </tr>
 
                     <tr style={{ borderTop: "1px solid var(--glass-border)" }}>
@@ -599,11 +724,11 @@ export default function BroadsheetViewer() {
                         No of C's
                       </td>
                       {subjects.map((sub: any) => (
-                        <td key={`sum-c-${sub.id}`} style={{ fontSize: 9.5, fontWeight: 700, color: "#14b8a6", borderRight: "1px solid var(--glass-border)" }}>
+                        <td key={`sum-c-${sub.id}`} style={{ fontSize: 9.5, fontWeight: 700, color: "var(--heading)", borderRight: "1px solid var(--glass-border)" }}>
                           {summary[sub.id]?.c_count ?? 0}
                         </td>
                       ))}
-                      <td colSpan={6}></td>
+                      <td colSpan={isCumulative ? 7 : 6}></td>
                     </tr>
 
                     <tr style={{ borderTop: "1px solid var(--glass-border)" }}>
@@ -611,11 +736,11 @@ export default function BroadsheetViewer() {
                         No of D's
                       </td>
                       {subjects.map((sub: any) => (
-                        <td key={`sum-d-${sub.id}`} style={{ fontSize: 9.5, fontWeight: 700, color: "#f59e0b", borderRight: "1px solid var(--glass-border)" }}>
+                        <td key={`sum-d-${sub.id}`} style={{ fontSize: 9.5, fontWeight: 700, color: "#d4af37", borderRight: "1px solid var(--glass-border)" }}>
                           {summary[sub.id]?.d_count ?? 0}
                         </td>
                       ))}
-                      <td colSpan={6}></td>
+                      <td colSpan={isCumulative ? 7 : 6}></td>
                     </tr>
 
                     <tr style={{ borderTop: "1px solid var(--glass-border)" }}>
@@ -623,11 +748,11 @@ export default function BroadsheetViewer() {
                         No of F's
                       </td>
                       {subjects.map((sub: any) => (
-                        <td key={`sum-f-${sub.id}`} style={{ fontSize: 9.5, fontWeight: 700, color: "#ef4444", borderRight: "1px solid var(--glass-border)" }}>
+                        <td key={`sum-f-${sub.id}`} style={{ fontSize: 9.5, fontWeight: 700, color: "#dc137b", borderRight: "1px solid var(--glass-border)" }}>
                           {summary[sub.id]?.f_count ?? 0}
                         </td>
                       ))}
-                      <td colSpan={6}></td>
+                      <td colSpan={isCumulative ? 7 : 6}></td>
                     </tr>
 
                     <tr style={{ background: "var(--muted)", borderTop: "1px solid var(--glass-border)" }}>
@@ -639,10 +764,10 @@ export default function BroadsheetViewer() {
                           {summary[sub.id]?.pass_count ?? 0}
                         </td>
                       ))}
-                      <td colSpan={6} style={{ background: "var(--muted)" }}></td>
+                      <td colSpan={isCumulative ? 7 : 6} style={{ background: "var(--muted)" }}></td>
                     </tr>
 
-                    <tr style={{ background: "rgba(16,185,129,0.08)", borderTop: "2px solid var(--glass-border)" }}>
+                    <tr style={{ background: "rgba(41,61,125,0.04)", borderTop: "2px solid var(--glass-border)" }}>
                       <td colSpan={2} style={{ position: "sticky", left: 0, background: "rgba(16,185,129,0.14)", zIndex: 5, textAlign: "left", padding: "6px 10px", fontWeight: 900, fontSize: 10.5, color: "#10b981", borderRight: "2px solid var(--glass-border)" }}>
                         % pass
                       </td>
@@ -654,7 +779,7 @@ export default function BroadsheetViewer() {
                             style={{
                               fontWeight: 900,
                               fontSize: 10,
-                              color: pct >= 80 ? "#10b981" : pct >= 60 ? "#0ea5e9" : pct >= 50 ? "#f59e0b" : "#ef4444",
+                              color: pct >= 75 ? "#293d7d" : pct >= 50 ? "#0093dd" : "#dc137b",
                               borderRight: "1px solid var(--glass-border)"
                             }}
                           >
@@ -662,7 +787,7 @@ export default function BroadsheetViewer() {
                           </td>
                         );
                       })}
-                      <td colSpan={6} style={{ background: "rgba(16,185,129,0.08)" }}></td>
+                      <td colSpan={isCumulative ? 7 : 6} style={{ background: "rgba(41,61,125,0.04)" }}></td>
                     </tr>
                   </>
                 )}

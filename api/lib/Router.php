@@ -28,15 +28,28 @@ class Router {
             $uri = $_SERVER['PATH_INFO'];
         } else {
             $uri = parse_url($requestUri, PHP_URL_PATH);
-            // Strip base directory prefix
-            $baseDir = '/lms/api';
-            if (strpos($uri, $baseDir . '/index.php') === 0) {
-                $uri = substr($uri, strlen($baseDir . '/index.php'));
-            } elseif (strpos($uri, $baseDir) === 0) {
-                $uri = substr($uri, strlen($baseDir));
+            // Dynamically strip script path / directory prefix
+            $scriptName = $_SERVER['SCRIPT_NAME'] ?? ''; // e.g. /lms/api/index.php or /api/index.php
+            $scriptDir  = rtrim(dirname($scriptName), '/\\'); // e.g. /lms/api or /api
+
+            if (!empty($scriptName) && strpos($uri, $scriptName) === 0) {
+                $uri = substr($uri, strlen($scriptName));
+            } elseif (!empty($scriptDir) && $scriptDir !== '/' && strpos($uri, $scriptDir) === 0) {
+                $uri = substr($uri, strlen($scriptDir));
+                if (strpos($uri, '/index.php') === 0) {
+                    $uri = substr($uri, strlen('/index.php'));
+                }
+            } elseif (strpos($uri, '/lms/api/index.php') === 0) {
+                $uri = substr($uri, strlen('/lms/api/index.php'));
+            } elseif (strpos($uri, '/lms/api') === 0) {
+                $uri = substr($uri, strlen('/lms/api'));
+            } elseif (strpos($uri, '/api/index.php') === 0) {
+                $uri = substr($uri, strlen('/api/index.php'));
+            } elseif (strpos($uri, '/api') === 0) {
+                $uri = substr($uri, strlen('/api'));
             }
         }
-        if ($uri === '' || $uri === null) $uri = '/';
+        if ($uri === '' || $uri === false || $uri === null) $uri = '/';
 
         foreach ($this->routes as $route) {
             if ($route['method'] === $requestMethod && preg_match($route['path'], $uri, $matches)) {

@@ -6,20 +6,25 @@ import { AppProvider } from "./contexts/AppContext";
 
 function LoadingScreen() {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#011d2f" }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#10192e" }}>
       <div style={{ textAlign: "center" }}>
-        <div
+        <img
+          src="/logo.png"
+          alt="Deeper Life High School"
           style={{
-            width: 48, height: 48, borderRadius: 14,
-            background: "linear-gradient(135deg, #219EBC 0%, #FB8500 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 12px",
-            boxShadow: "0 4px 24px rgba(33,158,188,0.4)",
+            width: 56, height: 56, borderRadius: 12,
+            margin: "0 auto 16px",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.35)",
+            objectFit: "contain",
+            display: "block"
           }}
-        >
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontWeight: 700, fontSize: 16, color: "#fff" }}>DLHS</span>
+        />
+        <div style={{ fontFamily: "'Raleway',sans-serif", fontSize: 15, fontWeight: 800, color: "#ffffff", letterSpacing: "0.02em" }}>
+          Deeper Life High School
         </div>
-        <div style={{ fontFamily: "'Poppins',sans-serif", fontSize: 13, color: "#8ECAE6" }}>Loading Deeper Life High School…</div>
+        <div style={{ fontFamily: "'Lato',sans-serif", fontSize: 12, color: "#bfd1ff", marginTop: 4 }}>
+          Preparing Academic Portal…
+        </div>
       </div>
     </div>
   );

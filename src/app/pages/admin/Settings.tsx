@@ -438,52 +438,54 @@ export default function AdminSettings() {
     <div>
       <div className="page-header-responsive">
         <div>
-          <div style={{ fontSize: 11, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Admin</div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--heading)", margin: 0 }}>
-            {activeTab === "system" ? "System Settings" : "My Profile"}
+          <div style={{ fontSize: 11, color: "#dc137b", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800, marginBottom: 4, fontFamily: "'Raleway', sans-serif" }}>Administrative Governance</div>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: "var(--heading)", margin: 0, fontFamily: "'Raleway', sans-serif" }}>
+            {activeTab === "system" ? "System Settings & Parameters" : "Administrative Profile"}
           </h1>
           <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: "4px 0 0" }}>
             {activeTab === "system"
-              ? "Configure platform-wide preferences and security options"
-              : "Update your personal details and account security settings"}
+              ? "Configure institutional grading policies, calendar sessions, and term security"
+              : "Update administrative credentials and account security settings"}
           </p>
         </div>
         {activeTab === "system" && (
           <button
             onClick={handleSave}
             style={{
-              display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 10,
-              background: saved ? "rgba(33,158,188,0.15)" : "linear-gradient(135deg, #219EBC, #023047)",
-              border: saved ? "1px solid #219EBC" : "none",
-              color: saved ? "#219EBC" : "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
-              boxShadow: saved ? "none" : "0 4px 16px rgba(33,158,188,0.3)", transition: "all 0.3s"
+              display: "flex", alignItems: "center", gap: 8, padding: "10px 22px", borderRadius: 6,
+              background: saved ? "rgba(41,61,125,0.12)" : "#dc137b",
+              border: saved ? "1px solid #293d7d" : "none",
+              color: saved ? "#293d7d" : "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+              boxShadow: saved ? "none" : "0 4px 14px rgba(220,19,123,0.28)", transition: "all 0.2s",
+              fontFamily: "'Raleway', sans-serif"
             }}
           >
-            {saved ? <Check size={14} /> : <Save size={14} />} {saved ? "Saved!" : "Save Changes"}
+            {saved ? <Check size={14} /> : <Save size={14} />} {saved ? "Saved to System!" : "Save Changes"}
           </button>
         )}
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 24, borderBottom: "1px solid var(--glass-border)", paddingBottom: 10 }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 24, borderBottom: "1px solid var(--border)", paddingBottom: 10 }}>
         <button
           onClick={() => setActiveTab("system")}
           style={{
             display: "flex",
             alignItems: "center",
             gap: 8,
-            padding: "8px 16px",
-            borderRadius: 8,
-            background: activeTab === "system" ? "rgba(251, 133, 0, 0.15)" : "transparent",
-            border: activeTab === "system" ? "1px solid #FB8500" : "1px solid transparent",
-            color: activeTab === "system" ? "#FB8500" : "var(--subtext)",
-            fontWeight: 600,
+            padding: "8px 18px",
+            borderRadius: 6,
+            background: activeTab === "system" ? "rgba(41, 61, 125, 0.1)" : "transparent",
+            border: activeTab === "system" ? "1px solid #293d7d" : "1px solid transparent",
+            color: activeTab === "system" ? "#293d7d" : "var(--subtext)",
+            fontWeight: 800,
             fontSize: 13,
             cursor: "pointer",
-            transition: "all 0.2s"
+            fontFamily: "'Raleway', sans-serif",
+            transition: "all 0.15s"
           }}
         >
-          <Globe size={14} /> System Settings
+          <Globe size={14} /> System Parameters
         </button>
         <button
           onClick={() => setActiveTab("profile")}
@@ -491,18 +493,19 @@ export default function AdminSettings() {
             display: "flex",
             alignItems: "center",
             gap: 8,
-            padding: "8px 16px",
-            borderRadius: 8,
-            background: activeTab === "profile" ? "rgba(251, 133, 0, 0.15)" : "transparent",
-            border: activeTab === "profile" ? "1px solid #FB8500" : "1px solid transparent",
-            color: activeTab === "profile" ? "#FB8500" : "var(--subtext)",
-            fontWeight: 600,
+            padding: "8px 18px",
+            borderRadius: 6,
+            background: activeTab === "profile" ? "rgba(41, 61, 125, 0.1)" : "transparent",
+            border: activeTab === "profile" ? "1px solid #293d7d" : "1px solid transparent",
+            color: activeTab === "profile" ? "#293d7d" : "var(--subtext)",
+            fontWeight: 800,
             fontSize: 13,
             cursor: "pointer",
-            transition: "all 0.2s"
+            fontFamily: "'Raleway', sans-serif",
+            transition: "all 0.15s"
           }}
         >
-          <User size={14} /> My Profile
+          <User size={14} /> Administrator Profile
         </button>
       </div>
 
@@ -512,7 +515,7 @@ export default function AdminSettings() {
             {/* Section 1: General Info */}
             <Glass>
               <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: "#219EBC18", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(41,61,125,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d" }}>
                   <Globe size={15} />
                 </div>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>General Parameters</span>
@@ -526,7 +529,7 @@ export default function AdminSettings() {
                       {schoolLogoPath ? (
                         <img src={`${API_MEDIA_BASE}${schoolLogoPath}`} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
-                        <span style={{ fontSize: 18, fontWeight: 800, color: "#219EBC" }}>{schoolAcronym.slice(0, 2)}</span>
+                        <span style={{ fontSize: 18, fontWeight: 800, color: "#293d7d" }}>{schoolAcronym.slice(0, 2)}</span>
                       )}
                     </div>
                     <div style={{ flex: 1 }}>
@@ -534,14 +537,14 @@ export default function AdminSettings() {
                         type="button"
                         onClick={() => logoInputRef.current?.click()}
                         disabled={logoUploading}
-                        style={{ padding: "6px 14px", borderRadius: 8, background: "#219EBC", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                        style={{ padding: "6px 14px", borderRadius: 8, background: "#293d7d", color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
                       >
                         {logoUploading ? "Uploading..." : "Upload Logo"}
                       </button>
                       <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: "none" }} />
                       <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 4 }}>PNG, JPG, WEBP, or SVG. Displayed on official report cards and transcripts.</div>
                       {logoResult && (
-                        <div style={{ fontSize: 11, fontWeight: 600, color: logoResult.ok ? "#2a9d8f" : "#ef4444", marginTop: 4 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: logoResult.ok ? "#293d7d" : "#ef4444", marginTop: 4 }}>
                           {logoResult.msg}
                         </div>
                       )}
@@ -572,7 +575,7 @@ export default function AdminSettings() {
                       <input ref={signatureInputRef} type="file" accept="image/*" onChange={handleSignatureUpload} style={{ display: "none" }} />
                       <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 4 }}>PNG, JPG, WEBP, or SVG (transparent background recommended). Printed on official report cards.</div>
                       {signatureResult && (
-                        <div style={{ fontSize: 11, fontWeight: 600, color: signatureResult.ok ? "#2a9d8f" : "#ef4444", marginTop: 4 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: signatureResult.ok ? "#293d7d" : "#ef4444", marginTop: 4 }}>
                           {signatureResult.msg}
                         </div>
                       )}
@@ -613,7 +616,7 @@ export default function AdminSettings() {
                     <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>Enable or disable showing student position (e.g. 1st, 2nd, 94th) on printed report cards</div>
                   </div>
                   <button type="button" onClick={() => setShowPosition(!showPosition)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    {showPosition ? <ToggleRight size={30} style={{ color: "#219EBC" }} /> : <ToggleLeft size={30} style={{ color: "rgba(142,202,230,0.3)" }} />}
+                    {showPosition ? <ToggleRight size={30} style={{ color: "#293d7d" }} /> : <ToggleLeft size={30} style={{ color: "var(--subtext)" }} />}
                   </button>
                 </div>
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
@@ -674,7 +677,7 @@ export default function AdminSettings() {
                     onClick={() => setActiveGradingScheme("senior")}
                     style={{
                       padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700,
-                      background: activeGradingScheme === "senior" ? "#219EBC" : "transparent",
+                      background: activeGradingScheme === "senior" ? "#293d7d" : "transparent",
                       color: activeGradingScheme === "senior" ? "#fff" : "var(--subtext)",
                       transition: "all 0.15s"
                     }}
@@ -685,7 +688,7 @@ export default function AdminSettings() {
                     onClick={() => setActiveGradingScheme("junior")}
                     style={{
                       padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11.5, fontWeight: 700,
-                      background: activeGradingScheme === "junior" ? "#FB8500" : "transparent",
+                      background: activeGradingScheme === "junior" ? "#dc137b" : "transparent",
                       color: activeGradingScheme === "junior" ? "#fff" : "var(--subtext)",
                       transition: "all 0.15s"
                     }}
@@ -698,7 +701,7 @@ export default function AdminSettings() {
               {activeGradingScheme === "senior" ? (
                 <div style={{ padding: "16px 20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: "#219EBC", textTransform: "uppercase", letterSpacing: "0.05em" }}>Senior Secondary Grading Thresholds (SS 1 - SS 3)</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "#293d7d", textTransform: "uppercase", letterSpacing: "0.05em" }}>Senior Secondary Grading Thresholds (SS 1 - SS 3)</span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 12, marginBottom: 16 }}>
                     <div>
@@ -718,7 +721,7 @@ export default function AdminSettings() {
                       <input type="number" min="0" max="100" value={gradeDMin} onChange={e => setGradeDMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
                     </div>
                     <div>
-                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#d97706", marginBottom: 4 }}>Grade E Min (%)</label>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#d4af37", marginBottom: 4 }}>Grade E Min (%)</label>
                       <input type="number" min="0" max="100" value={gradeEMin} onChange={e => setGradeEMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
                     </div>
                   </div>
@@ -750,7 +753,7 @@ export default function AdminSettings() {
                         <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
                       </div>
                       <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)" }}>
-                        <div style={{ fontWeight: 800, color: "#d97706" }}>E</div>
+                        <div style={{ fontWeight: 800, color: "#d4af37" }}>E</div>
                         <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeEMin}–{Number(gradeDMin) - 1}%</div>
                         <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
                       </div>
@@ -765,7 +768,7 @@ export default function AdminSettings() {
               ) : (
                 <div style={{ padding: "16px 20px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.05em" }}>Junior Secondary Grading Thresholds (Basic 7, 8, 9 / JSS 1–3)</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "#dc137b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Junior Secondary Grading Thresholds (Basic 7, 8, 9 / JSS 1–3)</span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 12, marginBottom: 16 }}>
                     <div>
@@ -785,7 +788,7 @@ export default function AdminSettings() {
                       <input type="number" min="0" max="100" value={gradeJuniorDMin} onChange={e => setGradeJuniorDMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
                     </div>
                     <div>
-                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#d97706", marginBottom: 4 }}>Grade E Min (%)</label>
+                      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#d4af37", marginBottom: 4 }}>Grade E Min (%)</label>
                       <input type="number" min="0" max="100" value={gradeJuniorEMin} onChange={e => setGradeJuniorEMin(e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12.5, outline: "none", boxSizing: "border-box", fontWeight: 700 }} />
                     </div>
                   </div>
@@ -817,7 +820,7 @@ export default function AdminSettings() {
                         <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
                       </div>
                       <div style={{ padding: "6px 4px", borderRadius: 6, background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.25)" }}>
-                        <div style={{ fontWeight: 800, color: "#d97706" }}>E</div>
+                        <div style={{ fontWeight: 800, color: "#d4af37" }}>E</div>
                         <div style={{ fontWeight: 700, fontSize: 10 }}>{gradeJuniorEMin}–{Number(gradeJuniorDMin) - 1}%</div>
                         <div style={{ fontSize: 8.5, color: "var(--subtext)" }}>PASS</div>
                       </div>
@@ -835,7 +838,7 @@ export default function AdminSettings() {
             {/* Section: Term Vacation & Resumption Calendar */}
             <Glass>
               <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: "#219EBC18", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(41,61,125,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d" }}>
                   <Calendar size={15} />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -846,7 +849,7 @@ export default function AdminSettings() {
               <div style={{ padding: "8px 20px 16px" }}>
                 {/* 1st Term */}
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#219EBC", marginBottom: 8, textTransform: "uppercase" }}>1st Term Calendar</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#293d7d", marginBottom: 8, textTransform: "uppercase" }}>1st Term Calendar</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
                     <div>
                       <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>End of Term Vacation</label>
@@ -871,7 +874,7 @@ export default function AdminSettings() {
 
                 {/* 2nd Term */}
                 <div style={{ padding: "12px 0", borderBottom: "1px solid var(--glass-border)" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#FFB703", marginBottom: 8, textTransform: "uppercase" }}>2nd Term Calendar</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#0093dd", marginBottom: 8, textTransform: "uppercase" }}>2nd Term Calendar</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
                     <div>
                       <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>End of Term Vacation</label>
@@ -896,7 +899,7 @@ export default function AdminSettings() {
 
                 {/* 3rd Term */}
                 <div style={{ padding: "12px 0" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#FB8500", marginBottom: 8, textTransform: "uppercase" }}>3rd Term Calendar</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#dc137b", marginBottom: 8, textTransform: "uppercase" }}>3rd Term Calendar</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
                     <div>
                       <label style={{ display: "block", fontSize: 11, color: "var(--subtext)", marginBottom: 4 }}>End of Term Vacation</label>
@@ -924,7 +927,7 @@ export default function AdminSettings() {
             {/* Section 2: Notifications */}
             <Glass>
               <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: "#FFB70318", display: "flex", alignItems: "center", justifyContent: "center", color: "#FFB703" }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(0,147,221,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0093dd" }}>
                   <Bell size={15} />
                 </div>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Notifications & Alerts</span>
@@ -940,7 +943,7 @@ export default function AdminSettings() {
                       <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>{t.d}</div>
                     </div>
                     <button onClick={() => t.set(!t.state)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                      {t.state ? <ToggleRight size={30} style={{ color: "#219EBC" }} /> : <ToggleLeft size={30} style={{ color: "rgba(142,202,230,0.3)" }} />}
+                      {t.state ? <ToggleRight size={30} style={{ color: "#293d7d" }} /> : <ToggleLeft size={30} style={{ color: "var(--subtext)" }} />}
                     </button>
                   </div>
                 ))}
@@ -950,7 +953,7 @@ export default function AdminSettings() {
             {/* Section 3: Security */}
             <Glass>
               <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: "#FB850018", display: "flex", alignItems: "center", justifyContent: "center", color: "#FB8500" }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(220,19,123,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#dc137b" }}>
                   <Shield size={15} />
                 </div>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Security Protocols</span>
@@ -967,7 +970,7 @@ export default function AdminSettings() {
                       <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>{t.d}</div>
                     </div>
                     <button onClick={() => t.set(!t.state)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                      {t.state ? <ToggleRight size={30} style={{ color: "#219EBC" }} /> : <ToggleLeft size={30} style={{ color: "rgba(142,202,230,0.3)" }} />}
+                      {t.state ? <ToggleRight size={30} style={{ color: "#293d7d" }} /> : <ToggleLeft size={30} style={{ color: "var(--subtext)" }} />}
                     </button>
                   </div>
                 ))}
@@ -977,7 +980,7 @@ export default function AdminSettings() {
             {/* Section 4: Database & Backups */}
             <Glass>
               <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: "#8ECAE618", display: "flex", alignItems: "center", justifyContent: "center", color: "#8ECAE6" }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(41,61,125,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d" }}>
                   <Database size={15} />
                 </div>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Data & Backups</span>
@@ -993,7 +996,7 @@ export default function AdminSettings() {
                       <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>{t.d}</div>
                     </div>
                     <button onClick={() => t.set(!t.state)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                      {t.state ? <ToggleRight size={30} style={{ color: "#219EBC" }} /> : <ToggleLeft size={30} style={{ color: "rgba(142,202,230,0.3)" }} />}
+                      {t.state ? <ToggleRight size={30} style={{ color: "#293d7d" }} /> : <ToggleLeft size={30} style={{ color: "var(--subtext)" }} />}
                     </button>
                   </div>
                 ))}
@@ -1004,7 +1007,7 @@ export default function AdminSettings() {
           {/* Section 5: Payment Methods */}
           <Glass style={{ marginTop: 18 }}>
             <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: "#2a9d8f18", display: "flex", alignItems: "center", justifyContent: "center", color: "#2a9d8f" }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: "#293d7d18", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d" }}>
                 <CreditCard size={15} />
               </div>
               <div style={{ flex: 1 }}>
@@ -1024,7 +1027,7 @@ export default function AdminSettings() {
                     <div style={{ fontSize: 11, color: "var(--subtext)", marginTop: 2 }}>{t.d}</div>
                   </div>
                   <button onClick={() => t.set(!t.state)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginLeft: 12, flexShrink: 0 }}>
-                    {t.state ? <ToggleRight size={30} style={{ color: "#2a9d8f" }} /> : <ToggleLeft size={30} style={{ color: "rgba(142,202,230,0.3)" }} />}
+                    {t.state ? <ToggleRight size={30} style={{ color: "#293d7d" }} /> : <ToggleLeft size={30} style={{ color: "var(--subtext)" }} />}
                   </button>
                 </div>
               ))}
@@ -1037,7 +1040,7 @@ export default function AdminSettings() {
           {/* Card 1: Personal Info */}
           <Glass>
             <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: "#FB850018", display: "flex", alignItems: "center", justifyContent: "center", color: "#FB8500" }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(220,19,123,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#dc137b" }}>
                 <User size={15} />
               </div>
               <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Personal Information</span>
@@ -1055,9 +1058,9 @@ export default function AdminSettings() {
                   ) : (
                     <div style={{
                       width: 80, height: 80, borderRadius: "50%",
-                      background: "linear-gradient(135deg, #FB8500, rgba(251,133,0,0.6))",
+                      background: "#293d7d",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 26, fontWeight: 800, color: "#011d2f",
+                      fontSize: 26, fontWeight: 800, color: "#16234b",
                       boxShadow: "0 4px 16px rgba(251,133,0,0.3)",
                     }}>
                       {(firstName[0] || "").toUpperCase()}{(lastName[0] || "").toUpperCase()}
@@ -1070,7 +1073,7 @@ export default function AdminSettings() {
                     style={{
                       position: "absolute", bottom: 0, right: 0,
                       width: 26, height: 26, borderRadius: "50%",
-                      background: "#FB8500", border: "2px solid var(--glass-bg)",
+                      background: "#293d7d", border: "2px solid var(--glass-bg)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       cursor: "pointer", boxShadow: "0 2px 8px rgba(251,133,0,0.4)"
                     }}
@@ -1119,7 +1122,7 @@ export default function AdminSettings() {
                   />
                   <span style={{
                     position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-                    fontSize: 10, fontWeight: 700, color: "#219EBC", background: "rgba(33,158,188,0.12)",
+                    fontSize: 10, fontWeight: 700, color: "#293d7d", background: "rgba(41,61,125,0.08)",
                     padding: "2px 8px", borderRadius: 6, letterSpacing: "0.04em"
                   }}>READ-ONLY</span>
                 </div>
@@ -1138,7 +1141,7 @@ export default function AdminSettings() {
               </div>
 
               {profileError && (
-                <div style={{ background: "rgba(231,111,81,0.1)", border: "1px solid rgba(231,111,81,0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: "#e76f51" }}>
+                <div style={{ background: "rgba(220,19,123,0.08)", border: "1px solid rgba(231,111,81,0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: "#dc137b" }}>
                   ⚠ {profileError}
                 </div>
               )}
@@ -1148,9 +1151,9 @@ export default function AdminSettings() {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   padding: "11px 20px", borderRadius: 10, cursor: "pointer",
-                  background: profileSaved ? "rgba(33,158,188,0.15)" : "linear-gradient(135deg, #FB8500, #E76F51)",
-                  border: profileSaved ? "1px solid #FB8500" : "none",
-                  color: profileSaved ? "#FB8500" : "#fff",
+                  background: profileSaved ? "rgba(33,158,188,0.15)" : "#dc137b",
+                  border: profileSaved ? "1px solid #dc137b" : "none",
+                  color: profileSaved ? "#dc137b" : "#fff",
                   fontSize: 13, fontWeight: 700,
                   boxShadow: profileSaved ? "none" : "0 4px 16px rgba(251,133,0,0.3)",
                   transition: "all 0.3s",
@@ -1164,14 +1167,14 @@ export default function AdminSettings() {
           {/* Card 2: Change Password */}
           <Glass>
             <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: "#219EBC18", display: "flex", alignItems: "center", justifyContent: "center", color: "#219EBC" }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(41,61,125,0.08)", display: "flex", alignItems: "center", justifyContent: "center", color: "#293d7d" }}>
                 <Shield size={15} />
               </div>
               <span style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>Change Password</span>
             </div>
             <form onSubmit={handlePasswordSave} style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ background: "rgba(33,158,188,0.06)", border: "1px solid rgba(33,158,188,0.15)", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "var(--subtext)", lineHeight: 1.55 }}>
-                🔒 For your security, please enter your current password before setting a new one. Ensure it meets the complexity criteria below.
+                For your security, please enter your current password before setting a new one. Ensure it meets the complexity criteria below.
               </div>
 
               <div>
@@ -1221,12 +1224,12 @@ export default function AdminSettings() {
                   }}
                 />
                 {confirmPassword && confirmPassword !== newPassword && (
-                  <div style={{ fontSize: 11, color: "#e76f51", marginTop: 4 }}>Passwords do not match</div>
+                  <div style={{ fontSize: 11, color: "#dc137b", marginTop: 4 }}>Passwords do not match</div>
                 )}
               </div>
 
               {passwordError && (
-                <div style={{ background: "rgba(231,111,81,0.1)", border: "1px solid rgba(231,111,81,0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: "#e76f51" }}>
+                <div style={{ background: "rgba(220,19,123,0.08)", border: "1px solid rgba(231,111,81,0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 12.5, color: "#dc137b" }}>
                   ⚠ {passwordError}
                 </div>
               )}
@@ -1236,9 +1239,9 @@ export default function AdminSettings() {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   padding: "11px 20px", borderRadius: 10, cursor: "pointer",
-                  background: passwordSaved ? "rgba(33,158,188,0.15)" : "linear-gradient(135deg, #219EBC, #023047)",
-                  border: passwordSaved ? "1px solid #219EBC" : "none",
-                  color: passwordSaved ? "#219EBC" : "#fff",
+                  background: passwordSaved ? "rgba(33,158,188,0.15)" : "#293d7d",
+                  border: passwordSaved ? "1px solid #293d7d" : "none",
+                  color: passwordSaved ? "#293d7d" : "#fff",
                   fontSize: 13, fontWeight: 700,
                   boxShadow: passwordSaved ? "none" : "0 4px 16px rgba(33,158,188,0.3)",
                   transition: "all 0.3s",
@@ -1268,8 +1271,8 @@ export default function AdminSettings() {
             <div className="responsive-grid-2" style={{ gap: 14, marginBottom: 16 }}>
               {(["junior_secondary", "senior_secondary"] as const).map(cat => {
                 const info = {
-                  junior_secondary: { label: "Junior Secondary Guide", emoji: "📘", desc: "Basic 7–9 curriculum guide (PDF)" },
-                  senior_secondary: { label: "Senior Secondary Guide", emoji: "🎓", desc: "SS 1–3 curriculum guide (PDF)" },
+                  junior_secondary: { label: "Junior Secondary Guide", emoji: "", desc: "Basic 7–9 curriculum guide (PDF)" },
+                  senior_secondary: { label: "Senior Secondary Guide", emoji: "", desc: "SS 1–3 curriculum guide (PDF)" },
                 }[cat];
                 const isActive = guideCategory === cat;
                 return (
@@ -1320,8 +1323,8 @@ export default function AdminSettings() {
               <div style={{
                 padding: "10px 14px", borderRadius: 9, marginBottom: 14, fontSize: 12.5,
                 background: guideResult.ok ? "rgba(42,157,143,0.08)" : "rgba(231,111,81,0.08)",
-                border: `1px solid ${guideResult.ok ? "rgba(42,157,143,0.25)" : "rgba(231,111,81,0.25)"}`,
-                color: guideResult.ok ? "#2a9d8f" : "#e76f51", fontWeight: 600
+                border: `1px solid ${guideResult.ok ? "rgba(41,61,125,0.2)" : "rgba(231,111,81,0.25)"}`,
+                color: guideResult.ok ? "#293d7d" : "#dc137b", fontWeight: 600
               }}>
                 {guideResult.ok ? "✓" : "⚠"} {guideResult.msg}
               </div>

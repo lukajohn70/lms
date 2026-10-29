@@ -10,6 +10,13 @@ class ExamController {
         $this->conn = $db->getConnection();
     }
 
+    private function getSetting($key, $default = "") {
+        $stmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = :k LIMIT 1");
+        $stmt->execute([':k' => $key]);
+        $val = $stmt->fetchColumn();
+        return $val !== false ? $val : $default;
+    }
+
     // Teacher: Create (save) a CBT exam with questions
     public function createExam() {
         $user = Auth::requireRole(['teacher']);
@@ -27,18 +34,27 @@ class ExamController {
         $duration       = intval($data['duration_minutes'] ?? 60);
         $questions      = $data['questions'] ?? [];
         $action         = $data['action'] ?? 'draft'; // 'draft' or 'submit'
+        $session        = !empty($data['session']) ? trim($data['session']) : $this->getSetting('academic_session', '2026/2027');
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+        $isCurr         = ($session === $currentSession ? 1 : 0);
 
-        // Verify teacher owns the course (directly or via class_subjects)
+        // Verify teacher is assigned to this course (via teacher_allocations or class_subjects)
         $s = $this->conn->prepare("
-            SELECT id FROM courses 
-            WHERE id = :cid 
-              AND (teacher_id = :tid OR id IN (SELECT course_id FROM class_subjects WHERE teacher_id = :tid2)) 
-            LIMIT 1
+            SELECT 1 FROM (
+                SELECT course_id FROM teacher_allocations 
+                WHERE teacher_id = :tid AND course_id = :cid AND academic_session = :session
+                UNION
+                SELECT course_id FROM class_subjects 
+                WHERE teacher_id = :tid2 AND course_id = :cid2 AND :is_curr = 1
+            ) t LIMIT 1
         ");
-        $s->execute([':cid' => $courseId, ':tid' => $user['id'], ':tid2' => $user['id']]);
-        if (!$s->fetch()) {
+        $s->execute([
+            ':tid' => $user['id'], ':cid' => $courseId, ':session' => $session,
+            ':tid2' => $user['id'], ':cid2' => $courseId, ':is_curr' => $isCurr
+        ]);
+        if (!$s->fetchColumn()) {
             http_response_code(403);
-            echo json_encode(['error' => 'Course not found or access denied']);
+            echo json_encode(['error' => 'Course not found or access denied: you are not assigned to this subject.']);
             return;
         }
 
@@ -212,21 +228,36 @@ class ExamController {
     // Teacher dashboard: per-class score trend (avg score per course)
     public function getTeacherScoreTrend() {
         $user = Auth::requireRole(['teacher']);
+        $session = isset($_GET['session']) && !empty($_GET['session']) ? trim($_GET['session']) : $this->getSetting('academic_session', '2026/2027');
+        $currentSession = $this->getSetting('academic_session', '2026/2027');
+        $isCurr = ($session === $currentSession ? 1 : 0);
 
         $stmt = $this->conn->prepare("
             SELECT c.name AS label, ROUND(AVG(g.score), 1) AS avg_score
             FROM grades g
             JOIN courses c ON g.course_id = c.id
-            WHERE c.teacher_id = :uid AND g.score IS NOT NULL
+            WHERE g.academic_session = :session
+              AND g.score IS NOT NULL
+              AND c.id IN (
+                  SELECT course_id FROM teacher_allocations WHERE teacher_id = :uid AND academic_session = :session2
+                  UNION
+                  SELECT course_id FROM class_subjects WHERE teacher_id = :uid2 AND :is_curr = 1
+              )
             GROUP BY c.id, c.name
             ORDER BY avg_score DESC
             LIMIT 6
         ");
-        $stmt->execute([':uid' => $user['id']]);
+        $stmt->execute([
+            ':session' => $session,
+            ':session2' => $session,
+            ':uid' => $user['id'],
+            ':uid2' => $user['id'],
+            ':is_curr' => $isCurr
+        ]);
         $rows = $stmt->fetchAll();
 
         // Map for chart: [{m: 'Course', avg: 74}, ...]
-        $trend = array_map(fn($r) => ['m' => substr($r['label'], 0, 6), 'avg' => floatval($r['avg_score'])], $rows);
+        $trend = array_map(fn($r) => ['m' => substr($r['label'], 0, 8), 'avg' => floatval($r['avg_score'])], $rows);
 
         echo json_encode(['trend' => $trend]);
     }

@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { UserCheck, Sparkles, CheckSquare, Heart, ShieldAlert, Award, FileText, CheckCircle2 } from "lucide-react";
+import { useSearchParams } from "react-router";
+import { UserCheck, CheckSquare, Heart, ShieldAlert, Award, FileText, CheckCircle2, Calendar } from "lucide-react";
+import { useApp } from "../../contexts/AppContext";
 import { apiClient } from "../../lib/apiClient";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
@@ -32,8 +34,18 @@ const psychomotorSkills = [
 ];
 
 export default function TeacherAssessments() {
+  const [searchParams] = useSearchParams();
+  const { settings } = useApp();
+
+  const [selectedSession, setSelectedSession] = useState(searchParams.get("session") || settings?.academic_session || "2026/2027");
   const [courses, setCourses] = useState<any[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(
+    searchParams.get("course_id") ? parseInt(searchParams.get("course_id")!) : null
+  );
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(
+    searchParams.get("class_id") ? parseInt(searchParams.get("class_id")!) : null
+  );
   const [students, setStudents] = useState<any[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   
@@ -45,14 +57,19 @@ export default function TeacherAssessments() {
   // Load courses & initial students
   useEffect(() => {
     setLoading(true);
-    const query = selectedCourseId ? `?course_id=${selectedCourseId}` : "";
+    let query = `?session=${encodeURIComponent(selectedSession)}`;
+    if (selectedCourseId) query += `&course_id=${selectedCourseId}`;
+    if (selectedClassId) query += `&class_id=${selectedClassId}`;
+
     apiClient.get(`/teacher/assessments${query}`)
       .then((res: any) => {
         setCourses(res.courses || []);
+        setClasses(res.classes || []);
         if (res.selected_course_id) {
-          setSelectedCourseId(res.selected_course_id);
-        } else if (res.courses && res.courses.length > 0 && !selectedCourseId) {
-          setSelectedCourseId(res.courses[0].id);
+          setSelectedCourseId(parseInt(res.selected_course_id));
+        }
+        if (res.selected_class_id) {
+          setSelectedClassId(parseInt(res.selected_class_id));
         }
         setStudents(res.students || []);
         if (res.students && res.students.length > 0) {
@@ -63,7 +80,7 @@ export default function TeacherAssessments() {
       })
       .catch(err => console.error("Error loading assessments", err))
       .finally(() => setLoading(false));
-  }, [selectedCourseId]);
+  }, [selectedCourseId, selectedClassId, selectedSession]);
 
   // Update specific metric in current student
   const updateMetric = (field: string, val: any) => {
@@ -83,6 +100,7 @@ export default function TeacherAssessments() {
       setSaving(true);
       apiClient.post("/teacher/assessments/save", {
         student_id: selectedStudent.id,
+        session: selectedSession,
         ...updated
       })
         .then(() => {
@@ -109,7 +127,22 @@ export default function TeacherAssessments() {
           <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>Behavior &amp; Skills Assessment</h1>
           <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>Evaluate student behavioral traits and psychomotor capabilities</p>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          {/* Academic Session */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--muted)", border: "1px solid var(--glass-border)", borderRadius: 8, padding: "5px 10px" }}>
+            <Calendar size={13} style={{ color: "#219EBC" }} />
+            <select
+              value={selectedSession}
+              onChange={e => setSelectedSession(e.target.value)}
+              style={{ background: "transparent", border: "none", color: "var(--heading)", fontSize: 12, fontWeight: 600, outline: "none", cursor: "pointer" }}
+            >
+              {["2026/2027", "2025/2026", "2024/2025", "2023/2024"].map(sess => (
+                <option key={sess} value={sess} style={{ background: "var(--popover)", color: "var(--heading)" }}>{sess}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Course select */}
           {courses.length > 0 && (
             <select 
               value={selectedCourseId || ""} 
@@ -117,6 +150,17 @@ export default function TeacherAssessments() {
               style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, color: "var(--heading)", outline: "none" }}
             >
               {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          )}
+
+          {/* Class Arm select */}
+          {classes.length > 0 && (
+            <select 
+              value={selectedClassId || ""} 
+              onChange={e => setSelectedClassId(parseInt(e.target.value))} 
+              style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, fontWeight: 600, color: "#219EBC", outline: "none" }}
+            >
+              {classes.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
             </select>
           )}
         </div>

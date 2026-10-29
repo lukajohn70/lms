@@ -10,6 +10,13 @@ class MaterialController {
         $this->conn = $db->getConnection();
     }
 
+    private function getSetting($key, $default = "") {
+        $stmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = :k LIMIT 1");
+        $stmt->execute([':k' => $key]);
+        $val = $stmt->fetchColumn();
+        return $val !== false ? $val : $default;
+    }
+
     public function upload() {
         $user = Auth::requireRole(['teacher', 'admin']);
         
@@ -25,7 +32,7 @@ class MaterialController {
         $file = $_FILES['material_file'];
 
         // Verify course exists and user has permission (if teacher, verify they teach the course)
-        $courseQuery = "SELECT id, teacher_id FROM courses WHERE id = :id";
+        $courseQuery = "SELECT id FROM courses WHERE id = :id";
         $cStmt = $this->conn->prepare($courseQuery);
         $cStmt->bindParam(':id', $courseId);
         $cStmt->execute();
@@ -38,12 +45,24 @@ class MaterialController {
         }
 
         if ($user['role'] === 'teacher') {
-            $s = $this->conn->prepare("SELECT 1 FROM class_subjects WHERE course_id = :cid AND teacher_id = :tid LIMIT 1");
-            $s->execute([':cid' => $course['id'], ':tid' => $user['id']]);
-            $inClass = $s->fetchColumn();
-            if ($course['teacher_id'] != $user['id'] && !$inClass) {
+            $s = $this->conn->prepare("
+                SELECT 1 FROM (
+                    SELECT course_id FROM teacher_allocations 
+                    WHERE teacher_id = :tid AND course_id = :cid
+                    UNION
+                    SELECT course_id FROM class_subjects 
+                    WHERE teacher_id = :tid2 AND course_id = :cid2
+                ) t LIMIT 1
+            ");
+            $s->execute([
+                ':tid' => $user['id'],
+                ':cid' => $course['id'],
+                ':tid2' => $user['id'],
+                ':cid2' => $course['id']
+            ]);
+            if (!$s->fetchColumn()) {
                 http_response_code(403);
-                echo json_encode(["error" => "You don't have permission to upload to this course"]);
+                echo json_encode(["error" => "You don't have permission to upload materials to this course."]);
                 return;
             }
         }

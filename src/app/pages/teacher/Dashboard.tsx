@@ -14,15 +14,17 @@ const ACTIVITY_COLORS = ["#219EBC", "#8ECAE6", "#FFB703", "#FB8500"];
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { user, settings } = useApp();
+  const [selectedSession, setSelectedSession] = useState(settings?.academic_session || "2026/2027");
   const [data, setData]         = useState<any>(null);
   const [trend, setTrend]       = useState<any[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     Promise.all([
-      apiClient.get('/dashboard/teacher'),
-      apiClient.get('/teacher/score-trend'),
+      apiClient.get(`/dashboard/teacher?session=${encodeURIComponent(selectedSession)}`),
+      apiClient.get(`/teacher/score-trend?session=${encodeURIComponent(selectedSession)}`),
       apiClient.get('/teacher/activity'),
     ])
       .then(([dash, trendRes, actRes]: any[]) => {
@@ -32,25 +34,38 @@ export default function TeacherDashboard() {
       })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedSession]);
 
-  if (loading || !data || !user) {
+  if (loading && !data) {
     return <div style={{ padding: 40, color: "var(--subtext)" }}>Loading dashboard...</div>;
   }
 
-  const { stats, classes } = data;
+  const stats = data?.stats || { totalStudents: 0, activeClasses: 0, cbtsCreated: 0, materialsUploaded: 0 };
+  const classes = data?.classes || [];
   const schoolName  = settings?.school_name  || "Deeper Life High School";
   const currentTerm = settings?.current_term || "2nd Term";
-  const session     = settings?.academic_session || "2026/2027";
 
   const trendData = trend.length > 0 ? trend : [{ m: "—", avg: 0 }];
 
   return (
     <div>
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, color: "#8ECAE6", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Teacher Dashboard</div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--heading)", margin: 0 }}>Welcome, {user.first_name} {user.last_name} 🎓</h1>
-        <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: "4px 0 0" }}>{schoolName} · {currentTerm} {session}</p>
+      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 11, color: "#8ECAE6", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Teacher Dashboard</div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: "var(--heading)", margin: 0 }}>Welcome, {user?.first_name} {user?.last_name} 🎓</h1>
+          <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: "4px 0 0" }}>{schoolName} · {currentTerm} {selectedSession}</p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--muted)", border: "1px solid var(--glass-border)", borderRadius: 8, padding: "5px 10px" }}>
+          <select
+            value={selectedSession}
+            onChange={e => setSelectedSession(e.target.value)}
+            style={{ background: "transparent", border: "none", color: "var(--heading)", fontSize: 12, fontWeight: 600, outline: "none", cursor: "pointer" }}
+          >
+            {["2026/2027", "2025/2026", "2024/2025", "2023/2024"].map(sess => (
+              <option key={sess} value={sess} style={{ background: "var(--popover)", color: "var(--heading)" }}>{sess}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Stat cards */}

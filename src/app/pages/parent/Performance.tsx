@@ -158,6 +158,14 @@ export default function Performance() {
     window.open(url, "_blank");
   };
 
+  const handlePrintTranscript = () => {
+    if (!selectedChild) return;
+    const token = localStorage.getItem("token");
+    const apiBase = API_BASE_URL.replace(/\/index\.php$/, "");
+    const url = `${apiBase}/index.php?path=/reports/transcript&student_id=${selectedChild.id}&token=${encodeURIComponent(token || "")}`;
+    window.open(url, "_blank");
+  };
+
   if (loadingChildren) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300, color: "var(--subtext)", fontSize: 14 }}>
@@ -273,6 +281,13 @@ export default function Performance() {
           >
             <Printer size={13} />
             Print Report Card
+          </button>
+          <button
+            onClick={handlePrintTranscript}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, background: "linear-gradient(135deg,#8B5CF6,#6D28D9)", color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, boxShadow: "0 4px 14px rgba(139,92,246,0.3)" }}
+          >
+            <GraduationCap size={13} />
+            Academic Transcript
           </button>
         </div>
       </div>

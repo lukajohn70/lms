@@ -9,9 +9,16 @@ lerna-debug.log*
 
 # Node modules & dependencies
 node_modules
-dist
+# dist (tracked so cPanel Git Version Control has production build files)
 dist-ssr
 *.local
+
+# Python scratch & temporary scraper files
+__pycache__/
+*.pyc
+database/__pycache__/
+database/portal_extract/
+downloads/
 
 # Editor / OS files
 .DS_Store

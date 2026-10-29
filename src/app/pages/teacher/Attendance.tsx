@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { CheckCircle, XCircle, Save, Users, Calendar } from "lucide-react";
+import { useSearchParams } from "react-router";
+import { CheckCircle, XCircle, Save, Users, Calendar, BookOpen } from "lucide-react";
+import { useApp } from "../../contexts/AppContext";
 import { apiClient } from "../../lib/apiClient";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
@@ -7,8 +9,18 @@ const Glass = ({ children, style }: { children: React.ReactNode; style?: React.C
 );
 
 export default function Attendance() {
+  const [searchParams] = useSearchParams();
+  const { settings } = useApp();
+
+  const [selectedSession, setSelectedSession] = useState(searchParams.get("session") || settings?.academic_session || "2026/2027");
   const [courses, setCourses] = useState<any[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(
+    searchParams.get("course_id") ? parseInt(searchParams.get("course_id")!) : null
+  );
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(
+    searchParams.get("class_id") ? parseInt(searchParams.get("class_id")!) : null
+  );
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [students, setStudents] = useState<any[]>([]);
   const [dates, setDates] = useState<string[]>([]);
@@ -17,21 +29,26 @@ export default function Attendance() {
 
   useEffect(() => {
     setLoading(true);
-    const query = selectedCourseId ? `?course_id=${selectedCourseId}&date=${selectedDate}` : `?date=${selectedDate}`;
+    let query = `?session=${encodeURIComponent(selectedSession)}&date=${selectedDate}`;
+    if (selectedCourseId) query += `&course_id=${selectedCourseId}`;
+    if (selectedClassId) query += `&class_id=${selectedClassId}`;
+
     apiClient.get(`/teacher/attendance${query}`)
       .then((res: any) => {
         setCourses(res.courses || []);
+        setClasses(res.classes || []);
         if (res.selected_course_id) {
-          setSelectedCourseId(res.selected_course_id);
-        } else if (res.courses && res.courses.length > 0 && !selectedCourseId) {
-          setSelectedCourseId(res.courses[0].id);
+          setSelectedCourseId(parseInt(res.selected_course_id));
+        }
+        if (res.selected_class_id) {
+          setSelectedClassId(parseInt(res.selected_class_id));
         }
         setDates(res.dates || []);
         setStudents(res.students || []);
       })
       .catch(err => console.error("Error loading attendance register", err))
       .finally(() => setLoading(false));
-  }, [selectedCourseId, selectedDate]);
+  }, [selectedCourseId, selectedClassId, selectedSession, selectedDate]);
 
   const toggle = (studentId: number, dateStr: string) => {
     setStudents(prev => prev.map(s => {
@@ -87,6 +104,8 @@ export default function Attendance() {
 
     apiClient.post('/teacher/attendance/save', {
       course_id: selectedCourseId,
+      class_id: selectedClassId,
+      session: selectedSession,
       attendance: records
     })
       .then(() => {
@@ -114,6 +133,20 @@ export default function Attendance() {
           <p style={{ fontSize: 12.5, color: "var(--subtext)", margin: 0 }}>Mark and track student attendance</p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          {/* Academic Session */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--muted)", border: "1px solid var(--glass-border)", borderRadius: 8, padding: "5px 10px" }}>
+            <Calendar size={13} style={{ color: "#219EBC" }} />
+            <select
+              value={selectedSession}
+              onChange={e => setSelectedSession(e.target.value)}
+              style={{ background: "transparent", border: "none", color: "var(--heading)", fontSize: 12, fontWeight: 600, outline: "none", cursor: "pointer" }}
+            >
+              {["2026/2027", "2025/2026", "2024/2025", "2023/2024"].map(sess => (
+                <option key={sess} value={sess} style={{ background: "var(--popover)", color: "var(--heading)" }}>{sess}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Course select */}
           {courses.length > 0 && (
             <select
@@ -122,6 +155,17 @@ export default function Attendance() {
               style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, color: "var(--heading)", outline: "none" }}
             >
               {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          )}
+
+          {/* Class Arm select */}
+          {classes.length > 0 && (
+            <select
+              value={selectedClassId || ""}
+              onChange={e => setSelectedClassId(parseInt(e.target.value))}
+              style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, fontWeight: 600, color: "#219EBC", outline: "none" }}
+            >
+              {classes.map(cl => <option key={cl.id} value={cl.id}>{cl.name}</option>)}
             </select>
           )}
 

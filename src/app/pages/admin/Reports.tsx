@@ -5,6 +5,7 @@ import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cart
 import { apiClient } from "../../lib/apiClient";
 import BroadsheetViewer from "./BroadsheetViewer";
 import ResultPrintManager from "./ResultPrintManager";
+import TranscriptManager from "./TranscriptManager";
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
   <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>{children}</div>
@@ -20,7 +21,7 @@ function getGradeLabel(score: number | null) {
   return "F";
 }
 
-type TabType = "end_of_term" | "midterm" | "broadsheet" | "approvals" | "analytics";
+type TabType = "end_of_term" | "midterm" | "transcripts" | "broadsheet" | "approvals" | "analytics";
 
 // Set to true whenever fee analytics/charts need to be shown again
 const SHOW_FEES_ANALYTICS = false;
@@ -28,7 +29,7 @@ const SHOW_FEES_ANALYTICS = false;
 export default function Reports() {
   const [searchParams, setSearchParams] = useSearchParams();
   const paramTab = searchParams.get("tab") as TabType | null;
-  const validTabs: TabType[] = ["end_of_term", "midterm", "broadsheet", "approvals", "analytics"];
+  const validTabs: TabType[] = ["end_of_term", "midterm", "transcripts", "broadsheet", "approvals", "analytics"];
   const [activeTab, setActiveTab] = useState<TabType>(
     paramTab && validTabs.includes(paramTab) ? paramTab : "end_of_term"
   );
@@ -162,22 +163,24 @@ export default function Reports() {
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {[
-            { id: "end_of_term" as const, label: "End-of-Term Reports", color: "#6366F1", icon: <FileText size={14} />, count: 0 },
-            { id: "midterm" as const, label: "Mid-Term Results", color: "#D97706", icon: <FileText size={14} />, count: 0 },
-            { id: "broadsheet" as const, label: "End-of-Term Broadsheet", color: "#10B981", icon: <Printer size={14} />, count: 0 },
-            { id: "approvals" as const, label: "Result Approvals & Locking", color: "#FB8500", icon: <ShieldCheck size={14} />, count: reopenRequestsCount },
-            { id: "analytics" as const, label: "Analytics Overview", color: "#219EBC", icon: <BarChart2 size={14} />, count: 0 }
+            { id: "end_of_term" as const, label: "End-of-Term Reports", color: "#293d7d", icon: <FileText size={14} />, count: 0 },
+            { id: "midterm" as const, label: "Mid-Term Results", color: "#0093dd", icon: <FileText size={14} />, count: 0 },
+            { id: "transcripts" as const, label: "Official Transcripts", color: "#16234b", icon: <GraduationCap size={14} />, count: 0 },
+            { id: "broadsheet" as const, label: "End-of-Term Broadsheet", color: "#dc137b", icon: <Printer size={14} />, count: 0 },
+            { id: "approvals" as const, label: "Result Approvals & Locking", color: "#dc137b", icon: <ShieldCheck size={14} />, count: reopenRequestsCount },
+            { id: "analytics" as const, label: "Analytics Overview", color: "#293d7d", icon: <BarChart2 size={14} />, count: 0 }
           ].map(tab => (
             <button key={tab.id} onClick={() => handleTabChange(tab.id)} style={{
               display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8,
               border: `1.5px solid ${activeTab === tab.id ? tab.color : "var(--glass-border)"}`,
-              background: activeTab === tab.id ? `${tab.color}22` : "var(--muted)",
+              background: activeTab === tab.id ? `${tab.color}15` : "var(--muted)",
               color: activeTab === tab.id ? tab.color : "var(--subtext)",
-              fontWeight: 700, fontSize: 12.5, cursor: "pointer", transition: "all 0.2s"
+              fontWeight: 800, fontSize: 12.5, cursor: "pointer", transition: "all 0.15s ease",
+              fontFamily: "'Raleway', sans-serif"
             }}>
               {tab.icon} {tab.label}
               {tab.count > 0 && (
-                <span style={{ background: "#FB8500", color: "#fff", padding: "1px 6px", borderRadius: 10, fontSize: 10, fontWeight: 800, marginLeft: 4 }}>
+                <span style={{ background: "#dc137b", color: "#fff", padding: "2px 7px", borderRadius: 4, fontSize: 10, fontWeight: 800, marginLeft: 4 }}>
                   {tab.count} Reopen Req
                 </span>
               )}
@@ -187,7 +190,7 @@ export default function Reports() {
       </div>
 
       {actionSuccess && (
-        <div style={{ marginBottom: 16, background: "rgba(42,157,143,0.12)", border: "1px solid rgba(42,157,143,0.3)", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, color: "#2a9d8f", fontWeight: 600 }}>
+        <div style={{ marginBottom: 16, background: "rgba(41,61,125,0.08)", border: "1px solid rgba(41,61,125,0.25)", borderRadius: 10, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, fontSize: 12.5, color: "#293d7d", fontWeight: 600 }}>
           <CheckCircle size={16} /> <span>{actionSuccess}</span>
         </div>
       )}
@@ -196,6 +199,8 @@ export default function Reports() {
         <ResultPrintManager mode="end_of_term" />
       ) : activeTab === "midterm" ? (
         <ResultPrintManager mode="midterm" />
+      ) : activeTab === "transcripts" ? (
+        <TranscriptManager />
       ) : activeTab === "broadsheet" ? (
         <BroadsheetViewer />
       ) : activeTab === "approvals" ? (
@@ -211,7 +216,7 @@ export default function Reports() {
                   {["1st Term", "2nd Term", "3rd Term"].map(t => (
                     <button key={t} onClick={() => setSelectedTerm(t)} style={{
                       padding: "5px 12px", borderRadius: 6, border: "none",
-                      background: selectedTerm === t ? "#FB8500" : "transparent",
+                      background: selectedTerm === t ? "#293d7d" : "transparent",
                       color: selectedTerm === t ? "#fff" : "var(--subtext)",
                       fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
                     }}>{t}</button>
@@ -219,18 +224,18 @@ export default function Reports() {
                 </div>
                 <button onClick={handlePublishAll} style={{
                   display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8,
-                  background: "linear-gradient(135deg,#2a9d8f,#219EBC)", color: "#fff",
+                  background: "#293d7d", color: "#fff",
                   border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700,
-                  boxShadow: "0 4px 14px rgba(42,157,143,0.3)"
+                  boxShadow: "0 4px 14px rgba(41,61,125,0.25)"
                 }}><Lock size={13} /> Batch Publish &amp; Lock All</button>
               </div>
             </div>
           </Glass>
 
           {/* Term-level Result Release Date Panel */}
-          <Glass style={{ padding: "16px 20px", marginBottom: 18, border: `1px solid ${savedReleaseDate && new Date(savedReleaseDate) > new Date() ? "rgba(255,183,3,0.4)" : "rgba(42,157,143,0.25)"}` }}>
+          <Glass style={{ padding: "16px 20px", marginBottom: 18, border: `1px solid ${savedReleaseDate && new Date(savedReleaseDate) > new Date() ? "rgba(212,175,55,0.35)" : "rgba(41,61,125,0.2)"}` }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
-              <CalendarClock size={22} style={{ color: "#FFB703", flexShrink: 0, marginTop: 2 }} />
+              <CalendarClock size={22} style={{ color: "#293d7d", flexShrink: 0, marginTop: 2 }} />
               <div style={{ flex: 1, minWidth: 240 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--heading)", marginBottom: 3 }}>
                   Result Release Date — {selectedTerm}
@@ -243,9 +248,9 @@ export default function Reports() {
                   <div style={{
                     display: "inline-flex", alignItems: "center", gap: 6,
                     padding: "4px 10px", borderRadius: 7, marginBottom: 10,
-                    background: new Date(savedReleaseDate) > new Date() ? "rgba(255,183,3,0.12)" : "rgba(42,157,143,0.12)",
-                    border: `1px solid ${new Date(savedReleaseDate) > new Date() ? "rgba(255,183,3,0.3)" : "rgba(42,157,143,0.3)"}`,
-                    color: new Date(savedReleaseDate) > new Date() ? "#FFB703" : "#2a9d8f",
+                    background: new Date(savedReleaseDate) > new Date() ? "rgba(212,175,55,0.12)" : "rgba(41,61,125,0.08)",
+                    border: `1px solid ${new Date(savedReleaseDate) > new Date() ? "rgba(212,175,55,0.25)" : "rgba(41,61,125,0.25)"}`,
+                    color: new Date(savedReleaseDate) > new Date() ? "#d4af37" : "#293d7d",
                     fontSize: 11.5, fontWeight: 600
                   }}>
                     {new Date(savedReleaseDate) > new Date() ? (
@@ -264,7 +269,7 @@ export default function Reports() {
                   />
                   <button onClick={handleSaveReleaseDate} disabled={releaseSaving} style={{
                     display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8,
-                    background: "linear-gradient(135deg,#FFB703,#e67600)", color: "#011d2f",
+                    background: "#dc137b", color: "#ffffff",
                     border: "none", cursor: releaseSaving ? "not-allowed" : "pointer", fontSize: 12.5, fontWeight: 700
                   }}>
                     <CalendarClock size={13} /> {releaseSaving ? "Saving..." : "Set Release Date"}
@@ -301,11 +306,11 @@ export default function Reports() {
                     const isReopenReq = sub.status === "reopen_requested";
                     const isSubmitted = sub.status === "submitted";
                     return (
-                      <div key={sub.course_id} style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 150px 1fr", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", background: isReopenReq ? "rgba(251,133,0,0.04)" : "transparent", borderLeft: isReopenReq ? "3px solid #FB8500" : "3px solid transparent" }}>
+                      <div key={sub.course_id} style={{ display: "grid", gridTemplateColumns: "1.5fr 1.2fr 100px 100px 150px 1fr", padding: "12px 18px", borderBottom: "1px solid var(--glass-border)", alignItems: "center", background: isReopenReq ? "rgba(220,19,123,0.04)" : "transparent", borderLeft: isReopenReq ? "3px solid #dc137b" : "3px solid transparent" }}>
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "var(--heading)" }}>{sub.course_name}</div>
                           {isReopenReq && sub.reopen_reason && (
-                            <div style={{ fontSize: 10, color: "#FB8500", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>
+                            <div style={{ fontSize: 10, color: "#dc137b", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>
                               ⚠ {sub.reopen_reason}
                             </div>
                           )}
@@ -315,29 +320,29 @@ export default function Reports() {
                           <div style={{ fontSize: 10, color: "var(--subtext)" }}>{sub.teacher_email || "—"}</div>
                         </div>
                         <div style={{ textAlign:"center", fontSize:12, fontWeight:600, color:"var(--heading)" }}>{sub.graded_count} / {sub.enrolled_count}</div>
-                        <div style={{ textAlign:"center", fontSize:13, fontWeight:700, color:"#219EBC" }}>{sub.class_average ? `${sub.class_average}%` : "—"}</div>
+                        <div style={{ textAlign:"center", fontSize:13, fontWeight:700, color:"#0093dd" }}>{sub.class_average ? `${sub.class_average}%` : "—"}</div>
                         <div style={{ textAlign:"center" }}>
-                          {isPublished && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(42,157,143,0.12)",color:"#2a9d8f",border:"1px solid rgba(42,157,143,0.3)",fontSize:11,fontWeight:700 }}><Lock size={11}/> Published</span>}
-                          {isLocked && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(2,48,71,0.2)",color:"#8ECAE6",border:"1px solid rgba(2,48,71,0.4)",fontSize:11,fontWeight:700 }}><Lock size={11}/> Locked</span>}
-                          {isReopenReq && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(251,133,0,0.15)",color:"#FB8500",border:"1px solid rgba(251,133,0,0.3)",fontSize:11,fontWeight:700 }}><AlertCircle size={11}/> Reopen Req.</span>}
-                          {isSubmitted && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(255,183,3,0.15)",color:"#FFB703",border:"1px solid rgba(255,183,3,0.3)",fontSize:11,fontWeight:700 }}><Clock size={11}/> Pending</span>}
-                          {sub.status==="draft" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(33,158,188,0.1)",color:"var(--subtext)",border:"1px solid var(--glass-border)",fontSize:11,fontWeight:600 }}>Draft</span>}
-                          {sub.status==="approved" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(33,158,188,0.15)",color:"#219EBC",border:"1px solid rgba(33,158,188,0.3)",fontSize:11,fontWeight:700 }}><CheckCircle size={11}/> Approved</span>}
+                          {isPublished && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(41,61,125,0.08)",color:"#293d7d",border:"1px solid rgba(41,61,125,0.25)",fontSize:11,fontWeight:700 }}><Lock size={11}/> Published</span>}
+                          {isLocked && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(41,61,125,0.08)",color:"#293d7d",border:"1px solid rgba(41,61,125,0.2)",fontSize:11,fontWeight:700 }}><Lock size={11}/> Locked</span>}
+                          {isReopenReq && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(220,19,123,0.12)",color:"#dc137b",border:"1px solid rgba(220,19,123,0.25)",fontSize:11,fontWeight:700 }}><AlertCircle size={11}/> Reopen Req.</span>}
+                          {isSubmitted && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(212,175,55,0.14)",color:"#d4af37",border:"1px solid rgba(212,175,55,0.25)",fontSize:11,fontWeight:700 }}><Clock size={11}/> Pending</span>}
+                          {sub.status==="draft" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(0,147,221,0.08)",color:"var(--subtext)",border:"1px solid var(--glass-border)",fontSize:11,fontWeight:600 }}>Draft</span>}
+                          {sub.status==="approved" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:"rgba(0,147,221,0.12)",color:"#0093dd",border:"1px solid rgba(0,147,221,0.25)",fontSize:11,fontWeight:700 }}><CheckCircle size={11}/> Approved</span>}
                         </div>
                         <div style={{ display:"flex",gap:5,justifyContent:"flex-end",flexWrap:"wrap" }}>
-                          <button onClick={() => handlePreview(sub)} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(33,158,188,0.1)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:11,fontWeight:600,cursor:"pointer" }}>
+                          <button onClick={() => handlePreview(sub)} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(0,147,221,0.08)",border:"1px solid rgba(0,147,221,0.25)",color:"#0093dd",fontSize:11,fontWeight:600,cursor:"pointer" }}>
                             <Eye size={12} /> Preview
                           </button>
                           {(isReopenReq || (isPublished || isLocked)) ? (
-                            <button onClick={() => handleUpdateStatus(sub.course_id, "draft")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(231,111,81,0.1)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:11,fontWeight:600,cursor:"pointer" }}>
+                            <button onClick={() => handleUpdateStatus(sub.course_id, "draft")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(220,19,123,0.08)",border:"1px solid rgba(220,19,123,0.25)",color:"#dc137b",fontSize:11,fontWeight:600,cursor:"pointer" }}>
                               <Unlock size={12} /> Reopen
                             </button>
                           ) : (
                             <>
-                              <button onClick={() => handleUpdateStatus(sub.course_id, "locked")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(2,48,71,0.2)",border:"1px solid rgba(142,202,230,0.3)",color:"#8ECAE6",fontSize:11,fontWeight:600,cursor:"pointer" }}>
+                              <button onClick={() => handleUpdateStatus(sub.course_id, "locked")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"rgba(41,61,125,0.08)",border:"1px solid rgba(41,61,125,0.25)",color:"#293d7d",fontSize:11,fontWeight:600,cursor:"pointer" }}>
                                 <Lock size={12} /> Lock Only
                               </button>
-                              <button onClick={() => handleUpdateStatus(sub.course_id, "published")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer" }}>
+                              <button onClick={() => handleUpdateStatus(sub.course_id, "published")} style={{ display:"flex",alignItems:"center",gap:4,padding:"5px 9px",borderRadius:6,background:"#293d7d",border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer" }}>
                                 <CheckCircle size={12} /> Lock &amp; Publish
                               </button>
                             </>
@@ -356,43 +361,43 @@ export default function Reports() {
                   const isReopenReq = sub.status === "reopen_requested";
                   const isSubmitted = sub.status === "submitted";
                   return (
-                    <div key={sub.course_id} style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: `1px solid ${isReopenReq ? "rgba(251,133,0,0.4)" : "var(--glass-border)"}`, display: "flex", flexDirection: "column", gap: 10, borderLeft: isReopenReq ? "3px solid #FB8500" : undefined }}>
+                    <div key={sub.course_id} style={{ padding: 14, borderRadius: 10, background: "var(--muted)", border: `1px solid ${isReopenReq ? "rgba(220,19,123,0.3)" : "var(--glass-border)"}`, display: "flex", flexDirection: "column", gap: 10, borderLeft: isReopenReq ? "3px solid #dc137b" : undefined }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--heading)" }}>{sub.course_name}</div>
                           <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2 }}>Teacher: {sub.teacher_name || "Unassigned"}</div>
                           {isReopenReq && sub.reopen_reason && (
-                            <div style={{ fontSize: 11, color: "#FB8500", marginTop: 3, fontStyle: "italic" }}>⚠ {sub.reopen_reason}</div>
+                            <div style={{ fontSize: 11, color: "#dc137b", marginTop: 3, fontStyle: "italic" }}>⚠ {sub.reopen_reason}</div>
                           )}
                         </div>
                         <div>
-                          {isPublished && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(42,157,143,0.12)",color:"#2a9d8f",border:"1px solid rgba(42,157,143,0.3)",fontSize:11,fontWeight:700 }}><Lock size={10}/> Published</span>}
-                          {isLocked && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(2,48,71,0.2)",color:"#8ECAE6",border:"1px solid rgba(2,48,71,0.4)",fontSize:11,fontWeight:700 }}><Lock size={10}/> Locked</span>}
-                          {isReopenReq && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(251,133,0,0.15)",color:"#FB8500",border:"1px solid rgba(251,133,0,0.3)",fontSize:11,fontWeight:700 }}><AlertCircle size={10}/> Reopen Req.</span>}
-                          {isSubmitted && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(255,183,3,0.15)",color:"#FFB703",border:"1px solid rgba(255,183,3,0.3)",fontSize:11,fontWeight:700 }}><Clock size={10}/> Pending</span>}
-                          {sub.status==="draft" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(33,158,188,0.1)",color:"var(--subtext)",border:"1px solid var(--glass-border)",fontSize:11,fontWeight:600 }}>Draft</span>}
+                          {isPublished && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(41,61,125,0.08)",color:"#293d7d",border:"1px solid rgba(41,61,125,0.25)",fontSize:11,fontWeight:700 }}><Lock size={10}/> Published</span>}
+                          {isLocked && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(41,61,125,0.08)",color:"#293d7d",border:"1px solid rgba(41,61,125,0.2)",fontSize:11,fontWeight:700 }}><Lock size={10}/> Locked</span>}
+                          {isReopenReq && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(220,19,123,0.12)",color:"#dc137b",border:"1px solid rgba(220,19,123,0.25)",fontSize:11,fontWeight:700 }}><AlertCircle size={10}/> Reopen Req.</span>}
+                          {isSubmitted && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(212,175,55,0.14)",color:"#d4af37",border:"1px solid rgba(212,175,55,0.25)",fontSize:11,fontWeight:700 }}><Clock size={10}/> Pending</span>}
+                          {sub.status==="draft" && <span style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:6,background:"rgba(0,147,221,0.08)",color:"var(--subtext)",border:"1px solid var(--glass-border)",fontSize:11,fontWeight:600 }}>Draft</span>}
                         </div>
                       </div>
 
                       <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", borderRadius: 8, background: "var(--glass-bg)", fontSize: 12 }}>
                         <div>Graded: <strong style={{ color: "var(--heading)" }}>{sub.graded_count} / {sub.enrolled_count}</strong></div>
-                        <div>Class Avg: <strong style={{ color: "#219EBC" }}>{sub.class_average ? `${sub.class_average}%` : "—"}</strong></div>
+                        <div>Class Avg: <strong style={{ color: "#0093dd" }}>{sub.class_average ? `${sub.class_average}%` : "—"}</strong></div>
                       </div>
 
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
-                        <button onClick={() => handlePreview(sub)} style={{ flex: "1 1 80px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(33,158,188,0.12)",border:"1px solid rgba(33,158,188,0.3)",color:"#219EBC",fontSize:12,fontWeight:600,cursor:"pointer" }}>
+                        <button onClick={() => handlePreview(sub)} style={{ flex: "1 1 80px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(0,147,221,0.1)",border:"1px solid rgba(0,147,221,0.25)",color:"#0093dd",fontSize:12,fontWeight:600,cursor:"pointer" }}>
                           <Eye size={13} /> Preview
                         </button>
                         {(isPublished || isLocked || isReopenReq) ? (
-                          <button onClick={() => handleUpdateStatus(sub.course_id, "draft")} style={{ flex: "1 1 100px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(231,111,81,0.12)",border:"1px solid rgba(231,111,81,0.3)",color:"#e76f51",fontSize:12,fontWeight:600,cursor:"pointer" }}>
+                          <button onClick={() => handleUpdateStatus(sub.course_id, "draft")} style={{ flex: "1 1 100px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(220,19,123,0.08)",border:"1px solid rgba(220,19,123,0.25)",color:"#dc137b",fontSize:12,fontWeight:600,cursor:"pointer" }}>
                             <Unlock size={13} /> Reopen
                           </button>
                         ) : (
                           <>
-                            <button onClick={() => handleUpdateStatus(sub.course_id, "locked")} style={{ flex: "1 1 100px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(2,48,71,0.2)",border:"1px solid rgba(142,202,230,0.3)",color:"#8ECAE6",fontSize:12,fontWeight:600,cursor:"pointer" }}>
+                            <button onClick={() => handleUpdateStatus(sub.course_id, "locked")} style={{ flex: "1 1 100px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"rgba(41,61,125,0.08)",border:"1px solid rgba(41,61,125,0.25)",color:"#293d7d",fontSize:12,fontWeight:600,cursor:"pointer" }}>
                               <Lock size={13} /> Lock Only
                             </button>
-                            <button onClick={() => handleUpdateStatus(sub.course_id, "published")} style={{ flex: "1 1 120px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"linear-gradient(135deg,#219EBC,#023047)",border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>
+                            <button onClick={() => handleUpdateStatus(sub.course_id, "published")} style={{ flex: "1 1 120px", display:"flex",alignItems:"center",justifyContent:"center",gap:5,padding:"8px 10px",borderRadius:7,background:"#293d7d",border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer" }}>
                               <CheckCircle size={13} /> Lock &amp; Publish
                             </button>
                           </>
@@ -409,12 +414,12 @@ export default function Reports() {
         <>
           <div className="responsive-grid-4">
             {[
-              { l: "Total Students", v: String(overview.total_students), delta: "+7 this term", c: "#219EBC", icon: <Users size={15}/> },
-              { l: "Academic Avg", v: `${overview.academic_average}%`, delta: "+1.8%", c: "#8ECAE6", icon: <TrendingUp size={15}/> },
-              { l: "CBTs Conducted", v: String(overview.exams_conducted), delta: "Dynamic", c: "#FFB703", icon: <BookOpen size={15}/> },
+              { l: "Total Students", v: String(overview.total_students), delta: "+7 this term", c: "#0093dd", icon: <Users size={15}/> },
+              { l: "Academic Avg", v: `${overview.academic_average}%`, delta: "+1.8%", c: "#293d7d", icon: <TrendingUp size={15}/> },
+              { l: "CBTs Conducted", v: String(overview.exams_conducted), delta: "Dynamic", c: "#d4af37", icon: <BookOpen size={15}/> },
               SHOW_FEES_ANALYTICS
-                ? { l: "Fee Collection", v: `${overview.fees_collected_rate}%`, delta: formatCurrency(overview.fees_collected_amount), c: "#FB8500", icon: <BarChart2 size={15}/> }
-                : { l: "Teaching Staff", v: String(overview.teaching_staff || 0), delta: "Active", c: "#FB8500", icon: <GraduationCap size={15}/> },
+                ? { l: "Fee Collection", v: `${overview.fees_collected_rate}%`, delta: formatCurrency(overview.fees_collected_amount), c: "#dc137b", icon: <BarChart2 size={15}/> }
+                : { l: "Teaching Staff", v: String(overview.teaching_staff || 0), delta: "Active", c: "#dc137b", icon: <GraduationCap size={15}/> },
             ].map(s => (
               <Glass key={s.l} style={{ padding: "16px 18px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -437,15 +442,15 @@ export default function Reports() {
                       <AreaChart data={enrollmentTrend} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                         <defs>
                           <linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#FB8500" stopOpacity={0.25} />
-                            <stop offset="95%" stopColor="#FB8500" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#dc137b" stopOpacity={0.25} />
+                            <stop offset="95%" stopColor="#dc137b" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
-                        <XAxis dataKey="m" tick={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
-                        <YAxis domain={['auto','auto']} tick={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={{ background:"var(--popover)", border:"1px solid var(--border)", borderRadius:8, fontFamily:"'Poppins',sans-serif", fontSize:11 }} />
-                        <Area type="monotone" dataKey="v" stroke="#FB8500" strokeWidth={2} fill="url(#eg)" dot={{ fill:"#FB8500", r:3, strokeWidth:0 }} />
+                        <XAxis dataKey="m" tick={{ fontFamily:"'Lato', sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
+                        <YAxis domain={['auto','auto']} tick={{ fontFamily:"'Lato', sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
+                        <Tooltip contentStyle={{ background:"var(--popover)", border:"1px solid var(--border)", borderRadius:8, fontFamily:"'Lato', sans-serif", fontSize:11 }} />
+                        <Area type="monotone" dataKey="v" stroke="#dc137b" strokeWidth={2} fill="url(#eg)" dot={{ fill:"#dc137b", r:3, strokeWidth:0 }} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -458,7 +463,7 @@ export default function Reports() {
                         <Pie data={feeBreakdown} cx="50%" cy="50%" outerRadius={65} dataKey="value" label={({ name, value }) => `${name}: ${value}%`} labelLine={false}>
                           {feeBreakdown.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                         </Pie>
-                        <Tooltip contentStyle={{ background:"var(--popover)", border:"1px solid var(--border)", borderRadius:8, fontFamily:"'Poppins',sans-serif", fontSize:11 }} />
+                        <Tooltip contentStyle={{ background:"var(--popover)", border:"1px solid var(--border)", borderRadius:8, fontFamily:"'Lato', sans-serif", fontSize:11 }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -471,11 +476,11 @@ export default function Reports() {
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={deptAvg} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
-                      <XAxis dataKey="d" tick={{ fontFamily:"'Poppins',sans-serif", fontSize:11, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0,100]} tick={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ background:"var(--popover)", border:"1px solid var(--border)", borderRadius:8, fontFamily:"'Poppins',sans-serif", fontSize:11 }} formatter={(v) => [`${v}%`, "Avg Score"]} />
+                      <XAxis dataKey="d" tick={{ fontFamily:"'Lato', sans-serif", fontSize:11, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
+                      <YAxis domain={[0,100]} tick={{ fontFamily:"'Lato', sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ background:"var(--popover)", border:"1px solid var(--border)", borderRadius:8, fontFamily:"'Lato', sans-serif", fontSize:11 }} formatter={(v) => [`${v}%`, "Avg Score"]} />
                       <Bar dataKey="v" radius={[5,5,0,0]}>
-                        {deptAvg.map((_, i) => <Cell key={i} fill={["#219EBC","#8ECAE6","#FFB703","#FB8500","#219EBC","#8ECAE6"][i%6]} />)}
+                        {deptAvg.map((_, i) => <Cell key={i} fill={["#0093dd","#293d7d","#d4af37","#dc137b","#0093dd","#293d7d"][i%6]} />)}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -491,15 +496,15 @@ export default function Reports() {
                     <AreaChart data={enrollmentTrend} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                       <defs>
                         <linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#FB8500" stopOpacity={0.25} />
-                          <stop offset="95%" stopColor="#FB8500" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#dc137b" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#dc137b" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
-                      <XAxis dataKey="m" tick={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
-                      <YAxis domain={['auto','auto']} tick={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ background:"var(--popover)", border:"1px solid var(--border)", borderRadius:8, fontFamily:"'Poppins',sans-serif", fontSize:11 }} />
-                      <Area type="monotone" dataKey="v" stroke="#FB8500" strokeWidth={2} fill="url(#eg)" dot={{ fill:"#FB8500", r:3, strokeWidth:0 }} />
+                      <XAxis dataKey="m" tick={{ fontFamily:"'Lato', sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
+                      <YAxis domain={['auto','auto']} tick={{ fontFamily:"'Lato', sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ background:"var(--popover)", border:"1px solid var(--border)", borderRadius:8, fontFamily:"'Lato', sans-serif", fontSize:11 }} />
+                      <Area type="monotone" dataKey="v" stroke="#dc137b" strokeWidth={2} fill="url(#eg)" dot={{ fill:"#dc137b", r:3, strokeWidth:0 }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -511,11 +516,11 @@ export default function Reports() {
                   <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={deptAvg} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--glass-border)" vertical={false} />
-                      <XAxis dataKey="d" tick={{ fontFamily:"'Poppins',sans-serif", fontSize:11, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0,100]} tick={{ fontFamily:"'Poppins',sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ background:"var(--popover)", border:"1px solid var(--border)", borderRadius:8, fontFamily:"'Poppins',sans-serif", fontSize:11 }} formatter={(v) => [`${v}%`, "Avg Score"]} />
+                      <XAxis dataKey="d" tick={{ fontFamily:"'Lato', sans-serif", fontSize:11, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
+                      <YAxis domain={[0,100]} tick={{ fontFamily:"'Lato', sans-serif", fontSize:10, fill:"var(--subtext)" }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ background:"var(--popover)", border:"1px solid var(--border)", borderRadius:8, fontFamily:"'Lato', sans-serif", fontSize:11 }} formatter={(v) => [`${v}%`, "Avg Score"]} />
                       <Bar dataKey="v" radius={[5,5,0,0]}>
-                        {deptAvg.map((_, i) => <Cell key={i} fill={["#219EBC","#8ECAE6","#FFB703","#FB8500","#219EBC","#8ECAE6"][i%6]} />)}
+                        {deptAvg.map((_, i) => <Cell key={i} fill={["#0093dd","#293d7d","#d4af37","#dc137b","#0093dd","#293d7d"][i%6]} />)}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -583,7 +588,7 @@ export default function Reports() {
                       {previewData.students.map((st: any, i: number) => {
                         const total = st.total !== null && st.total !== undefined ? parseFloat(st.total) : null;
                         const gl = getGradeLabel(total);
-                        const gc = total === null ? "var(--subtext)" : total >= 60 ? "#2a9d8f" : total >= 45 ? "#FFB703" : "#e76f51";
+                        const gc = total === null ? "var(--subtext)" : total >= 60 ? "#293d7d" : total >= 45 ? "#d4af37" : "#dc137b";
                         return (
                           <div key={st.id} style={{ display:"grid",gridTemplateColumns:"36px 2fr 1fr 70px 70px 70px 70px 56px 80px",padding:"9px 18px",borderBottom:"1px solid var(--glass-border)",alignItems:"center",background:i%2===0?"transparent":"var(--muted)" }}>
                             <span style={{fontSize:11,color:"var(--subtext)"}}>{i+1}</span>
@@ -596,7 +601,7 @@ export default function Reports() {
                             <span style={{textAlign:"center",fontSize:13,fontWeight:800,color:gc}}>{gl}</span>
                             <span style={{textAlign:"center"}}>
                               {st.status ? (
-                                <span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:st.status==="published"?"rgba(42,157,143,0.12)":"rgba(255,183,3,0.12)",color:st.status==="published"?"#2a9d8f":"#FFB703",fontWeight:600}}>{st.status}</span>
+                                <span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:st.status==="published"?"rgba(41,61,125,0.08)":"rgba(212,175,55,0.12)",color:st.status==="published"?"#293d7d":"#d4af37",fontWeight:600}}>{st.status}</span>
                               ) : (
                                 <span style={{fontSize:10,color:"var(--subtext)"}}>not graded</span>
                               )}
@@ -615,12 +620,12 @@ export default function Reports() {
               <div style={{ padding:"12px 18px",background:"var(--muted)",borderTop:"1px solid var(--glass-border)",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,fontSize:12,color:"var(--subtext)",flexShrink:0 }}>
                 <div style={{ display:"flex",gap:14,flexWrap:"wrap" }}>
                   <span>Enrolled: <strong style={{color:"var(--heading)"}}>{previewData.count}</strong></span>
-                  <span>Graded: <strong style={{color:"#2a9d8f"}}>{previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).length}</strong></span>
-                  <span>Not Graded: <strong style={{color:"#e76f51"}}>{previewData.students.filter((s:any)=>s.total===null||s.total===undefined).length}</strong></span>
+                  <span>Graded: <strong style={{color:"#293d7d"}}>{previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).length}</strong></span>
+                  <span>Not Graded: <strong style={{color:"#dc137b"}}>{previewData.students.filter((s:any)=>s.total===null||s.total===undefined).length}</strong></span>
                   {(() => {
                     const gs = previewData.students.filter((s:any)=>s.total!==null&&s.total!==undefined).map((s:any)=>parseFloat(s.total));
                     const avg = gs.length ? (gs.reduce((a:number,b:number)=>a+b,0)/gs.length).toFixed(1) : null;
-                    return <span>Class Avg: <strong style={{color:"#219EBC"}}>{avg ? `${avg}%` : "—"}</strong></span>;
+                    return <span>Class Avg: <strong style={{color:"#0093dd"}}>{avg ? `${avg}%` : "—"}</strong></span>;
                   })()}
                 </div>
                 <button

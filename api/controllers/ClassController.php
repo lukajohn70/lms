@@ -24,6 +24,13 @@ class ClassController {
         } catch (Exception $e) {}
     }
 
+    private function getSetting($key, $default = "") {
+        $stmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = :k LIMIT 1");
+        $stmt->execute([':k' => $key]);
+        $val = $stmt->fetchColumn();
+        return $val !== false ? $val : $default;
+    }
+
     // Get all classes with form teacher details
     public function getClasses() {
         Auth::requireRole(['admin', 'teacher']);
@@ -155,13 +162,24 @@ class ClassController {
             return;
         }
 
+        $name = trim($data->name);
+
+        // Prevent duplicate course names
+        $stmtCheck = $this->conn->prepare("SELECT id FROM courses WHERE LOWER(name) = LOWER(:n) LIMIT 1");
+        $stmtCheck->execute([':n' => $name]);
+        if ($stmtCheck->fetch()) {
+            http_response_code(400);
+            echo json_encode(["error" => "A subject with the name '$name' already exists."]);
+            return;
+        }
+
         try {
             $stmt = $this->conn->prepare("INSERT INTO courses (name, description, topics, department) VALUES (:n, :d, :t, :dept)");
             $stmt->execute([
-                ':n' => trim($data->name),
+                ':n' => $name,
                 ':d' => isset($data->description) ? trim($data->description) : null,
                 ':t' => isset($data->topics) ? trim($data->topics) : null,
-                ':dept' => isset($data->department) ? trim($data->department) : null
+                ':dept' => isset($data->department) ? trim($data->department) : 'Science'
             ]);
             $id = $this->conn->lastInsertId();
             
@@ -313,6 +331,7 @@ class ClassController {
         }
 
         $classId = intval($data->class_id);
+        $session = !empty($data->session) ? trim($data->session) : $this->getSetting('academic_session', '2026/2027');
 
         try {
             $this->conn->beginTransaction();
@@ -327,7 +346,18 @@ class ClassController {
                 VALUES (:cid, :coid, :t, :eg, :tid)
             ");
 
-            $stmtCourseTeacher = $this->conn->prepare("UPDATE courses SET teacher_id = :tid WHERE id = :coid");
+            // Set course default teacher only if currently unassigned (preserves global default without mutating historical pointers)
+            $stmtCourseTeacher = $this->conn->prepare("UPDATE courses SET teacher_id = :tid WHERE id = :coid AND teacher_id IS NULL");
+            
+            $stmtInsertAlloc = $this->conn->prepare("
+                INSERT INTO teacher_allocations (teacher_id, class_id, course_id, academic_session) 
+                VALUES (:tid, :cid, :coid, :session)
+                ON DUPLICATE KEY UPDATE teacher_id = :tid2
+            ");
+            $stmtDeleteAlloc = $this->conn->prepare("
+                DELETE FROM teacher_allocations 
+                WHERE class_id = :cid AND course_id = :coid AND academic_session = :session
+            ");
 
             foreach ($data->subjects as $sub) {
                 $tid = !empty($sub->teacher_id) ? intval($sub->teacher_id) : null;
@@ -341,8 +371,22 @@ class ClassController {
                     ':tid' => $tid
                 ]);
 
+                // Always clear existing allocation for this session & class & subject to cleanly replace without polluting history
+                $stmtDeleteAlloc->execute([
+                    ':cid' => $classId,
+                    ':coid' => $coid,
+                    ':session' => $session
+                ]);
+
                 if ($tid) {
                     $stmtCourseTeacher->execute([':tid' => $tid, ':coid' => $coid]);
+                    $stmtInsertAlloc->execute([
+                        ':tid' => $tid,
+                        ':cid' => $classId,
+                        ':coid' => $coid,
+                        ':session' => $session,
+                        ':tid2' => $tid
+                    ]);
                 }
             }
 
@@ -371,6 +415,15 @@ class ClassController {
         $description = isset($data->description) ? trim($data->description) : null;
         $department = isset($data->department) ? trim($data->department) : null;
         $topics = isset($data->topics) ? trim($data->topics) : null;
+
+        // Prevent duplicate subject name on rename
+        $stmtCheck = $this->conn->prepare("SELECT id FROM courses WHERE LOWER(name) = LOWER(:n) AND id != :id LIMIT 1");
+        $stmtCheck->execute([':n' => $name, ':id' => $id]);
+        if ($stmtCheck->fetch()) {
+            http_response_code(400);
+            echo json_encode(["error" => "Another subject with the name '$name' already exists."]);
+            return;
+        }
 
         try {
             $stmt = $this->conn->prepare("
@@ -580,10 +633,32 @@ class ClassController {
                 $ins->execute([':cid' => $classId, ':coid' => $courseId, ':tid' => $teacherId]);
             }
 
-            // Also update courses default teacher_id if unassigned
+            // Always clear any prior allocation for this subject, class arm, and session to prevent duplicate or conflicting records
+            $allocDel = $this->conn->prepare("
+                DELETE FROM teacher_allocations 
+                WHERE class_id = :cid AND course_id = :coid AND academic_session = :session
+            ");
+            $allocDel->execute([
+                ':cid' => $classId,
+                ':coid' => $courseId,
+                ':session' => $session
+            ]);
+
+            // Also update courses default teacher_id if unassigned (without mutating if already set)
             if ($teacherId !== null) {
                 $this->conn->prepare("UPDATE courses SET teacher_id = :tid WHERE id = :coid AND teacher_id IS NULL")
                     ->execute([':tid' => $teacherId, ':coid' => $courseId]);
+
+                $allocStmt = $this->conn->prepare("
+                    INSERT INTO teacher_allocations (teacher_id, class_id, course_id, academic_session) 
+                    VALUES (:tid, :cid, :coid, :session)
+                ");
+                $allocStmt->execute([
+                    ':tid' => $teacherId,
+                    ':cid' => $classId,
+                    ':coid' => $courseId,
+                    ':session' => $session
+                ]);
             }
 
             echo json_encode([

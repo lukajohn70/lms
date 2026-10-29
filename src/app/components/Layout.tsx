@@ -6,7 +6,7 @@ import {
   GraduationCap, ClipboardList, FlaskConical, ChevronDown, ChevronRight,
   LogOut, HelpCircle, Users, Settings, BarChart2, CheckSquare, CalendarDays,
   Bell, Search, Sun, Moon, UserCheck, Menu, X, ArrowUp, Award, Shield,
-  Printer, ShieldCheck,
+  Printer, ShieldCheck, RefreshCw,
 } from "lucide-react";
 import { useApp, Role } from "../contexts/AppContext";
 import { NotificationPanel } from "./NotificationPanel";
@@ -48,6 +48,7 @@ const NAV: Record<Role, NavItem[]> = {
     { icon: <LayoutDashboard size={17} />, label: "Dashboard", to: "/admin" },
     { icon: <Users size={17} />, label: "User Management", to: "/admin/users" },
     { icon: <BookOpen size={17} />, label: "Academic Setup", to: "/admin/classes" },
+    { icon: <RefreshCw size={17} />, label: "Portal Sync & Import", to: "/admin/portal-sync" },
     { icon: <Library size={17} />, label: "E-Library Manager", to: "/admin/library" },
     {
       icon: <BarChart2 size={17} />, label: "Reports & Printing",
@@ -64,9 +65,9 @@ const NAV: Record<Role, NavItem[]> = {
 };
 
 const ROLE_COLOR: Record<string, string> = {
-  student: "#219EBC",
-  teacher: "#8ECAE6",
-  admin: "#FB8500",
+  student: "#0093dd",
+  teacher: "#293d7d",
+  admin: "#dc137b",
 };
 
 function SidebarNavItem({ item, basePath, onNavClick }: { item: NavItem; basePath: string; onNavClick?: () => void }) {
@@ -86,14 +87,14 @@ function SidebarNavItem({ item, basePath, onNavClick }: { item: NavItem; basePat
       <div className="mb-1">
         <button
           onClick={() => setOpen((p) => !p)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
-          style={{ background: "transparent", border: "2px solid transparent" }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150"
+          style={{ background: "transparent", border: "none" }}
         >
-          <span style={{ color: "var(--sky)" }}>{item.icon}</span>
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "12.5px", color: "var(--sky)", flex: 1, textAlign: "left" }}>
+          <span style={{ color: "#bfd1ff" }}>{item.icon}</span>
+          <span style={{ fontFamily: "'Raleway',sans-serif", fontSize: "12.5px", fontWeight: 700, color: "#bfd1ff", flex: 1, textAlign: "left" }}>
             {item.label}
           </span>
-          {open ? <ChevronDown size={12} style={{ color: "var(--sky)", opacity: 0.6 }} /> : <ChevronRight size={12} style={{ color: "var(--sky)", opacity: 0.6 }} />}
+          {open ? <ChevronDown size={12} style={{ color: "#bfd1ff", opacity: 0.7 }} /> : <ChevronRight size={12} style={{ color: "#bfd1ff", opacity: 0.7 }} />}
         </button>
         {open && (
           <div className="ml-4 mt-0.5 flex flex-col gap-0.5">
@@ -105,13 +106,13 @@ function SidebarNavItem({ item, basePath, onNavClick }: { item: NavItem; basePat
                 onClick={onNavClick}
                 className={({ isActive }) => {
                   const active = isChildActive(c.to, isActive);
-                  return `flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-150 ${active ? "nav-active" : ""}`;
+                  return `flex items-center gap-2.5 px-3 py-2 rounded-md transition-all duration-150 ${active ? "nav-active" : ""}`;
                 }}
                 style={({ isActive }) => {
                   const active = isChildActive(c.to, isActive);
                   return {
-                    background: active ? "rgba(33,158,188,0.18)" : "transparent",
-                    borderLeft: active ? "2px solid #219EBC" : "2px solid transparent",
+                    background: active ? "rgba(220,19,123,0.18)" : "transparent",
+                    borderLeft: active ? "3px solid #dc137b" : "3px solid transparent",
                   };
                 }}
               >
@@ -119,8 +120,8 @@ function SidebarNavItem({ item, basePath, onNavClick }: { item: NavItem; basePat
                   const active = isChildActive(c.to, isActive);
                   return (
                     <>
-                      <span style={{ color: active ? "#219EBC" : "rgba(142,202,230,0.7)" }}>{c.icon}</span>
-                      <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "12px", color: active ? "#e8f4f8" : "rgba(232,244,248,0.75)", fontWeight: active ? 600 : 400 }}>
+                      <span style={{ color: active ? "#dc137b" : "rgba(191,209,255,0.7)" }}>{c.icon}</span>
+                      <span style={{ fontSize: "12px", color: active ? "#ffffff" : "rgba(248,250,252,0.8)", fontWeight: active ? 700 : 500 }}>
                         {c.label}
                       </span>
                     </>
@@ -140,17 +141,17 @@ function SidebarNavItem({ item, basePath, onNavClick }: { item: NavItem; basePat
       end={item.to === `/${basePath}`}
       onClick={onNavClick}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-all duration-150 ${isActive ? "nav-active" : ""}`
+        `flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-all duration-150 ${isActive ? "nav-active" : ""}`
       }
       style={({ isActive }) => ({
-        background: isActive ? "rgba(33,158,188,0.2)" : "transparent",
-        borderLeft: isActive ? "2px solid #219EBC" : "2px solid transparent",
+        background: isActive ? "rgba(220,19,123,0.18)" : "transparent",
+        borderLeft: isActive ? "3px solid #dc137b" : "3px solid transparent",
       })}
     >
       {({ isActive }) => (
         <>
-          <span style={{ color: isActive ? "#219EBC" : "var(--sky)" }}>{item.icon}</span>
-          <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "12.5px", fontWeight: isActive ? 600 : 400, color: isActive ? "#e8f4f8" : "var(--sky)" }}>
+          <span style={{ color: isActive ? "#dc137b" : "#bfd1ff" }}>{item.icon}</span>
+          <span style={{ fontFamily: "'Raleway',sans-serif", fontSize: "12.5px", fontWeight: isActive ? 700 : 600, color: isActive ? "#ffffff" : "#bfd1ff" }}>
             {item.label}
           </span>
         </>
@@ -269,16 +270,16 @@ export function Layout({ children }: { children: ReactNode }) {
         <img
           src="/logo.png"
           alt="School Logo"
-          style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0, boxShadow: "0 4px 12px rgba(33,158,188,0.25)" }}
+          style={{ width: 38, height: 38, borderRadius: 8, flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}
         />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 14.5, color: "#e8f4f8", letterSpacing: "0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{schoolFirst === 'DLHS' ? 'DLHS Kaduna' : schoolFirst}</div>
-          <div style={{ fontSize: 9.5, color: "#8ECAE6", letterSpacing: "0.08em", fontWeight: 600, textTransform: "uppercase" }}>{schoolRest}</div>
+          <div style={{ fontWeight: 800, fontSize: 14.5, color: "#ffffff", letterSpacing: "0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Raleway',sans-serif" }}>{schoolFirst === 'DLHS' ? 'DLHS Kaduna' : schoolFirst}</div>
+          <div style={{ fontSize: 9.5, color: "#d4af37", letterSpacing: "0.08em", fontWeight: 700, textTransform: "uppercase" }}>{schoolRest}</div>
         </div>
         {/* Close button for mobile */}
         <button
           onClick={closeSidebar}
-          style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(142,202,230,0.6)", display: "flex", alignItems: "center", padding: 4 }}
+          style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(191,209,255,0.7)", display: "flex", alignItems: "center", padding: 4 }}
           className="md-hidden"
           aria-label="Close menu"
         >
@@ -291,9 +292,9 @@ export function Layout({ children }: { children: ReactNode }) {
         <div
           style={{
             width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-            background: `linear-gradient(135deg, ${roleColor}, rgba(142,202,230,0.6))`,
+            background: roleColor,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 12, fontWeight: 700, color: "#011d2f",
+            fontSize: 12, fontWeight: 700, color: "#ffffff",
             overflow: "hidden"
           }}
         >
@@ -308,18 +309,18 @@ export function Layout({ children }: { children: ReactNode }) {
           )}
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 600, color: "#e8f4f8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#f8fafc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "'Raleway',sans-serif" }}>
             {name}
           </div>
-          <div style={{ fontSize: 10.5, color: "rgba(142,202,230,0.7)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 10.5, color: "#bfd1ff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {subtitle}
           </div>
         </div>
         <div
           style={{
-            padding: "2px 7px", borderRadius: 6, flexShrink: 0,
-            background: `rgba(${roleColor === "#219EBC" ? "33,158,188" : roleColor === "#FFB703" ? "255,183,3" : roleColor === "#FB8500" ? "251,133,0" : "142,202,230"},0.15)`,
-            fontSize: 9, fontWeight: 700, color: roleColor, textTransform: "uppercase", letterSpacing: "0.05em",
+            padding: "2px 7px", borderRadius: 4, flexShrink: 0,
+            background: `rgba(255,255,255,0.1)`,
+            fontSize: 9, fontWeight: 800, color: roleColor === "#293d7d" ? "#bfd1ff" : roleColor, textTransform: "uppercase", letterSpacing: "0.05em",
           }}
         >
           {user.role}
@@ -340,18 +341,18 @@ export function Layout({ children }: { children: ReactNode }) {
               `flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-all duration-150 ${isActive ? "nav-active" : ""}`
             }
             style={({ isActive }) => ({
-              background: isActive ? "rgba(131,56,236,0.2)" : "transparent",
-              borderLeft: isActive ? "2px solid #8338EC" : "2px solid transparent",
+              background: isActive ? "rgba(220,19,123,0.18)" : "transparent",
+              borderLeft: isActive ? "2px solid #dc137b" : "2px solid transparent",
               marginTop: 4,
             })}
           >
             {({ isActive }) => (
               <>
-                <span style={{ color: isActive ? "#8338EC" : "rgba(131,56,236,0.75)" }}><Shield size={17} /></span>
-                <span style={{ fontFamily: "'Poppins',sans-serif", fontSize: "12.5px", fontWeight: isActive ? 600 : 400, color: isActive ? "#e8f4f8" : "rgba(131,56,236,0.85)" }}>
+                <span style={{ color: isActive ? "#dc137b" : "rgba(191,209,255,0.75)" }}><Shield size={17} /></span>
+                <span style={{ fontFamily: "'Raleway',sans-serif", fontSize: "12.5px", fontWeight: isActive ? 700 : 500, color: isActive ? "#ffffff" : "rgba(248,250,252,0.85)" }}>
                   HOD Portal
                 </span>
-                <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 4, background: "rgba(131,56,236,0.15)", color: "#8338EC", marginLeft: "auto" }}>HOD</span>
+                <span style={{ fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 4, background: "rgba(220,19,123,0.15)", color: "#dc137b", marginLeft: "auto" }}>HOD</span>
               </>
             )}
           </NavLink>
@@ -365,8 +366,8 @@ export function Layout({ children }: { children: ReactNode }) {
           className="flex items-center gap-2.5 px-3 py-2 rounded-xl w-full transition-all duration-150"
           style={{ background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
         >
-          <HelpCircle size={15} style={{ color: "rgba(142,202,230,0.5)" }} />
-          <span style={{ fontSize: 12, color: "rgba(142,202,230,0.5)" }}>Help & Support</span>
+          <HelpCircle size={15} style={{ color: "#bfd1ff" }} />
+          <span style={{ fontSize: 12, color: "#bfd1ff", fontWeight: 600 }}>Help &amp; Support</span>
         </button>
         <button
           onClick={handleLogout}
@@ -424,7 +425,7 @@ export function Layout({ children }: { children: ReactNode }) {
         @media (max-width: 768px) { .md-hidden { display: flex !important; } }
       `}</style>
 
-      <div style={{ minHeight: "100vh", display: "flex", fontFamily: "'Poppins',sans-serif", width: "100%", maxWidth: "100vw", overflowX: "hidden", boxSizing: "border-box" }}>
+      <div style={{ minHeight: "100vh", display: "flex", fontFamily: "'Lato', 'Plus Jakarta Sans', sans-serif", width: "100%", maxWidth: "100vw", overflowX: "hidden", boxSizing: "border-box" }}>
 
         {/* ===== DESKTOP SIDEBAR ===== */}
         <aside
@@ -461,7 +462,7 @@ export function Layout({ children }: { children: ReactNode }) {
             height: "var(--topbar-h)",
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "0 16px",
-            background: theme === "dark" ? "rgba(1,16,28,0.9)" : "rgba(238,246,250,0.92)",
+            background: theme === "dark" ? "rgba(13,22,39,0.94)" : "rgba(255,255,255,0.95)",
             backdropFilter: "blur(16px)",
             borderBottom: "1px solid var(--border)",
             zIndex: 40,
@@ -474,7 +475,7 @@ export function Layout({ children }: { children: ReactNode }) {
               className="mobile-menu-btn"
               onClick={() => setSidebarOpen(true)}
               style={{
-                width: 36, height: 36, borderRadius: 10,
+                width: 36, height: 36, borderRadius: 8,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 background: "var(--muted)", border: "1px solid var(--border)",
                 cursor: "pointer", color: "var(--heading)", flexShrink: 0
@@ -489,7 +490,7 @@ export function Layout({ children }: { children: ReactNode }) {
               <div
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
-                  padding: "7px 14px", borderRadius: 10, width: 240,
+                  padding: "7px 14px", borderRadius: 8, width: 240,
                   background: "var(--muted)", border: "1px solid var(--border)",
                 }}
               >
@@ -501,9 +502,9 @@ export function Layout({ children }: { children: ReactNode }) {
 
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {/* Session badge — hidden on mobile to save space */}
-            <div className="topbar-session" style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 8, background: "rgba(33,158,188,0.1)", border: "1px solid rgba(33,158,188,0.2)" }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#219EBC", boxShadow: "0 0 5px #219EBC" }} />
-              <span style={{ fontSize: 11, color: "#219EBC" }}>
+            <div className="topbar-session" style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 6, background: "rgba(41,61,125,0.06)", border: "1px solid rgba(41,61,125,0.12)" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#dc137b" }} />
+              <span style={{ fontSize: 11.5, color: "var(--heading)", fontWeight: 600 }}>
                 {settings?.academic_session || "2026/2027"} · {settings?.current_term || "2nd Term"}
               </span>
             </div>
@@ -512,7 +513,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <button
               onClick={toggleTheme}
               style={{
-                width: 36, height: 36, borderRadius: 10,
+                width: 36, height: 36, borderRadius: 8,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 background: "var(--muted)", border: "1px solid var(--border)",
                 cursor: "pointer", transition: "all 0.2s",
@@ -520,8 +521,8 @@ export function Layout({ children }: { children: ReactNode }) {
               title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             >
               {theme === "dark"
-                ? <Sun size={16} style={{ color: "#FFB703" }} />
-                : <Moon size={16} style={{ color: "#219EBC" }} />}
+                ? <Sun size={16} style={{ color: "#d4af37" }} />
+                : <Moon size={16} style={{ color: "#293d7d" }} />}
             </button>
 
             {/* Notification bell */}
@@ -529,14 +530,14 @@ export function Layout({ children }: { children: ReactNode }) {
               <button
                 onClick={() => setNotifOpen((p) => !p)}
                 style={{
-                  width: 36, height: 36, borderRadius: 10, position: "relative",
+                  width: 36, height: 36, borderRadius: 8, position: "relative",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  background: notifOpen ? "rgba(33,158,188,0.2)" : "var(--muted)",
+                  background: notifOpen ? "rgba(220,19,123,0.12)" : "var(--muted)",
                   border: "1px solid var(--border)", cursor: "pointer",
                 }}
               >
                 <Bell size={16} style={{ color: "var(--subtext)" }} />
-                <span style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: "50%", background: "#FFB703", boxShadow: "0 0 5px #FFB703" }} />
+                <span style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: "50%", background: "#dc137b" }} />
               </button>
               {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
             </div>
@@ -554,9 +555,9 @@ export function Layout({ children }: { children: ReactNode }) {
               <div
                 style={{
                   width: 32, height: 32, borderRadius: "50%",
-                  background: `linear-gradient(135deg, ${roleColor}, rgba(142,202,230,0.6))`,
+                  background: roleColor,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 11, fontWeight: 700, color: "#011d2f",
+                  fontSize: 11, fontWeight: 800, color: "#ffffff",
                   overflow: "hidden"
                 }}
               >
@@ -604,17 +605,17 @@ export function Layout({ children }: { children: ReactNode }) {
               bottom: "calc(22px + env(safe-area-inset-bottom, 0px))",
               right: 22,
               zIndex: 999999,
-              width: 46,
-              height: 46,
+              width: 44,
+              height: 44,
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #219EBC, #023047)",
+              background: "#293d7d",
               border: "1.5px solid rgba(255,255,255,0.4)",
               color: "#fff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              boxShadow: "0 8px 28px rgba(2,48,71,0.65), 0 2px 8px rgba(0,0,0,0.4)",
+              boxShadow: "0 6px 20px rgba(41,61,125,0.4)",
               transition: "opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
               opacity: showBackToTop ? 1 : 0,
               pointerEvents: showBackToTop ? "auto" : "none",
@@ -625,19 +626,19 @@ export function Layout({ children }: { children: ReactNode }) {
             title="Back to top"
             aria-label="Back to top"
           >
-            <ArrowUp size={22} strokeWidth={2.5} />
+            <ArrowUp size={20} strokeWidth={2.5} />
           </button>,
           document.body
         )}
 
         {/* ===== HELP & SUPPORT MODAL ===== */}
         {helpOpen && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(1, 18, 29, 0.6)", backdropFilter: "blur(8px)", padding: "16px" }}>
-            <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: 16, width: "100%", maxWidth: "800px", maxHeight: "90vh", boxShadow: "var(--glass-shadow)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(16, 28, 50, 0.7)", backdropFilter: "blur(8px)", padding: "16px" }}>
+            <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", borderRadius: 12, width: "100%", maxWidth: "800px", maxHeight: "90vh", boxShadow: "var(--glass-shadow)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
               {/* Header */}
               <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--glass-border)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
                 <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}><HelpCircle size={18} style={{ color: "#FB8500" }} /> Help & Support Desk</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--heading)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}><HelpCircle size={18} style={{ color: "#dc137b" }} /> Help & Support Desk</h3>
                   <span style={{ fontSize: 11.5, color: "var(--subtext)" }}>Knowledge base and contact line for {user.role}s</span>
                 </div>
                 <button onClick={() => { setHelpOpen(false); setSubject(""); setMessage(""); setTicketSent(false); }} style={{ background: "none", border: "none", color: "var(--subtext)", cursor: "pointer", fontSize: 18, fontWeight: 700 }}>✕</button>
@@ -653,7 +654,7 @@ export function Layout({ children }: { children: ReactNode }) {
                     <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Frequently Asked Questions</h4>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingRight: 8 }}>
                       {getFaqsForRole(user.role).map((faq, idx) => (
-                        <div key={idx} style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(255,255,255,0.02)", border: "1px solid var(--glass-border)" }}>
+                        <div key={idx} style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(41,61,125,0.03)", border: "1px solid var(--glass-border)" }}>
                           <strong style={{ fontSize: 12, color: "var(--heading)", display: "block", marginBottom: 4 }}>Q: {faq.q}</strong>
                           <span style={{ fontSize: 11.5, color: "var(--subtext)", lineHeight: 1.45 }}>{faq.a}</span>
                         </div>
@@ -665,29 +666,29 @@ export function Layout({ children }: { children: ReactNode }) {
                   <div style={{ borderLeft: "1px solid var(--glass-border)", paddingLeft: 24 }}>
                     <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--heading)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.04em" }}>Contact Support</h4>
                     
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11.5, color: "var(--subtext)", marginBottom: 18, background: "rgba(33,158,188,0.06)", border: "1px solid rgba(33,158,188,0.15)", borderRadius: 10, padding: 12 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11.5, color: "var(--subtext)", marginBottom: 18, background: "rgba(41,61,125,0.05)", border: "1px solid rgba(41,61,125,0.12)", borderRadius: 8, padding: 12 }}>
                       <div>📞 Phone: <strong>{settings?.school_phone || "+234 800 354 7466"}</strong></div>
                       <div>✉ Email: <strong>{settings?.school_email || "support@deeperlifehighschool.org"}</strong></div>
                       <div>📍 Address: <strong>{settings?.school_address || "Deeper Life High School Campus"}</strong></div>
                     </div>
 
                     {ticketSent ? (
-                      <div style={{ padding: "24px 16px", textAlign: "center", background: "rgba(42,157,143,0.08)", border: "1px solid rgba(42,157,143,0.2)", borderRadius: 10 }}>
-                        <div style={{ fontSize: 24, marginBottom: 8, color: "#2a9d8f" }}>✓</div>
-                        <strong style={{ fontSize: 13, color: "#2a9d8f", display: "block", marginBottom: 4 }}>Ticket Sent!</strong>
+                      <div style={{ padding: "24px 16px", textAlign: "center", background: "rgba(41,61,125,0.06)", border: "1px solid rgba(41,61,125,0.2)", borderRadius: 8 }}>
+                        <div style={{ fontSize: 24, marginBottom: 8, color: "#293d7d" }}>✓</div>
+                        <strong style={{ fontSize: 13, color: "#293d7d", display: "block", marginBottom: 4 }}>Ticket Sent!</strong>
                         <span style={{ fontSize: 11.5, color: "var(--subtext)", lineHeight: 1.4 }}>Your message has been sent directly to the administrator. We will get back to you shortly.</span>
                       </div>
                     ) : (
                       <form onSubmit={handleSendSupport} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                         <div>
                           <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", marginBottom: 4, textTransform: "uppercase" }}>Subject</label>
-                          <input type="text" required value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Grade query or report card issue" style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                          <input type="text" required value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. Grade query or report card issue" style={{ width: "100%", padding: "7px 10px", borderRadius: 6, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
                         </div>
                         <div>
                           <label style={{ display: "block", fontSize: 10.5, fontWeight: 700, color: "var(--subtext)", marginBottom: 4, textTransform: "uppercase" }}>Message Description</label>
-                          <textarea required value={message} onChange={e => setMessage(e.target.value)} placeholder="Provide detailed explanation..." rows={4} style={{ width: "100%", padding: "7px 10px", borderRadius: 8, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                          <textarea required value={message} onChange={e => setMessage(e.target.value)} placeholder="Provide detailed explanation..." rows={4} style={{ width: "100%", padding: "7px 10px", borderRadius: 6, background: "var(--muted)", border: "1px solid var(--glass-border)", color: "var(--heading)", fontSize: 12, outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
                         </div>
-                        <button type="submit" disabled={sendingTicket} style={{ width: "100%", padding: "9px", borderRadius: 8, background: "linear-gradient(135deg, #219EBC, #1a8aaa)", border: "none", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(33,158,188,0.25)" }}>
+                        <button type="submit" disabled={sendingTicket} style={{ width: "100%", padding: "10px", borderRadius: 6, background: "#dc137b", border: "none", color: "#fff", fontSize: 12.5, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(220,19,123,0.25)" }}>
                           {sendingTicket ? "Sending..." : "Submit Ticket"}
                         </button>
                       </form>

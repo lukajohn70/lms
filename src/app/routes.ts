@@ -42,6 +42,7 @@ const AdminReports = lazy(() => import("./pages/admin/Reports"));
 const AdminSettings = lazy(() => import("./pages/admin/Settings"));
 const AdminAdmissions = lazy(() => import("./pages/admin/Admissions"));
 const AdminLibrary = lazy(() => import("./pages/admin/Library"));
+const AdminPortalSync = lazy(() => import("./pages/admin/PortalSync"));
 
 
 export const router = createBrowserRouter([
@@ -99,6 +100,7 @@ export const router = createBrowserRouter([
           { path: "cbt", Component: AdminCBT },
           { path: "fees", Component: AdminFees },
           { path: "reports", Component: AdminReports },
+          { path: "portal-sync", Component: AdminPortalSync },
           { path: "settings", Component: AdminSettings },
           { path: "*", Component: NotFound },
         ],

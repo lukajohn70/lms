@@ -16,19 +16,33 @@ type FeeRate = {
 };
 
 const FEE_RATES: FeeRate[] = [
-  { key: "fee_acceptance", label: "Acceptance Fee", description: "One-time admission acceptance fee for new students", defaultVal: "20000", color: "#FB8500", icon: "🎓" },
-  { key: "fee_tuition_nursery", label: "Tuition – Nursery", description: "Per-term school fees for Nursery classes (NUR 1–3)", defaultVal: "75000", color: "#219EBC", icon: "📚" },
-  { key: "fee_tuition_primary", label: "Tuition – Primary", description: "Per-term school fees for Primary classes (PRI 1–6)", defaultVal: "95000", color: "#219EBC", icon: "📚" },
-  { key: "fee_tuition_secondary", label: "Tuition – Secondary", description: "Per-term school fees for Secondary classes (JSS/SS)", defaultVal: "120000", color: "#219EBC", icon: "📚" },
-  { key: "fee_materials_nursery", label: "Materials – Nursery", description: "Books, learning kits and stationery for Nursery students", defaultVal: "18000", color: "#8ECAE6", icon: "📦" },
-  { key: "fee_materials_primary", label: "Materials – Primary", description: "Books, learning kits and stationery for Primary students", defaultVal: "22000", color: "#8ECAE6", icon: "📦" },
-  { key: "fee_materials_secondary", label: "Materials – Secondary", description: "Books, learning kits and stationery for Secondary students", defaultVal: "28000", color: "#8ECAE6", icon: "📦" },
-  { key: "fee_development", label: "Development Levy", description: "Annual school infrastructure and development levy", defaultVal: "15000", color: "#FFB703", icon: "🏗️" },
-  { key: "fee_pta", label: "PTA Dues", description: "Parent-Teacher Association annual membership dues", defaultVal: "5000", color: "#2a9d8f", icon: "🤝" },
-  { key: "fee_exam_waec", label: "WAEC/NECO Fees", description: "External examination fees (for SS3 students)", defaultVal: "45000", color: "#e76f51", icon: "📝" },
-  { key: "fee_uniform", label: "Uniform Fee", description: "School uniform and sports kit package", defaultVal: "12000", color: "#9b5de5", icon: "👕" },
-  { key: "fee_feeding", label: "Feeding (Per Term)", description: "Optional school feeding plan (canteen subscription)", defaultVal: "35000", color: "#f15bb5", icon: "🍽️" },
+  { key: "fee_acceptance", label: "Acceptance Fee", description: "One-time admission acceptance fee for new students", defaultVal: "20000", color: "#dc137b", icon: "acceptance" },
+  { key: "fee_tuition_nursery", label: "Tuition – Nursery", description: "Per-term school fees for Nursery classes (NUR 1–3)", defaultVal: "75000", color: "#293d7d", icon: "tuition" },
+  { key: "fee_tuition_primary", label: "Tuition – Primary", description: "Per-term school fees for Primary classes (PRI 1–6)", defaultVal: "95000", color: "#293d7d", icon: "tuition" },
+  { key: "fee_tuition_secondary", label: "Tuition – Secondary", description: "Per-term school fees for Secondary classes (JSS/SS)", defaultVal: "120000", color: "#293d7d", icon: "tuition" },
+  { key: "fee_materials_nursery", label: "Materials – Nursery", description: "Books, learning kits and stationery for Nursery students", defaultVal: "18000", color: "#0093dd", icon: "materials" },
+  { key: "fee_materials_primary", label: "Materials – Primary", description: "Books, learning kits and stationery for Primary students", defaultVal: "22000", color: "#0093dd", icon: "materials" },
+  { key: "fee_materials_secondary", label: "Materials – Secondary", description: "Books, learning kits and stationery for Secondary students", defaultVal: "28000", color: "#0093dd", icon: "materials" },
+  { key: "fee_development", label: "Development Levy", description: "Annual school infrastructure and development levy", defaultVal: "15000", color: "#d4af37", icon: "development" },
+  { key: "fee_pta", label: "PTA Dues", description: "Parent-Teacher Association annual membership dues", defaultVal: "5000", color: "#293d7d", icon: "pta" },
+  { key: "fee_exam_waec", label: "WAEC/NECO Fees", description: "External examination fees (for SS3 students)", defaultVal: "45000", color: "#dc137b", icon: "exam" },
+  { key: "fee_uniform", label: "Uniform Fee", description: "Official school uniform and house wear package", defaultVal: "12000", color: "#0093dd", icon: "uniform" },
+  { key: "fee_feeding", label: "Boarding Feeding (Per Term)", description: "Standard school dining hall & cafeteria subscription", defaultVal: "35000", color: "#d4af37", icon: "feeding" },
 ];
+
+const renderFeeIcon = (key: string, color: string) => {
+  const iconProps = { size: 16, style: { color } };
+  switch (key) {
+    case "acceptance": return <GraduationCap {...iconProps} />;
+    case "tuition": return <BookOpen {...iconProps} />;
+    case "materials": return <Package {...iconProps} />;
+    case "development": return <Building {...iconProps} />;
+    case "pta": return <UsersIcon {...iconProps} />;
+    case "uniform": return <Shirt {...iconProps} />;
+    case "feeding": return <Coffee {...iconProps} />;
+    default: return <FileText {...iconProps} />;
+  }
+};
 
 const Glass = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
   <div style={{ background: "var(--glass-bg)", border: "1px solid var(--glass-border)", backdropFilter: "blur(20px)", borderRadius: 14, boxShadow: "var(--glass-shadow)", ...style }}>{children}</div>
@@ -142,18 +156,19 @@ export default function Fees() {
   const outstanding = totalExpected - totalCollected;
 
   const sc: Record<string, { c: string; bg: string }> = {
-    paid: { c: "#219EBC", bg: "rgba(33,158,188,0.1)" },
-    partial: { c: "#FFB703", bg: "rgba(255,183,3,0.1)" },
-    pending: { c: "#FB8500", bg: "rgba(251,133,0,0.1)" },
+    paid: { c: "#10b981", bg: "rgba(16,185,129,0.1)" },
+    partial: { c: "#d4af37", bg: "rgba(212,175,55,0.12)" },
+    pending: { c: "#dc137b", bg: "rgba(220,19,123,0.12)" },
   };
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     display: "flex", alignItems: "center", gap: 7,
-    padding: "8px 18px", borderRadius: 9, cursor: "pointer",
-    background: active ? "rgba(33,158,188,0.14)" : "transparent",
-    border: active ? "1px solid rgba(33,158,188,0.4)" : "1px solid transparent",
-    color: active ? "#219EBC" : "var(--subtext)",
-    fontWeight: active ? 700 : 500, fontSize: 13, transition: "all 0.2s"
+    padding: "8px 18px", borderRadius: 8, cursor: "pointer",
+    background: active ? "rgba(41,61,125,0.08)" : "transparent",
+    border: active ? "1px solid #293d7d" : "1px solid transparent",
+    color: active ? "#293d7d" : "var(--subtext)",
+    fontWeight: 800, fontSize: 13, transition: "all 0.15s",
+    fontFamily: "'Raleway', sans-serif"
   });
 
   return (
@@ -161,7 +176,7 @@ export default function Fees() {
       {/* Header */}
       <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <div style={{ fontSize: 11, color: "#FB8500", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>Admin</div>
+          <div style={{ fontSize: 11, color: "#dc137b", textTransform: "uppercase", letterSpacing: "0.07em", fontFamily: "'Raleway', sans-serif", fontWeight: 800, marginBottom: 4 }}>Admin</div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: "var(--heading)", margin: "0 0 4px" }}>
             {activeTab === "ledger" ? "Fee Management" : "Fee Rate Configuration"}
           </h1>
@@ -174,18 +189,18 @@ export default function Fees() {
         {activeTab === "ledger" ? (
           <button onClick={openCreateModal} style={{
             display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10,
-            background: "linear-gradient(135deg, #219EBC, #1a8aaa)", border: "none", cursor: "pointer",
-            fontSize: 12.5, fontWeight: 700, color: "#fff", boxShadow: "0 4px 12px rgba(33,158,188,0.25)"
+            background: "#293d7d", border: "none", cursor: "pointer",
+            fontSize: 12.5, fontWeight: 700, color: "#fff", boxShadow: "0 4px 12px rgba(41,61,125,0.25)"
           }}>
             <Plus size={14} /> Create Invoice
           </button>
         ) : (
           <button onClick={handleSaveRates} disabled={ratesSaving} style={{
             display: "flex", alignItems: "center", gap: 8, padding: "9px 20px", borderRadius: 10,
-            background: ratesSaved ? "rgba(42,157,143,0.15)" : "linear-gradient(135deg, #FB8500, #E76F51)",
-            border: ratesSaved ? "1px solid #2a9d8f" : "none",
-            color: ratesSaved ? "#2a9d8f" : "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
-            boxShadow: ratesSaved ? "none" : "0 4px 16px rgba(251,133,0,0.3)", transition: "all 0.3s"
+            background: ratesSaved ? "rgba(41,61,125,0.08)" : "#dc137b",
+            border: ratesSaved ? "1px solid #293d7d" : "none",
+            color: ratesSaved ? "#293d7d" : "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+            boxShadow: ratesSaved ? "none" : "0 4px 16px rgba(220,19,123,0.25)", transition: "all 0.3s"
           }}>
             {ratesSaved ? <><Check size={14} /> Saved!</> : <><Save size={14} /> {ratesSaving ? "Saving..." : "Save Rates"}</>}
           </button>
@@ -207,9 +222,9 @@ export default function Fees() {
         <>
           <div className="responsive-grid-3">
             {[
-              { l: "Total Collected", v: `₦${totalCollected.toLocaleString()}`, c: "#219EBC", icon: <CheckCircle size={15} /> },
-              { l: "Outstanding Balance", v: `₦${outstanding.toLocaleString()}`, c: "#FB8500", icon: <AlertTriangle size={15} /> },
-              { l: "Collection Rate", v: totalExpected > 0 ? `${Math.round((totalCollected / totalExpected) * 100)}%` : "0%", c: "#FFB703", icon: <CreditCard size={15} /> },
+              { l: "Total Collected", v: `₦${totalCollected.toLocaleString()}`, c: "#293d7d", icon: <CheckCircle size={15} /> },
+              { l: "Outstanding Balance", v: `₦${outstanding.toLocaleString()}`, c: "#dc137b", icon: <AlertTriangle size={15} /> },
+              { l: "Collection Rate", v: totalExpected > 0 ? `${Math.round((totalCollected / totalExpected) * 100)}%` : "0%", c: "#d4af37", icon: <CreditCard size={15} /> },
             ].map(s => (
               <Glass key={s.l} style={{ padding: "16px 20px" }}>
                 <div style={{ width: 28, height: 28, borderRadius: 8, background: `${s.c}18`, display: "flex", alignItems: "center", justifyContent: "center", color: s.c, marginBottom: 10 }}>{s.icon}</div>
@@ -252,7 +267,7 @@ export default function Fees() {
                       style={{ width: "100%", padding: "8px 12px", borderRadius: 8, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 13, color: "var(--heading)", outline: "none" }} required />
                   </div>
                   <button type="submit" disabled={createLoading}
-                    style={{ width: "100%", marginTop: 8, padding: "10px", borderRadius: 8, background: "linear-gradient(135deg,#219EBC,#1a8aaa)", color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>
+                    style={{ width: "100%", marginTop: 8, padding: "10px", borderRadius: 8, background: "#293d7d", color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700 }}>
                     {createLoading ? "Creating..." : "Generate Invoice"}
                   </button>
                 </form>
@@ -270,9 +285,9 @@ export default function Fees() {
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {["all", "paid", "partial", "pending"].map(f => (
                   <button key={f} onClick={() => setFilter(f)} style={{
-                    padding: "5px 12px", borderRadius: 7, border: `1px solid ${filter === f ? "#219EBC" : "var(--glass-border)"}`,
-                    background: filter === f ? "rgba(33,158,188,0.12)" : "var(--muted)", cursor: "pointer", fontSize: 11.5,
-                    color: filter === f ? "#219EBC" : "var(--subtext)", fontWeight: filter === f ? 700 : 400, textTransform: "capitalize"
+                    padding: "5px 12px", borderRadius: 7, border: `1px solid ${filter === f ? "#293d7d" : "var(--glass-border)"}`,
+                    background: filter === f ? "rgba(41,61,125,0.08)" : "var(--muted)", cursor: "pointer", fontSize: 11.5,
+                    color: filter === f ? "#293d7d" : "var(--subtext)", fontWeight: filter === f ? 700 : 400, textTransform: "capitalize"
                   }}>{f}</button>
                 ))}
               </div>
@@ -292,7 +307,7 @@ export default function Fees() {
                 return (
                   <div key={f.id} style={{ padding: "14px 18px", borderBottom: "1px solid var(--glass-border)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(33,158,188,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#219EBC", flexShrink: 0 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(41,61,125,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#293d7d", flexShrink: 0 }}>
                         {f.student.split(" ").map(w => w[0]).join("")}
                       </div>
                       <div style={{ flex: "1 1 180px", minWidth: 160 }}>
@@ -303,7 +318,7 @@ export default function Fees() {
                         <div style={{ fontSize: 10.5, color: "var(--subtext)" }}>{f.class} · {f.description} · ₦{f.paid.toLocaleString()} paid of ₦{f.total.toLocaleString()}</div>
                       </div>
                       <div style={{ textAlign: "right", marginLeft: "auto", flexShrink: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: balance > 0 ? "#FB8500" : "#219EBC" }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: balance > 0 ? "#dc137b" : "#10b981" }}>
                           {balance > 0 ? `₦${balance.toLocaleString()} balance` : "CLEARED"}
                         </div>
                         <div style={{ fontSize: 10, color: "var(--subtext)" }}>{pct}% paid</div>
@@ -318,11 +333,11 @@ export default function Fees() {
                           <div style={{ display: "flex", gap: 6 }}>
                             <input type="number" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)}
                               style={{ width: 120, padding: "5px 9px", borderRadius: 7, border: "1px solid var(--glass-border)", background: "var(--muted)", fontSize: 12, color: "var(--heading)", outline: "none" }} />
-                            <button onClick={() => recordPayment(f.id)} style={{ padding: "5px 12px", borderRadius: 7, background: "#219EBC", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "#fff" }}>Record</button>
+                            <button onClick={() => recordPayment(f.id)} style={{ padding: "5px 12px", borderRadius: 7, background: "#293d7d", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#fff" }}>Record</button>
                             <button onClick={() => setRecording(null)} style={{ padding: "5px 9px", borderRadius: 7, background: "var(--muted)", border: "1px solid var(--glass-border)", cursor: "pointer", fontSize: 12, color: "var(--subtext)" }}>✕</button>
                           </div>
                         ) : (
-                          <button onClick={() => setRecording(f.id)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 7, background: "rgba(251,133,0,0.1)", border: "1px solid rgba(251,133,0,0.2)", cursor: "pointer", fontSize: 11.5, color: "#FB8500", fontWeight: 600 }}>
+                          <button onClick={() => setRecording(f.id)} style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 7, background: "rgba(220,19,123,0.08)", border: "1px solid rgba(220,19,123,0.2)", cursor: "pointer", fontSize: 11.5, color: "#dc137b", fontWeight: 600 }}>
                             <CreditCard size={12} /> Record Payment
                           </button>
                         )
@@ -340,8 +355,8 @@ export default function Fees() {
       {activeTab === "rates" && (
         <>
           {/* Info Banner */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 16px", borderRadius: 10, background: "rgba(33,158,188,0.07)", border: "1px solid rgba(33,158,188,0.2)", marginBottom: 20 }}>
-            <Info size={16} style={{ color: "#219EBC", flexShrink: 0, marginTop: 1 }} />
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 16px", borderRadius: 10, background: "rgba(41,61,125,0.04)", border: "1px solid rgba(41,61,125,0.15)", marginBottom: 20 }}>
+            <Info size={16} style={{ color: "#293d7d", flexShrink: 0, marginTop: 1 }} />
             <div style={{ fontSize: 12.5, color: "var(--subtext)", lineHeight: 1.55 }}>
               <strong style={{ color: "var(--heading)" }}>Fee Rate Configuration:</strong> These rates are used as defaults when auto-generating invoices for newly enrolled students. Changes take effect for <em>future</em> invoices only — existing invoices are not retroactively updated.
             </div>
@@ -354,7 +369,7 @@ export default function Fees() {
               {FEE_RATES.map(rate => (
                 <Glass key={rate.key} style={{ padding: "18px 20px" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
-                    <div style={{ fontSize: 22 }}>{rate.icon}</div>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: `${rate.color}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>{renderFeeIcon(rate.icon, rate.color)}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--heading)" }}>{rate.label}</div>
                       <div style={{ fontSize: 11.5, color: "var(--subtext)", marginTop: 2, lineHeight: 1.5 }}>{rate.description}</div>
@@ -372,7 +387,7 @@ export default function Fees() {
                         background: `${rate.color}09`,
                         color: "var(--heading)", fontSize: 14, fontWeight: 700,
                         outline: "none", boxSizing: "border-box",
-                        fontFamily: "'Poppins', sans-serif"
+                        fontFamily: "'Lato', sans-serif"
                       }}
                       min="0"
                       step="500"
@@ -403,10 +418,10 @@ export default function Fees() {
                 </div>
                 <button onClick={handleSaveRates} disabled={ratesSaving} style={{
                   display: "flex", alignItems: "center", gap: 8, padding: "10px 22px", borderRadius: 10,
-                  background: ratesSaved ? "rgba(42,157,143,0.15)" : "linear-gradient(135deg, #FB8500, #E76F51)",
-                  border: ratesSaved ? "1px solid #2a9d8f" : "none",
-                  color: ratesSaved ? "#2a9d8f" : "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
-                  boxShadow: ratesSaved ? "none" : "0 4px 12px rgba(251,133,0,0.3)", transition: "all 0.3s"
+                  background: ratesSaved ? "rgba(41,61,125,0.08)" : "#dc137b",
+                  border: ratesSaved ? "1px solid #293d7d" : "none",
+                  color: ratesSaved ? "#293d7d" : "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  boxShadow: ratesSaved ? "none" : "0 4px 12px rgba(220,19,123,0.25)", transition: "all 0.3s"
                 }}>
                   {ratesSaved ? <><Check size={14} /> Saved!</> : <><Save size={14} /> {ratesSaving ? "Saving..." : "Save All Rates"}</>}
                 </button>

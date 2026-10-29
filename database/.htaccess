@@ -1,8 +1,15 @@
 # Block all direct HTTP access to database migration, schema and seed files
 <IfModule mod_authz_core.c>
     Require all denied
+    <FilesMatch "^(import_portal_full\.php|import_portal_results\.php)$">
+        Require all granted
+    </FilesMatch>
 </IfModule>
 <IfModule !mod_authz_core.c>
     Order Deny,Allow
     Deny from all
+    <FilesMatch "^(import_portal_full\.php|import_portal_results\.php)$">
+        Allow from all
+    </FilesMatch>
 </IfModule>
+
