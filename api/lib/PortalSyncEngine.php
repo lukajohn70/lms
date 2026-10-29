@@ -87,6 +87,23 @@ class PortalSyncEngine {
         @file_put_contents($this->logFile, $entry . PHP_EOL, FILE_APPEND);
     }
 
+    private function isCancelled(): bool {
+        $cancelFile = $this->statusFile . '.cancel';
+        if (file_exists($cancelFile)) {
+            return true;
+        }
+        if (file_exists($this->statusFile)) {
+            $content = @file_get_contents($this->statusFile);
+            if ($content) {
+                $decoded = json_decode($content, true);
+                if (is_array($decoded) && isset($decoded['state']) && ($decoded['state'] === 'cancelled' || $decoded['state'] === 'stopped')) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private function updateStatus(float $progress, string $step, string $state = 'running'): void {
         $payload = [
             'is_syncing'         => ($state === 'running' || $state === 'starting'),
@@ -330,6 +347,18 @@ class PortalSyncEngine {
                 $this->log("--- Processing {$sessionName} • {$termName} ---");
 
                 foreach ($this->classes as $portalCid => $className) {
+                    if ($this->isCancelled()) {
+                        $this->log("🛑 Sync execution stopped by administrator.", "WARN");
+                        $this->updateStatus($progress ?? 0, "Synchronization stopped by administrator.", "cancelled");
+                        $cancelFile = $this->statusFile . '.cancel';
+                        if (file_exists($cancelFile)) @unlink($cancelFile);
+                        return [
+                            'success'       => false,
+                            'message'       => 'Synchronization stopped by administrator.',
+                            'scores_synced' => $this->scoresSynced
+                        ];
+                    }
+
                     $completedSteps++;
                     $progress = 10 + ($completedSteps / max(1, $totalSteps)) * 85;
                     $this->updateStatus($progress, "Syncing {$className} ({$termName})...");

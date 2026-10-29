@@ -91,6 +91,16 @@ export default function PortalSync() {
   // Toast / feedback message
   const [toast, setToast] = useState<{ type: "success" | "error" | "info"; msg: string } | null>(null);
 
+  // Auto-dismiss toast notification after 4.5 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
   const consoleEndRef = useRef<HTMLDivElement>(null);
 
   // Initial Fetch & Auto-Polling
@@ -156,6 +166,15 @@ export default function PortalSync() {
   };
 
   const handleStartSync = async () => {
+    // Instantly switch UI to syncing state and reveal the "Stop Sync Execution" button
+    setSyncStatus((prev: any) => ({
+      ...prev,
+      is_syncing: true,
+      state: "running",
+      progress: Math.max(prev.progress || 0, 4),
+      step: "Initiating portal sync with dlhsportal.org...",
+    }));
+
     try {
       const res: any = await apiClient.post<any>("/admin/portal-sync/trigger", {
         session: sessionTarget,
@@ -168,21 +187,30 @@ export default function PortalSync() {
         sync_allocations: syncAllocations,
       });
       const data = res?.message ? res : (res?.data || {});
-      setToast({ type: "success", msg: data.message || "Portal synchronization started in background!" });
+      setToast({ type: "success", msg: data.message || "Portal synchronization running!" });
       fetchStatus();
     } catch (err: any) {
       setToast({ type: "error", msg: err.message || "Failed to initiate sync." });
+      setSyncStatus((prev: any) => ({
+        ...prev,
+        is_syncing: false,
+        state: "failed",
+      }));
     }
   };
 
   const handleCancelSync = async () => {
     if (!confirm("Are you sure you want to stop the ongoing synchronization?")) return;
     try {
+      setSyncStatus((prev: any) => ({
+        ...prev,
+        step: "Stopping synchronization process...",
+      }));
       await apiClient.post("/admin/portal-sync/cancel");
-      setToast({ type: "info", msg: "Synchronization cancelled." });
+      setToast({ type: "info", msg: "Synchronization stopped." });
       fetchStatus();
     } catch (err: any) {
-      setToast({ type: "error", msg: "Failed to cancel sync." });
+      setToast({ type: "error", msg: "Failed to stop sync." });
     }
   };
 
@@ -565,11 +593,14 @@ export default function PortalSync() {
                     fontSize: 13,
                     border: "none",
                     cursor: "pointer",
-                    boxShadow: "0 4px 14px rgba(220,38,38,0.35)",
+                    boxShadow: "0 4px 14px rgba(220,38,38,0.45)",
+                    transition: "transform 0.15s ease",
                   }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
                 >
                   <Square size={16} fill="#fff" />
-                  Stop Sync
+                  Stop Sync Execution
                 </button>
               )}
 

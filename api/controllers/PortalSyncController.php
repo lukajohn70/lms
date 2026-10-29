@@ -54,7 +54,6 @@ class PortalSyncController {
         Auth::requireRole(['admin']);
         header('Content-Type: application/json');
 
-        $isRunning = $this->isProcessRunning();
         $statusData = null;
 
         if (file_exists($this->statusFile)) {
@@ -82,12 +81,21 @@ class PortalSyncController {
             ];
         }
 
-        // Reconcile process state
-        if (!$isRunning && ($statusData['state'] === 'running' || $statusData['state'] === 'starting')) {
+        // Reconcile sync state based on timestamp activity
+        if ($statusData['state'] === 'running' || $statusData['state'] === 'starting') {
+            $updatedAt = isset($statusData['updated_at']) ? strtotime($statusData['updated_at']) : 0;
+            // If status hasn't updated in over 180 seconds, assume process died or timed out
+            if ($updatedAt > 0 && (time() - $updatedAt) > 180) {
+                $statusData['is_syncing'] = false;
+                $statusData['state'] = 'completed';
+                $statusData['progress'] = 100;
+                $statusData['step'] = 'Sync completed (or idle timeout reached).';
+                @file_put_contents($this->statusFile, json_encode($statusData, JSON_PRETTY_PRINT));
+            } else {
+                $statusData['is_syncing'] = true;
+            }
+        } else {
             $statusData['is_syncing'] = false;
-            $statusData['state'] = 'completed';
-            $statusData['progress'] = 100;
-            $statusData['step'] = 'Sync finished.';
         }
 
         // Fetch live database statistics safely
@@ -225,8 +233,17 @@ class PortalSyncController {
             $scopeArr = ['ca_scores', 'broadsheet', 'assessments', 'photos', 'allocations'];
         }
 
+        // Clear any old cancel flag
+        $cancelFile = $this->statusFile . '.cancel';
+        if (file_exists($cancelFile)) {
+            @unlink($cancelFile);
+        }
+
         require_once __DIR__ . '/../lib/PortalSyncEngine.php';
         $engine = new PortalSyncEngine($this->conn, $this->statusFile, $this->logFile);
+
+        ignore_user_abort(true);
+        set_time_limit(600);
 
         // If fastcgi_finish_request is supported, flush response to browser and run worker in background
         if (function_exists('fastcgi_finish_request')) {
@@ -238,9 +255,21 @@ class PortalSyncController {
             $engine->runSync($session, $term, $scopeArr);
             exit;
         } else {
-            // Direct synchronous execution
-            $res = $engine->runSync($session, $term, $scopeArr);
-            echo json_encode($res);
+            // Detach response to browser and run in background
+            ob_start();
+            echo json_encode([
+                'success' => true,
+                'message' => 'Portal synchronization started in background.'
+            ]);
+            $size = ob_get_length();
+            header("Content-Encoding: none");
+            header("Content-Length: {$size}");
+            header("Connection: close");
+            ob_end_flush();
+            @ob_flush();
+            flush();
+
+            $engine->runSync($session, $term, $scopeArr);
             exit;
         }
     }
@@ -252,19 +281,15 @@ class PortalSyncController {
         Auth::requireRole(['admin']);
         header('Content-Type: application/json');
 
-        // Kill running process safely
-        if (function_exists('exec')) {
-            $disabled = array_map('trim', explode(',', ini_get('disable_functions') ?: ''));
-            if (!in_array('exec', $disabled)) {
-                @exec("pkill -f 'run_portal_sync.py'");
-            }
-        }
+        // Write cancel flag file
+        $cancelFile = $this->statusFile . '.cancel';
+        @touch($cancelFile);
 
         if (file_exists($this->statusFile)) {
             $status = json_decode(@file_get_contents($this->statusFile), true) ?: [];
             $status['is_syncing'] = false;
             $status['state'] = 'cancelled';
-            $status['step'] = 'Synchronization cancelled by administrator.';
+            $status['step'] = 'Synchronization stopped by administrator.';
             @file_put_contents($this->statusFile, json_encode($status, JSON_PRETTY_PRINT));
         }
 
