@@ -1,6 +1,7 @@
 <?php
-require_once 'config/Database.php';
-require_once 'lib/Auth.php';
+require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../lib/Auth.php';
+require_once __DIR__ . '/../lib/TenantContext.php';
 
 class AdmissionController {
     private $conn;
@@ -70,19 +71,21 @@ class AdmissionController {
             }
         }
 
+        $tenantId = TenantContext::getTenantId();
         $query = "INSERT INTO admissions (
             application_number, parent_first_name, parent_last_name, parent_email, parent_phone, 
             parent_address, parent_occupation, parent_relationship, child_first_name, child_last_name, 
             child_dob, child_gender, grade_level, previous_school, previous_grade, 
-            payment_status, payment_reference, status, exam_type, exam_date, exam_venue, exam_seat_number, parent_id, passport_path
+            payment_status, payment_reference, status, exam_type, exam_date, exam_venue, exam_seat_number, parent_id, passport_path, tenant_id
         ) VALUES (
             :application_number, :parent_first_name, :parent_last_name, :parent_email, :parent_phone, 
             :parent_address, :parent_occupation, :parent_relationship, :child_first_name, :child_last_name, 
             :child_dob, :child_gender, :grade_level, :previous_school, :previous_grade, 
-            'paid', :payment_reference, 'exam_scheduled', 'entrance', :exam_date, :exam_venue, :exam_seat_number, :parent_id, :passport_path
+            'paid', :payment_reference, 'exam_scheduled', 'entrance', :exam_date, :exam_venue, :exam_seat_number, :parent_id, :passport_path, :tenant_id
         )";
 
         $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':tenant_id', $tenantId);
 
         $stmt->bindParam(':application_number', $appNumber);
         $stmt->bindParam(':parent_first_name', $data->parent_first_name);
@@ -390,10 +393,7 @@ class AdmissionController {
         }
 
         // Autogenerate admission number reflecting school name
-        $sStmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'school_name' LIMIT 1");
-        $sStmt->execute();
-        $sName = $sStmt->fetchColumn();
-        $schoolName = $sName ? $sName : "Deeper Life High School";
+        $schoolName = TenantContext::getSetting('school_name', 'Deeper Life High School');
         
         $words = explode(" ", preg_replace("/[^a-zA-Z ]/", "", $schoolName));
         $prefix = "";

@@ -21,6 +21,9 @@ class Router {
     public function delete($path, $action) { $this->addRoute('DELETE', $path, $action); }
 
     public function dispatch($requestMethod, $requestUri) {
+        if ($requestMethod === 'HEAD') {
+            $requestMethod = 'GET';
+        }
         // Check query parameter ?path= first if provided
         if (!empty($_GET['path'])) {
             $uri = $_GET['path'];

@@ -37,7 +37,7 @@ function StatCounter({ target, suffix, label }: { target: number; suffix: string
 
 export default function RoleSelect() {
   const navigate = useNavigate();
-  const { login, theme, toggleTheme } = useApp();
+  const { login, theme, toggleTheme, currentTenant, allTenants, switchTenant } = useApp();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,10 +89,14 @@ export default function RoleSelect() {
           <div style={{ position: "relative", zIndex: 1 }}>
             {/* Logo on left panel */}
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
-              <img src="/logo.png" alt="Deeper Life High School" style={{ width: 56, height: 56, borderRadius: 12, boxShadow: "0 6px 20px rgba(0,0,0,0.3)", objectFit: "contain" }} />
+              <img src={currentTenant?.logo_url ? `/${currentTenant.logo_url}` : "/logo.png"} alt={currentTenant?.name || "School"} style={{ width: 56, height: 56, borderRadius: 12, boxShadow: "0 6px 20px rgba(0,0,0,0.3)", objectFit: "contain" }} />
               <div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#ffffff", fontFamily: "'Raleway', sans-serif" }}>Deeper Life High School</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#d4af37", textTransform: "uppercase", letterSpacing: "1px" }}>Leadership with Distinction</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#ffffff", fontFamily: "'Raleway', sans-serif" }}>
+                  {currentTenant?.name || "School Portal"}
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#d4af37", textTransform: "uppercase", letterSpacing: "1px" }}>
+                  {currentTenant?.motto || "Leadership with Distinction"}
+                </div>
               </div>
             </div>
 
@@ -146,13 +150,43 @@ export default function RoleSelect() {
           </button>
 
           <div style={{ width: "100%", maxWidth: "420px" }}>
+            {/* Institution Switcher (Multi-Tenant SaaS) */}
+            {allTenants && allTenants.length > 1 && (
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: theme === "dark" ? "#94a3b8" : "#64748b", marginBottom: 6 }}>
+                  Select Institution
+                </label>
+                <select
+                  value={currentTenant?.slug || ""}
+                  onChange={(e) => switchTenant(e.target.value)}
+                  style={{
+                    width: "100%", padding: "10px 12px", borderRadius: 10,
+                    background: theme === "dark" ? "rgba(191,209,255,0.06)" : "#ffffff",
+                    color: theme === "dark" ? "#f8fafc" : "#16234b",
+                    border: `1.5px solid ${theme === "dark" ? "rgba(191,209,255,0.18)" : "#cbd5e1"}`,
+                    fontSize: 13, fontWeight: 700, outline: "none", cursor: "pointer"
+                  }}
+                >
+                  {allTenants.map((t) => (
+                    <option key={t.id} value={t.slug} style={{ color: "#000" }}>
+                      {t.name} ({t.campus || t.acronym})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Logo + heading */}
-            <div style={{ marginBottom: 32 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-                <img src="/logo.png" alt="Deeper Life High School" style={{ width: 48, height: 48, borderRadius: 10, objectFit: "contain" }} />
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <img src={currentTenant?.logo_url ? `/${currentTenant.logo_url}` : "/logo.png"} alt={currentTenant?.name || "School"} style={{ width: 48, height: 48, borderRadius: 10, objectFit: "contain" }} />
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: theme === "dark" ? "#f8fafc" : "#16234b", fontFamily: "'Raleway', sans-serif" }}>Deeper Life High School</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#dc137b", textTransform: "uppercase", letterSpacing: "0.5px" }}>Kaduna Campus</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: theme === "dark" ? "#f8fafc" : "#16234b", fontFamily: "'Raleway', sans-serif" }}>
+                    {currentTenant?.name || "School Portal"}
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#dc137b", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    {currentTenant?.campus || "Academic Portal"}
+                  </div>
                 </div>
               </div>
               <h1 style={{ fontSize: 25, fontWeight: 900, color: theme === "dark" ? "#f8fafc" : "#16234b", margin: "0 0 6px", fontFamily: "'Raleway', sans-serif" }}>

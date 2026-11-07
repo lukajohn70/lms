@@ -1,6 +1,7 @@
 <?php
-require_once 'config/Database.php';
-require_once 'lib/Auth.php';
+require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../lib/Auth.php';
+require_once __DIR__ . '/../lib/TenantContext.php';
 
 class BroadsheetController {
     private $conn;
@@ -11,10 +12,7 @@ class BroadsheetController {
     }
 
     private function getSetting($key, $default = "") {
-        $stmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = :k LIMIT 1");
-        $stmt->execute([':k' => $key]);
-        $val = $stmt->fetchColumn();
-        return $val !== false ? $val : $default;
+        return TenantContext::getSetting($key, $default);
     }
 
     private function normalizeTerm($raw) {

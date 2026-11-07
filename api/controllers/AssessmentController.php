@@ -1,6 +1,7 @@
 <?php
-require_once 'config/Database.php';
-require_once 'lib/Auth.php';
+require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../lib/Auth.php';
+require_once __DIR__ . '/../lib/TenantContext.php';
 
 class AssessmentController {
     private $conn;
@@ -11,10 +12,7 @@ class AssessmentController {
     }
 
     private function getSetting($key, $default = "") {
-        $stmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = :k LIMIT 1");
-        $stmt->execute([':k' => $key]);
-        $val = $stmt->fetchColumn();
-        return $val !== false ? $val : $default;
+        return TenantContext::getSetting($key, $default);
     }
 
     private function resolveImageSrc($relPath, $apiBase) {
@@ -2533,10 +2531,10 @@ foreach ($studentIds as $sid):
             <circle cx="70" cy="70" r="44" fill="none" stroke="#1e3a8a" stroke-width="1.2" />
             <!-- Curved Text along circle -->
             <text fill="#1e3a8a" font-size="8" font-weight="900" letter-spacing="1.1">
-              <textPath href="#stampCircleTop" startOffset="50%" text-anchor="middle">DEEPER LIFE HIGH SCHOOL</textPath>
+              <textPath href="#stampCircleTop" startOffset="50%" text-anchor="middle"><?= strtoupper(htmlspecialchars($schoolName)) ?></textPath>
             </text>
             <text fill="#1e3a8a" font-size="8.5" font-weight="900" letter-spacing="1.4">
-              <textPath href="#stampCircleBottom" startOffset="50%" text-anchor="middle">★ KADUNA CAMPUS ★</textPath>
+              <textPath href="#stampCircleBottom" startOffset="50%" text-anchor="middle">★ <?= strtoupper(htmlspecialchars($schoolCampus ?: 'OFFICIAL CAMPUS')) ?> ★</textPath>
             </text>
             <!-- Center Seal Content -->
             <text x="70" y="59" text-anchor="middle" fill="#1e3a8a" font-size="7" font-weight="800" letter-spacing="0.5">OFFICIAL</text>

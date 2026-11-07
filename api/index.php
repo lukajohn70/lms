@@ -27,7 +27,7 @@ if ($appEnv === 'development') {
 header("Access-Control-Allow-Origin: {$originToSend}");
 header("Vary: Origin");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Tenant-ID, X-Tenant-Slug, X-School-Slug");
 header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -37,7 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-
+require_once 'lib/TenantContext.php';
+require_once 'controllers/TenantController.php';
 require_once 'controllers/MaterialController.php';
 require_once 'controllers/AdmissionController.php';
 require_once 'controllers/DashboardController.php';
@@ -113,6 +114,13 @@ $router->post('/teacher/form-class/set-term-days', 'FormTeacherController@setBul
 // System Settings
 $router->get('/admin/settings', 'SettingController@getSettings');
 $router->post('/admin/settings/save', 'SettingController@saveSettings');
+
+// Multi-Tenant SaaS School Management
+$router->get('/tenants', 'TenantController@index');
+$router->get('/tenants/current', 'TenantController@current');
+$router->post('/admin/tenants/create', 'TenantController@create');
+$router->post('/admin/tenants/update', 'TenantController@update');
+$router->get('/admin/tenants/stats', 'TenantController@stats');
 
 // DLHS Portal Synchronization & Data Import
 $router->get('/admin/portal-sync/status', 'PortalSyncController@getStatus');

@@ -15,12 +15,14 @@ function computeApiBaseUrl(): string {
 
 export const API_BASE_URL = computeApiBaseUrl();
 
-/** Build auth headers — token travels ONLY in the Authorization header, never in the URL. */
+/** Build auth & multi-tenant headers */
 function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+  const tenantSlug = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_slug') : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    ...(tenantSlug ? { 'X-Tenant-Slug': tenantSlug } : {}),
     ...extra,
   };
 }
@@ -72,11 +74,13 @@ export const apiClient = {
   // For multipart/form-data uploads (files, avatars, CSV imports)
   postForm: async (endpoint: string, formData: FormData) => {
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+    const tenantSlug = typeof localStorage !== 'undefined' ? localStorage.getItem('tenant_slug') : null;
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
         // Do NOT set Content-Type — browser sets it with boundary automatically
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...(tenantSlug ? { 'X-Tenant-Slug': tenantSlug } : {}),
       },
       body: formData,
     });

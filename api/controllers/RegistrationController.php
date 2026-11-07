@@ -1,6 +1,7 @@
 <?php
-require_once 'config/Database.php';
-require_once 'lib/Auth.php';
+require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../lib/Auth.php';
+require_once __DIR__ . '/../lib/TenantContext.php';
 
 class RegistrationController {
     private $conn;
@@ -75,10 +76,7 @@ class RegistrationController {
             $passwordHash = password_hash($defaultPassword, PASSWORD_BCRYPT);
 
             // Get school name for prefix
-            $sStmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'school_name' LIMIT 1");
-            $sStmt->execute();
-            $sName = $sStmt->fetchColumn();
-            $schoolName = $sName ? $sName : "Deeper Life High School";
+            $schoolName = TenantContext::getSetting('school_name', 'Deeper Life High School');
             
             $words = explode(" ", preg_replace("/[^a-zA-Z ]/", "", $schoolName));
             $prefix = "";
@@ -92,13 +90,15 @@ class RegistrationController {
             $year = date('Y');
             $admNumber = $prefix . "/" . $year . "/" . str_pad($data->registration_id, 4, '0', STR_PAD_LEFT);
 
-            $userQuery = "INSERT INTO users (email, password_hash, role, first_name, last_name, admission_number) VALUES (:email, :password_hash, 'student', :first_name, :last_name, :adm_num)";
+            $tenantId = TenantContext::getTenantId();
+            $userQuery = "INSERT INTO users (email, password_hash, role, first_name, last_name, admission_number, tenant_id) VALUES (:email, :password_hash, 'student', :first_name, :last_name, :adm_num, :tenant_id)";
             $userStmt = $this->conn->prepare($userQuery);
             $userStmt->bindParam(':email', $studentEmail);
             $userStmt->bindParam(':password_hash', $passwordHash);
             $userStmt->bindParam(':first_name', $registration['child_first_name']);
             $userStmt->bindParam(':last_name', $registration['child_last_name']);
             $userStmt->bindParam(':adm_num', $admNumber);
+            $userStmt->bindParam(':tenant_id', $tenantId);
             $userStmt->execute();
             
             $studentId = $this->conn->lastInsertId();

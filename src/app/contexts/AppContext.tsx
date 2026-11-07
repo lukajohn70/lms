@@ -1,6 +1,27 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { apiClient } from "../lib/apiClient";
 
+export interface TenantInfo {
+  id: number;
+  uuid: string;
+  name: string;
+  slug: string;
+  acronym: string;
+  subdomain?: string | null;
+  campus?: string | null;
+  motto?: string | null;
+  vision?: string | null;
+  address?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  principal_name?: string | null;
+  logo_url?: string | null;
+  theme_primary?: string;
+  theme_secondary?: string;
+  theme_accent?: string;
+  is_default?: boolean | number;
+}
+
 export type Role = "student" | "teacher" | "admin" | "parent";
 
 export interface AppUser {
@@ -25,6 +46,9 @@ interface AppContextType {
   settings: Record<string, string> | null;
   updateSettings: (newSettings: Record<string, string>) => void;
   updateUser: (userData: Partial<AppUser>) => void;
+  currentTenant: TenantInfo | null;
+  allTenants: TenantInfo[];
+  switchTenant: (slug: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -38,6 +62,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<Record<string, string> | null>(null);
+  const [currentTenant, setCurrentTenant] = useState<TenantInfo | null>(null);
+  const [allTenants, setAllTenants] = useState<TenantInfo[]>([]);
+
+  // Load Tenants & Settings on boot
+  useEffect(() => {
+    apiClient.get("/tenants")
+      .then((res: any) => {
+        if (res && res.success) {
+          setAllTenants(res.tenants || []);
+          setCurrentTenant(res.current || null);
+          if (res.current?.theme_primary) {
+            document.documentElement.style.setProperty('--tenant-primary', res.current.theme_primary);
+          }
+        }
+      })
+      .catch(err => console.warn("Could not load tenants", err));
+  }, []);
+
+  const switchTenant = async (slug: string) => {
+    localStorage.setItem("tenant_slug", slug);
+    try {
+      const res = await apiClient.get("/tenants/current");
+      if (res && res.success) {
+        setCurrentTenant(res.tenant);
+        if (res.tenant?.theme_primary) {
+          document.documentElement.style.setProperty('--tenant-primary', res.tenant.theme_primary);
+        }
+      }
+      const sRes = await apiClient.get("/admin/settings");
+      if (sRes && sRes.success) {
+        setSettings(sRes.settings);
+      }
+    } catch (e) {
+      console.error("Failed to switch tenant", e);
+    }
+  };
 
   useEffect(() => {
     const root = document.documentElement;
@@ -110,7 +170,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AppContext.Provider value={{ theme, toggleTheme, user, isLoggedIn, login, logout, settings, updateSettings, updateUser }}>
+    <AppContext.Provider value={{ theme, toggleTheme, user, isLoggedIn, login, logout, settings, updateSettings, updateUser, currentTenant, allTenants, switchTenant }}>
       {children}
     </AppContext.Provider>
   );

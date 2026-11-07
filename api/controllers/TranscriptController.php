@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/Database.php';
 require_once __DIR__ . '/../lib/Auth.php';
+require_once __DIR__ . '/../lib/TenantContext.php';
 
 class TranscriptController {
     private $conn;
@@ -11,10 +12,7 @@ class TranscriptController {
     }
 
     private function getSetting($key, $default = "") {
-        $stmt = $this->conn->prepare("SELECT setting_value FROM system_settings WHERE setting_key = :k LIMIT 1");
-        $stmt->execute([':k' => $key]);
-        $val = $stmt->fetchColumn();
-        return $val !== false ? $val : $default;
+        return TenantContext::getSetting($key, $default);
     }
 
     /**
@@ -713,7 +711,7 @@ class TranscriptController {
             <?php else: ?>
               <div class="badge-icon">✕</div>
               <h1 class="status-title">Verification Failed</h1>
-              <div class="school-label">Deeper Life High School Official Registry</div>
+              <div class="school-label"><?= htmlspecialchars($this->getSetting('school_name', 'Official School Registry')) ?> Official Registry</div>
               <p style="color: #cbd5e1; font-size: 14px; margin-bottom: 20px; line-height: 1.6;">
                 <?= htmlspecialchars($message) ?>
               </p>
@@ -723,7 +721,7 @@ class TranscriptController {
             <?php endif; ?>
 
             <div class="seal-note">
-              Official Electronic Verification Service • Deeper Life High School Examination Board
+              Official Electronic Verification Service • <?= htmlspecialchars($this->getSetting('school_name', 'Official Examination Board')) ?> Examination Board
             </div>
           </div>
         </body>
@@ -1454,7 +1452,7 @@ body {
 
     <!-- Tamper Evident Notice -->
     <div class="security-note">
-      <strong>OFFICIAL SECURITY DECLARATION:</strong> This academic transcript is issued by Deeper Life High School without alteration or erasure. 
+      <strong>OFFICIAL SECURITY DECLARATION:</strong> This academic transcript is issued by <?= htmlspecialchars($schoolName) ?> without alteration or erasure. 
       Any addition, falsification, or unauthorized duplication invalidates this document. Electronic authenticity can be verified online at 
       <code><?= htmlspecialchars($ver['verification_url']) ?></code>
     </div>

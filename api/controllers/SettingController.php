@@ -1,6 +1,7 @@
 <?php
-require_once 'config/Database.php';
-require_once 'lib/Auth.php';
+require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../lib/Auth.php';
+require_once __DIR__ . '/../lib/TenantContext.php';
 
 class SettingController {
     private $conn;
@@ -10,12 +11,16 @@ class SettingController {
         $this->conn = $db->getConnection();
     }
 
-    // Get all system settings
+    // Get all system settings scoped to current tenant
     public function getSettings() {
         Auth::authenticate(); // Any authenticated user can read settings
+        $tenant = TenantContext::getTenant();
+        $tenantId = TenantContext::getTenantId();
 
         try {
-            $stmt = $this->conn->query("SELECT setting_key, setting_value FROM system_settings");
+            // First load baseline settings
+            $stmt = $this->conn->prepare("SELECT setting_key, setting_value FROM system_settings WHERE tenant_id = 1 OR tenant_id IS NULL");
+            $stmt->execute();
             $rows = $stmt->fetchAll();
 
             $settings = [];
@@ -23,7 +28,32 @@ class SettingController {
                 $settings[$row['setting_key']] = $row['setting_value'];
             }
 
-            echo json_encode(["success" => true, "settings" => $settings]);
+            // If tenant is not 1, overlay tenant-specific overrides
+            if ($tenantId !== 1) {
+                $tStmt = $this->conn->prepare("SELECT setting_key, setting_value FROM system_settings WHERE tenant_id = ?");
+                $tStmt->execute([$tenantId]);
+                while ($tRow = $tStmt->fetch()) {
+                    $settings[$tRow['setting_key']] = $tRow['setting_value'];
+                }
+            }
+
+            // Overlay tenant model profile properties
+            $settings['school_name']     = $tenant['name'] ?? ($settings['school_name'] ?? 'School');
+            $settings['school_acronym']  = $tenant['acronym'] ?? ($settings['school_acronym'] ?? 'SCH');
+            $settings['school_motto']    = $tenant['motto'] ?? ($settings['school_motto'] ?? '');
+            $settings['school_vision']   = $tenant['vision'] ?? ($settings['school_vision'] ?? '');
+            $settings['school_campus']   = $tenant['campus'] ?? ($settings['school_campus'] ?? '');
+            $settings['school_address']  = $tenant['address'] ?? ($settings['school_address'] ?? '');
+            $settings['school_email']    = $tenant['email'] ?? ($settings['school_email'] ?? '');
+            $settings['school_phone']    = $tenant['phone'] ?? ($settings['school_phone'] ?? '');
+            $settings['school_principal']= $tenant['principal_name'] ?? ($settings['school_principal'] ?? '');
+            $settings['school_director'] = $tenant['director_name'] ?? ($settings['school_director'] ?? '');
+            $settings['school_logo_path']= $tenant['logo_url'] ?? ($settings['school_logo_path'] ?? 'uploads/logos/default_school.png');
+            $settings['theme_primary']   = $tenant['theme_primary'] ?? '#023047';
+            $settings['theme_secondary'] = $tenant['theme_secondary'] ?? '#219ebc';
+            $settings['theme_accent']    = $tenant['theme_accent'] ?? '#ffb703';
+
+            echo json_encode(["success" => true, "settings" => $settings, "tenant" => $tenant]);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(["error" => "Failed to fetch settings: " . $e->getMessage()]);
